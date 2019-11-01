@@ -1,6 +1,6 @@
 # 语音识别
 
-本项目是基于PaddlePaddle的[DeepSpeech2](https://github.com/PaddlePaddle/DeepSpeech)项目修改的，方便训练中文自定义数据集。
+本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech)项目修改的，方便训练中文自定义数据集。
 
 ## 目录
 - [环境搭建](#环境搭建)
@@ -23,7 +23,7 @@ nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu
 - git clone 这个资源库
 
 ```
-git clone https://github.com/PaddlePaddle/DeepSpeech.git
+git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
 - 运行 Docker 镜像
