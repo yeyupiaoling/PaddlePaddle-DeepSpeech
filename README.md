@@ -33,3 +33,42 @@ sudo nvidia-docker run -it -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/pad
 ```
 
 ## 数据准备
+
+```bash
+cd run/
+```
+
+```bash
+sh download_public_data.sh
+```
+
+
+```bash
+sh prepare_train_data.sh
+```
+
+
+## 训练模型
+```bash
+sh download_model.sh
+```
+
+
+```bash
+sh train.sh
+```
+
+## 评估和预测
+
+```bash
+sh hyper_parameter_tune.sh
+```
+
+
+```bash
+sh eval.sh
+```
+
+```bash
+sh infer.sh
+```
