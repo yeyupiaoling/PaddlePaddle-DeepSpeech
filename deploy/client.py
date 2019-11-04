@@ -11,16 +11,8 @@ import argparse
 import pyaudio
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument(
-    "--host_ip",
-    default="localhost",
-    type=str,
-    help="Server IP address. (default: %(default)s)")
-parser.add_argument(
-    "--host_port",
-    default=8086,
-    type=int,
-    help="Server Port. (default: %(default)s)")
+parser.add_argument("--host_ip",   default="localhost", type=str,  help="Server IP address. (default: %(default)s)")
+parser.add_argument("--host_port", default=8086,        type=int,  help="Server Port. (default: %(default)s)")
 args = parser.parse_args()
 
 is_recording = False

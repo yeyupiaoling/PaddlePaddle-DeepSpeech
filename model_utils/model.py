@@ -3,23 +3,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
+import copy
+import logging
 import os
 import time
-import logging
-import gzip
-import copy
-import inspect
-import cPickle as pickle
-import collections
-import multiprocessing
-import numpy as np
+from datetime import datetime
 from distutils.dir_util import mkpath
+import numpy as np
 import paddle.fluid as fluid
 import paddle.fluid.compiler as compiler
 from decoders.swig_wrapper import Scorer
-from decoders.swig_wrapper import ctc_greedy_decoder
 from decoders.swig_wrapper import ctc_beam_search_decoder_batch
+from decoders.swig_wrapper import ctc_greedy_decoder
 from model_utils.network import deep_speech_v2_network
 
 logging.basicConfig(
@@ -338,8 +333,8 @@ class DeepSpeech2Model(object):
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("epoch: %d, batch: %d, train loss: %f\n" %
-                              (epoch_id, batch_id,
+                        print("Train 『%s』 epoch: %d, batch: %d, train loss: %f\n" %
+                              (datetime.now(), epoch_id, batch_id,
                                np.mean(each_loss[0]) / batch_size))
 
                     else:
