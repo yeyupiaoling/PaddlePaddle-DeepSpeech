@@ -1,5 +1,4 @@
 #! /usr/bin/env bash
-. utility.sh
 
 cd ../ > /dev/null
 
@@ -7,7 +6,7 @@ cd ../ > /dev/null
 export FLAGS_sync_nccl_allreduce=0
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
 python -u train.py \
---batch_size=64 \
+--batch_size=32 \
 --num_epoch=50 \
 --num_conv_layers=2 \
 --num_rnn_layers=3 \
@@ -24,7 +23,6 @@ python -u train.py \
 --use_gpu=True \
 --is_local=True \
 --share_rnn_weights=False \
---init_from_pretrained_model='./models/baidu_cn1.2k_model_fluid' \
 --train_manifest='./dataset/manifest.train' \
 --dev_manifest='./dataset/manifest.dev' \
 --mean_std_path='./dataset/mean_std.npz' \
