@@ -15,8 +15,8 @@ import os
 
 from data_utils.utility import download, unpack
 
-# URL_ROOT = 'http://www.openslr.org/resources/38'
-URL_ROOT = 'http://192.168.1.118:55000'
+URL_ROOT = 'http://www.openslr.org/resources/38'
+# URL_ROOT = 'http://192.168.1.118:55000'
 DATA_URL = URL_ROOT + '/ST-CMDS-20170001_1-OS.tar.gz'
 MD5_DATA = 'c28ddfc8e4ebe48949bc79a0c23c5545'
 
@@ -53,6 +53,7 @@ def prepare_dataset(url, md5sum, target_dir, annotation_path):
     if not os.path.exists(data_dir):
         filepath = download(url, md5sum, target_dir)
         unpack(filepath, target_dir)
+        os.remove(filepath)
     else:
         print("Skip downloading and unpacking. Free ST-Chinese-Mandarin-Corpus data already exists in %s." % target_dir)
     create_annotation_text(data_dir, annotation_path)
