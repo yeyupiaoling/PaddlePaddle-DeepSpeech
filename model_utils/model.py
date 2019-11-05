@@ -333,7 +333,7 @@ class DeepSpeech2Model(object):
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("Train 『%s』 epoch: %d, batch: %d, train loss: %f\n" %
+                        print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
                               (datetime.now(), epoch_id, batch_id,
                                np.mean(each_loss[0]) / batch_size))
 
