@@ -191,10 +191,10 @@ def start_server():
     # warming up with utterrances sampled from Librispeech
     print('-----------------------------------------------------------')
     print('Warming up ...')
-    warm_up_test(
-        audio_process_handler=file_to_transcript,
-        manifest_path=args.warmup_manifest,
-        num_test_cases=3)
+    # warm_up_test(
+    #     audio_process_handler=file_to_transcript,
+    #     manifest_path=args.warmup_manifest,
+    #     num_test_cases=3)
     print('-----------------------------------------------------------')
 
     # start the server
