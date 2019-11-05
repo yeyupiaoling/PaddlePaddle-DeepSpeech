@@ -151,17 +151,14 @@ sh infer.sh
 
 ## 项目部署
 
- - 启动语音识别服务，使用Socket通讯
+ - 启动语音识别服务，使用Socket通讯。需要注意的是`host_ip`参数是电脑本机的IP地址，其他使用默认就可以。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 \
-python deploy/server.py \
---host_ip localhost \
---host_port 8086
+sh start_server.sh
 ```
 
- - 测试服务，在控制台中，按下`空格键`，按住并开始讲话。讲话完毕请释放该键以让控制台中显示语音的文本结果。要退出客户端，只需按`ESC键`。
+ - 测试服务，执行下面这个程序调用语音识别服务。在控制台中，按下`空格键`，按住并开始讲话。讲话完毕请释放该键以让控制台中显示语音的文本结果。要退出客户端，只需按`ESC键`。
 ```shell script
 python deploy/client.py \
---host_ip localhost \
---host_port 8086
+--host_ip='192.168.1.130' \
+--host_port=10086
 ```
