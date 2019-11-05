@@ -10,7 +10,7 @@ python -u train.py \
 --num_epoch=50 \
 --num_conv_layers=2 \
 --num_rnn_layers=3 \
---rnn_layer_size=1024 \
+--rnn_layer_size=2048 \
 --num_iter_print=100 \
 --save_epoch=2 \
 --num_samples=120000 \
@@ -23,6 +23,7 @@ python -u train.py \
 --use_gpu=True \
 --is_local=True \
 --share_rnn_weights=False \
+--init_from_pretrained_model='./models/baidu_cn1.2k_model_fluid/params.pdparams' \
 --train_manifest='./dataset/manifest.train' \
 --dev_manifest='./dataset/manifest.dev' \
 --mean_std_path='./dataset/mean_std.npz' \

@@ -4,7 +4,7 @@ cd ../ > /dev/null
 
 # start server
 CUDA_VISIBLE_DEVICES=0 \
-python -u deploy/server.py \
+PYTHONPATH=.:$PYTHONPATH python -u deploy/server.py \
 --host_ip="192.168.1.118" \
 --host_port=10086 \
 --beam_size=500 \
@@ -16,7 +16,7 @@ python -u deploy/server.py \
 --cutoff_prob=1.0 \
 --cutoff_top_n=40 \
 --use_gru=False \
---use_gpu=True \
+--use_gpu=False \
 --share_rnn_weights=True \
 --speech_save_dir="./audios_cache" \
 --warmup_manifest="./dataset/manifest.test" \
@@ -35,4 +35,5 @@ fi
 
 
 exit 0
+
 

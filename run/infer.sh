@@ -11,7 +11,7 @@ python -u infer.py \
 --num_proc_bsearch=8 \
 --num_conv_layers=2 \
 --num_rnn_layers=3 \
---rnn_layer_size=1024 \
+--rnn_layer_size=2048 \
 --alpha=2.6 \
 --beta=5.0 \
 --cutoff_prob=0.99 \
