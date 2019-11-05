@@ -63,6 +63,7 @@ if [ $? -ne 0 ]; then
 fi
 
 
+echo "Model file download done."
 exit 0
 
 
