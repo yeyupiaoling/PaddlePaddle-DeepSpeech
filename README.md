@@ -64,7 +64,7 @@ sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-g
 ```
 
 - git clone 本项目源码
-```bash
+```shell script
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
@@ -74,9 +74,21 @@ sudo nvidia-docker run -it -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/pad
 ```
 
  - 安装 PaddlePaddle 1.6.0，因为这个项目必须要在 PaddlePaddle 1.6.0 版本以上才可以运行。
- 
 ```shell script
-pip install paddlepaddle-gpu==1.6.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
+pip2 install paddlepaddle-gpu==1.6.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
+```
+
+### 搭建本地环境
+
+ - 并不建议使用本地进行训练和预测，但是如何开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先需要正确安装 PaddlePaddle 1.6.0 的GPU版本，并安装相关的CUDA和CUDNN。
+```shell script
+pip2 install paddlepaddle-gpu==1.6.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
+```
+
+ - 切换到`DeepSpeech/setup/`目录下，执行`setup.sh`脚本，注意在执行之后需要输入root用户密码，等待安装即可
+```shell script
+cd DeepSpeech/setup/
+sh setup.sh
 ```
 
 ## 数据准备
