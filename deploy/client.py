@@ -11,8 +11,8 @@ import argparse
 import pyaudio
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--host_ip",   default="localhost", type=str,  help="Server IP address. (default: %(default)s)")
-parser.add_argument("--host_port", default=8086,        type=int,  help="Server Port. (default: %(default)s)")
+parser.add_argument("--host_ip", default="192.168.1.118", type=str, help="Server IP address. (default: %(default)s)")
+parser.add_argument("--host_port", default=10086, type=int, help="Server Port. (default: %(default)s)")
 args = parser.parse_args()
 
 is_recording = False
@@ -47,7 +47,7 @@ def callback(in_data, frame_count, time_info, status):
         # Connect to server and send data
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((args.host_ip, args.host_port))
-        sent = ''.join(data_list)
+        sent = b''.join(data_list)
         sock.sendall(struct.pack('>i', len(sent)) + sent)
         print('Speech[length=%d] Sent.' % len(sent))
         # Receive data from the server and shut down
