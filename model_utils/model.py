@@ -345,6 +345,7 @@ class DeepSpeech2Model(object):
 
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
+                    print('Finish the %d epoch' % epoch_id)
                     train_reader.reset()
                     break
             time_end = time.time()
