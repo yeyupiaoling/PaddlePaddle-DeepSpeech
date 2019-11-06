@@ -5,7 +5,7 @@ cd ../ > /dev/null
 # start server
 CUDA_VISIBLE_DEVICES=0 \
 PYTHONPATH=.:$PYTHONPATH python -u deploy/server.py \
---host_ip="192.168.1.118" \
+--host_ip="192.168.1.130" \
 --host_port=10086 \
 --beam_size=500 \
 --num_conv_layers=2 \

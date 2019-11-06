@@ -68,9 +68,9 @@ sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-g
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
-- 运行 PaddlePaddle Docker 镜像
+- 运行 PaddlePaddle Docker 镜像，这里设置与主机共同拥有IP和端口号。
 ```shell script
-sudo nvidia-docker run -it -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu /bin/bash
+sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu /bin/bash
 ```
 
  - 安装 PaddlePaddle 1.6.0，因为这个项目必须要在 PaddlePaddle 1.6.0 版本以上才可以运行。
