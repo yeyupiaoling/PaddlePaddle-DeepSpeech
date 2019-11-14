@@ -47,7 +47,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                     {
                         'audio_filepath': audio_path,
                         'duration': duration,
-                        'text': text.replace('\n', '')
+                        'text': text.replace('\n', '').replace('\r', '')
                     },
                     ensure_ascii=False))
 
