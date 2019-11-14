@@ -56,9 +56,9 @@ def write_manifest(audio_path, manifest_path_prefix):
 
 if __name__ == '__main__':
     write_manifest(
-        audio_path=args.annotation_path,
+        audio_path=args.noise_path,
         manifest_path_prefix=os.path.join(args.manifest_prefix, 'manifest.noise'))
 
     write_manifest(
-        audio_path=args.annotation_path,
+        audio_path=args.impulse_path,
         manifest_path_prefix=os.path.join(args.manifest_prefix, 'manifest.impulse'))
