@@ -27,10 +27,18 @@ parser.add_argument(
     default="./dataset/",
     type=str,
     help="Filepath prefix for output manifests. (default: %(default)s)")
+parser.add_argument(
+    "--old_vocab_path",
+    default=None,
+    type=str,
+    help="Filepath prefix for output manifests.")
 args = parser.parse_args()
 
 
-def create_manifest(annotation_path, manifest_path_prefix):
+def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
+    if old_vocab_path is not None:
+        with codecs.open(old_vocab_path, 'w', 'utf-8') as f:
+            old_vocab = f.readlines()
     json_lines = []
     for annotation_text in os.listdir(annotation_path):
         print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
@@ -39,7 +47,12 @@ def create_manifest(annotation_path, manifest_path_prefix):
             lines = f.readlines()
         for line in lines:
             audio_path = line.split('\t')[0]
-            text = line.split('\t')[1]
+            text = line.split('\t')[1].replace('\n', '').replace('\r', '')
+            if old_vocab_path is not None:
+                for c in text:
+                    if c not in old_vocab:
+                        print(c)
+                        continue
             audio_data, samplerate = soundfile.read(audio_path)
             duration = float(len(audio_data) / samplerate)
             json_lines.append(
@@ -47,7 +60,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                     {
                         'audio_filepath': audio_path,
                         'duration': duration,
-                        'text': text.replace('\n', '').replace('\r', '')
+                        'text': text
                     },
                     ensure_ascii=False))
 
@@ -70,7 +83,8 @@ def create_manifest(annotation_path, manifest_path_prefix):
 def main():
     create_manifest(
         annotation_path=args.annotation_path,
-        manifest_path_prefix=args.manifest_prefix)
+        manifest_path_prefix=args.manifest_prefix,
+        old_vocab_path=args.old_vocab_path)
 
 
 if __name__ == '__main__':

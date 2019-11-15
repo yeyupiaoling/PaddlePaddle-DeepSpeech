@@ -98,6 +98,11 @@ sh setup.sh
 cd DeepSpeech/run/
 ```
 
+ - 我们先来下载官方的预训练模型和官方提供的超大语言模型文件，这些文件将存放在`DeepSpeech/models`目录下。
+```shell script
+sh download_model.sh
+```
+
  - 本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。
 ```shell script
 sh download_public_data.sh
@@ -112,7 +117,6 @@ sh download_public_data.sh
 ./dataset/audio/wav/0175/H0175A0470.wav 据克而瑞研究中心监测
 ./dataset/audio/wav/0175/H0175A0180.wav 把温度加大到十八
 ```
- 
 
  - 然后执行下面的数据集处理脚本，这个是把我们的数据集生成三个JSON格式的文件，分别是`manifest.dev、manifest.test、manifest.train`。然后计算均值和标准差用于归一化，脚本随机采样2000个的语音频谱特征的均值和标准差，并将结果保存在`mean_std.npz`中。建立词表。最后建立词表，把所有出现的字符都存放子在`zh_vocab.txt`文件中，一行一个字符。以上生成的文件都存放在`DeepSpeech/dataset/`目录下。
 ```shell script
@@ -121,11 +125,6 @@ sh prepare_train_data.sh
 
 
 ## 训练模型
-
- - 在执行训练之前，我们先来下载官方的预训练模型和官方提供的超大语言模型文件，这些文件将存放在`DeepSpeech/models`目录下。
-```shell script
-sh download_model.sh
-```
 
  - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/checkpoints`目录下。
 ```shell script
