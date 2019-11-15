@@ -5,7 +5,6 @@ i.e.
 cd ../
 PYTHONPATH=.:$PYTHONPATH python data/create_manifest.py
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -39,7 +38,13 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
     if old_vocab_path is not None:
         with codecs.open(old_vocab_path, 'r', 'utf-8') as f:
             old_vocab = f.readlines()
+            old_chars = []
+            for t in old_vocab:
+                old_chars.append(t.replace('\n', ''))
+            print(old_chars)
     json_lines = []
+    s = 0
+    not_c = set()
     for annotation_text in os.listdir(annotation_path):
         print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
@@ -47,11 +52,13 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
             lines = f.readlines()
         for line in lines:
             audio_path = line.split('\t')[0]
-            text = line.split('\t')[1].replace('\n', '').replace('\r', '')
+            text = line.split('\t')[1].replace('\n', '').replace('\r', '').replace(' ', '').replace('·', '').replace('．', '')
             if old_vocab_path is not None:
                 for c in text:
-                    if c not in old_vocab:
-                        print(c)
+                    if c not in old_chars:
+                        s += 1
+                        print(s)
+                        not_c.add(c) 
                         continue
             audio_data, samplerate = soundfile.read(audio_path)
             duration = float(len(audio_data) / samplerate)
@@ -78,6 +85,8 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
     f_train.close()
     f_dev.close()
     f_test.close()
+    print(len(not_c))
+    print(not_c)
 
 
 def main():
