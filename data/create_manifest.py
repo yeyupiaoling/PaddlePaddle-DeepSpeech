@@ -36,11 +36,9 @@ args = parser.parse_args()
 
 
 def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
-    global old_vocab
     if old_vocab_path is not None:
-        f = codecs.open(old_vocab_path, 'w', 'utf-8')
-        old_vocab = f.readlines()
-        f.close()
+        with codecs.open(old_vocab_path, 'r', 'utf-8') as f:
+            old_vocab = f.readlines()
     json_lines = []
     for annotation_text in os.listdir(annotation_path):
         print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
