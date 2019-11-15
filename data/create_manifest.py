@@ -52,7 +52,7 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
             lines = f.readlines()
         for line in lines:
             audio_path = line.split('\t')[0]
-            text = line.split('\t')[1].replace('\n', '').replace('\r', '').replace(' ', '').replace('·', '').replace('．', '')
+            text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
             if old_vocab_path is not None:
                 for c in text:
                     if c not in old_chars:
@@ -88,6 +88,27 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
     print(len(not_c))
     print(not_c)
 
+
+def is_ustr(in_str):
+    out_str = ''
+    for i in range(len(in_str)):
+        if is_uchar(in_str[i]):
+            out_str = out_str + in_str[i]
+        else:
+            out_str = out_str + ' '
+    return ''.join(out_str.split())
+
+
+def is_uchar(uchar):
+    if u'\u4e00' <= uchar <= u'\u9fa5':
+        return True
+    if u'\u0030' <= uchar <= u'\u0039':
+        return False
+    if (u'\u0041' <= uchar <= u'\u005a') or (u'\u0061' <= uchar <= u'\u007a'):
+        return False
+    if uchar in ('-', ',', '，', '。', '.', '>', '?'):
+        return False
+    return False
 
 def main():
     create_manifest(
