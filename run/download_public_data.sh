@@ -37,4 +37,3 @@ fi
 
 echo "Pubilc data download done."
 exit 0
-

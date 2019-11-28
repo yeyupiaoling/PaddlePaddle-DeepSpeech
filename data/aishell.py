@@ -14,8 +14,8 @@ import codecs
 import os
 from data_utils.utility import download, unpack
 
-URL_ROOT = 'http://www.openslr.org/resources/33'
-# URL_ROOT = 'http://192.168.1.118:55000'
+# URL_ROOT = 'http://www.openslr.org/resources/33'
+URL_ROOT = 'http://192.168.1.119:55000'
 DATA_URL = URL_ROOT + '/data_aishell.tgz'
 MD5_DATA = '2f494334227864a8a8fec932999db9d8'
 
