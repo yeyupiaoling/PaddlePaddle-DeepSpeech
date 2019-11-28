@@ -14,7 +14,7 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
-add_arg('num_samples',      int,    20000,     "# of samples to for statistics.")
+add_arg('num_samples',      int,    2000,     "# of samples to for statistics.")
 add_arg('specgram_type',    str,    'linear',   "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 add_arg('manifest_path',    str,    './dataset/manifest.train',   "Filepath of manifest to compute normalizer's mean and stddev.")
 add_arg('output_path',      str,    './dataset/mean_std.npz',     "Filepath of write mean and stddev to (.npz).")
