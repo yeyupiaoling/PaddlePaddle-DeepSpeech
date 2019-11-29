@@ -5,7 +5,7 @@ cd ../ > /dev/null
 # start server
 CUDA_VISIBLE_DEVICES=0 \
 PYTHONPATH=.:$PYTHONPATH python -u deploy/server.py \
---host_ip="192.168.1.130" \
+--host_ip="192.168.1.119" \
 --host_port=10086 \
 --beam_size=500 \
 --num_conv_layers=2 \
@@ -17,7 +17,7 @@ PYTHONPATH=.:$PYTHONPATH python -u deploy/server.py \
 --cutoff_top_n=40 \
 --use_gru=True \
 --use_gpu=True \
---share_rnn_weights=True \
+--share_rnn_weights=False \
 --speech_save_dir="./audios_cache" \
 --warmup_manifest="./dataset/manifest.test" \
 --mean_std_path="./models/baidu_cn1.2k_model_fluid/mean_std.npz" \

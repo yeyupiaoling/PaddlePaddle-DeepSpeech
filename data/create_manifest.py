@@ -106,7 +106,7 @@ def is_uchar(uchar):
         return False
     if (u'\u0041' <= uchar <= u'\u005a') or (u'\u0061' <= uchar <= u'\u007a'):
         return False
-    if uchar in ('-', ',', '，', '。', '.', '>', '?'):
+    if uchar in ('-', ',', '.', '>', '?'):
         return False
     return False
 
