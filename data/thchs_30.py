@@ -15,8 +15,8 @@ import os
 
 from data_utils.utility import download, unpack
 
-# URL_ROOT = 'http://www.openslr.org/resources/18'
-URL_ROOT = 'http://192.168.1.119:55000'
+URL_ROOT = 'http://www.openslr.org/resources/18'
+# URL_ROOT = 'http://192.168.1.119:55000'
 DATA_URL = URL_ROOT + '/data_thchs30.tgz'
 MD5_DATA = '2d2252bde5c8429929e1841d4cb95e90'
 
