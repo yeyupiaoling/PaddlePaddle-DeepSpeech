@@ -15,8 +15,8 @@ import os
 
 from data_utils.utility import download, unpack
 
-# URL_ROOT = 'http://www.openslr.org/resources/38'
-URL_ROOT = 'http://192.168.1.119:55000'
+URL_ROOT = 'http://www.openslr.org/resources/38'
+# URL_ROOT = 'http://192.168.88.128:55000'
 DATA_URL = URL_ROOT + '/ST-CMDS-20170001_1-OS.tar.gz'
 MD5_DATA = 'c28ddfc8e4ebe48949bc79a0c23c5545'
 

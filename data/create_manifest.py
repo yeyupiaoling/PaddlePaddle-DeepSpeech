@@ -11,6 +11,8 @@ from __future__ import print_function
 
 import os
 import codecs
+import wave
+
 import soundfile
 import json
 import argparse
@@ -52,6 +54,18 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
             lines = f.readlines()
         for line in lines:
             audio_path = line.split('\t')[0]
+
+            # change nchannels, sampwidth, framerate, nframes
+            f = wave.open(audio_path, "rb")
+            str_data = f.readframes(f.getnframes())
+            f.close()
+            file = wave.open(audio_path, 'wb')
+            file.setnchannels(1)
+            file.setsampwidth(4)
+            file.setframerate(16000)
+            file.writeframes(str_data)
+            file.close()
+
             text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
             if old_vocab_path is not None:
                 for c in text:
@@ -109,6 +123,7 @@ def is_uchar(uchar):
     if uchar in ('-', ',', '.', '>', '?'):
         return False
     return False
+
 
 def main():
     create_manifest(

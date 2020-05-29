@@ -4,7 +4,9 @@ cd ../ > /dev/null
 
 # train model
 export FLAGS_sync_nccl_allreduce=0
-CUDA_VISIBLE_DEVICES=0 \
+export FLAGS_eager_delete_tensor_gb=0
+export FLAGS_fraction_of_gpu_memory_to_use=0.98
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
 python -u train.py \
 --batch_size=32 \
 --num_epoch=50 \
@@ -12,12 +14,12 @@ python -u train.py \
 --num_rnn_layers=3 \
 --rnn_layer_size=2048 \
 --num_iter_print=100 \
---save_epoch=2 \
+--save_epoch=1 \
 --num_samples=120000 \
 --learning_rate=5e-4 \
 --max_duration=27.0 \
 --min_duration=0.0 \
---test_off=False \
+--test_off=True \
 --use_sortagrad=True \
 --use_gru=True \
 --use_gpu=True \
