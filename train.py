@@ -40,7 +40,7 @@ add_arg('mean_std_path',                str,  './dataset/mean_std.npz',     "Fil
 add_arg('vocab_path',                   str,  './dataset/zh_vocab.txt',     "Filepath of vocabulary.")
 add_arg('output_model_dir',             str,  "./models/checkpoints",       "Directory for saving checkpoints.")
 add_arg('augment_conf_path',            str,  './conf/augmentation.config',    "Filepath of augmentation configuration file (json-format).")
-add_arg('specgram_type',                str,  'linear',    "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
+add_arg('specgram_type',                str,  'mfcc',    "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 add_arg('shuffle_method',               str,  'batch_shuffle_clipped',    "Shuffle method.", choices=['instance_shuffle', 'batch_shuffle', 'batch_shuffle_clipped'])
 # yapf: disable
 args = parser.parse_args()

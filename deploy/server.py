@@ -131,8 +131,8 @@ def start_server():
         augmentation_config='{}',
         specgram_type=args.specgram_type,
         keep_transcription_text=True,
-        place = place,
-        is_training = False)
+        place=place,
+        is_training=False)
     # prepare ASR model
     ds2_model = DeepSpeech2Model(
         vocab_size=data_generator.vocab_size,
@@ -149,6 +149,7 @@ def start_server():
     if args.decoding_method == "ctc_beam_search":
         ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path,
                                   vocab_list)
+
     # prepare ASR inference handler
     def file_to_transcript(filename):
         feature = data_generator.process_utterance(filename, "")
@@ -166,7 +167,7 @@ def start_server():
             axis=0)
         feature = (np.array([feature[0]]).astype('float32'),
                    None,
-                   np.array([audio_len]).astype('int64').reshape([-1,1]),
+                   np.array([audio_len]).astype('int64').reshape([-1, 1]),
                    np.array([mask]).astype('float32'))
         probs_split = ds2_model.infer_batch_probs(
             infer_data=feature,

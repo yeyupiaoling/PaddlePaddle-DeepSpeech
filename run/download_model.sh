@@ -32,8 +32,8 @@ mkdir -p models/baidu_cn1.2k_model_fluid
 cd models/baidu_cn1.2k_model_fluid > /dev/null
 
 # Download pretrained model
-#URL='https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz'
-URL='http://192.168.1.118:55000/baidu_cn1.2k_model_fluid.tar.gz'
+URL='https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz'
+#URL='http://192.168.88.128:55000/baidu_cn1.2k_model_fluid.tar.gz'
 MD5=4e4e64dea5f83703ea4b8d601df91000
 TARGET=baidu_cn1.2k_model_fluid.tar.gz
 
@@ -50,8 +50,8 @@ rm $TARGET
 cd ../.. > /dev/null
 
 # Download language model
-#URL='https://deepspeech.bj.bcebos.com/zh_lm/zhidao_giga.klm'
-URL='http://192.168.1.118:55000/zhidao_giga.klm'
+URL='https://deepspeech.bj.bcebos.com/zh_lm/zhidao_giga.klm'
+#URL='http://192.168.88.128:55000/zhidao_giga.klm'
 MD5=1cf449f2123d80504e99f9b97d965418
 TARGET=./models/zhidao_giga.klm
 
