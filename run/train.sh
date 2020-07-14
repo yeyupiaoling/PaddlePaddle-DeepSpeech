@@ -31,7 +31,7 @@ python -u train.py \
 --vocab_path='./dataset/zh_vocab.txt' \
 --output_model_dir='./models/checkpoints/' \
 --augment_conf_path='./conf/augmentation.config' \
---specgram_type='mfcc' \
+--specgram_type='linear' \
 --shuffle_method='batch_shuffle_clipped' \
 
 if [ $? -ne 0 ]; then
