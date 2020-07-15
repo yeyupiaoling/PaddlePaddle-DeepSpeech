@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -19,27 +20,29 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
-add_arg('num_samples',      int,    10,     "# of samples to infer.")
-add_arg('beam_size',        int,    500,    "Beam search width.")
-add_arg('num_proc_bsearch', int,    8,      "# of CPUs for beam search.")
-add_arg('num_conv_layers',  int,    2,      "# of convolution layers.")
-add_arg('num_rnn_layers',   int,    3,      "# of recurrent layers.")
-add_arg('rnn_layer_size',   int,    2048,   "# of recurrent cells per layer.")
-add_arg('alpha',            float,  2.5,    "Coef of LM for beam search.")
-add_arg('beta',             float,  0.3,    "Coef of WC for beam search.")
-add_arg('cutoff_prob',      float,  1.0,    "Cutoff probability for pruning.")
-add_arg('cutoff_top_n',     int,    40,     "Cutoff number for pruning.")
-add_arg('use_gru',          bool,   True,  "Use GRUs instead of simple RNNs.")
-add_arg('use_gpu',          bool,   True,   "Use GPU or not.")
-add_arg('share_rnn_weights',bool,   False,   "Share input-hidden weights across  bi-directional RNNs. Not for GRU.")
-add_arg('infer_manifest',   str,    './dataset/manifest.dev',     "Filepath of manifest to infer.")
-add_arg('mean_std_path',    str,    './dataset/mean_std.npz',    "Filepath of normalizer's mean & std.")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',     "Filepath of vocabulary.")
-add_arg('lang_model_path',  str,    './models/zhidao_giga.klm',     "Filepath for language model.")
-add_arg('model_path',       str,    './models/checkpoints/step_final',    "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
-add_arg('decoding_method',  str,    'ctc_beam_search',     "Decoding method. Options: ctc_beam_search, ctc_greedy", choices = ['ctc_beam_search', 'ctc_greedy'])
-add_arg('error_rate_type',  str,    'wer',     "Error rate type for evaluation.", choices=['wer', 'cer'])
-add_arg('specgram_type',    str,    'linear',     "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
+add_arg('num_samples', int, 10, "# of samples to infer.")
+add_arg('beam_size', int, 500, "Beam search width.")
+add_arg('num_proc_bsearch', int, 8, "# of CPUs for beam search.")
+add_arg('num_conv_layers', int, 2, "# of convolution layers.")
+add_arg('num_rnn_layers', int, 3, "# of recurrent layers.")
+add_arg('rnn_layer_size', int, 2048, "# of recurrent cells per layer.")
+add_arg('alpha', float, 2.5, "Coef of LM for beam search.")
+add_arg('beta', float, 0.3, "Coef of WC for beam search.")
+add_arg('cutoff_prob', float, 1.0, "Cutoff probability for pruning.")
+add_arg('cutoff_top_n', int, 40, "Cutoff number for pruning.")
+add_arg('use_gru', bool, True, "Use GRUs instead of simple RNNs.")
+add_arg('use_gpu', bool, True, "Use GPU or not.")
+add_arg('share_rnn_weights', bool, False, "Share input-hidden weights across  bi-directional RNNs. Not for GRU.")
+add_arg('infer_manifest', str, './dataset/manifest.dev', "Filepath of manifest to infer.")
+add_arg('mean_std_path', str, './dataset/mean_std.npz', "Filepath of normalizer's mean & std.")
+add_arg('vocab_path', str, './dataset/zh_vocab.txt', "Filepath of vocabulary.")
+add_arg('lang_model_path', str, './models/zhidao_giga.klm', "Filepath for language model.")
+add_arg('model_path', str, './models/checkpoints/step_final',
+        "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
+add_arg('decoding_method', str, 'ctc_beam_search', "Decoding method. Options: ctc_beam_search, ctc_greedy",
+        choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('error_rate_type', str, 'wer', "Error rate type for evaluation.", choices=['wer', 'cer'])
+add_arg('specgram_type', str, 'linear', "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 # yapf: disable
 args = parser.parse_args()
 
@@ -63,8 +66,8 @@ def infer():
         augmentation_config='{}',
         specgram_type=args.specgram_type,
         keep_transcription_text=True,
-        place = place,
-        is_training = False)
+        place=place,
+        is_training=False)
     batch_reader = data_generator.batch_reader_creator(
         manifest_path=args.infer_manifest,
         batch_size=args.num_samples,
@@ -87,10 +90,7 @@ def infer():
 
     if args.decoding_method == "ctc_greedy":
         ds2_model.logger.info("start inference ...")
-        probs_split = ds2_model.infer_batch_probs(
-            infer_data=infer_data,
-            feeding_dict=data_generator.feeding)
-
+        probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
         result_transcripts = ds2_model.decode_batch_greedy(
             probs_split=probs_split,
             vocab_list=vocab_list)
@@ -98,11 +98,9 @@ def infer():
         ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path,
                                   vocab_list)
         ds2_model.logger.info("start inference ...")
-        probs_split= ds2_model.infer_batch_probs(
-            infer_data=infer_data,
-            feeding_dict=data_generator.feeding)
+        probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
-        result_transcripts= ds2_model.decode_batch_beam_search(
+        result_transcripts = ds2_model.decode_batch_beam_search(
             probs_split=probs_split,
             beam_alpha=args.alpha,
             beam_beta=args.beta,
@@ -121,6 +119,7 @@ def infer():
               (args.error_rate_type, error_rate_func(target, result)))
 
     ds2_model.logger.info("finish inference")
+
 
 def main():
     print_arguments(args)

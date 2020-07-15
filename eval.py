@@ -87,9 +87,7 @@ def evaluate():
     errors_sum, len_refs, num_ins = 0.0, 0, 0
     ds2_model.logger.info("start evaluation ...")
     for infer_data in batch_reader():
-        probs_split = ds2_model.infer_batch_probs(
-            infer_data=infer_data,
-            feeding_dict=data_generator.feeding)
+        probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
         if args.decoding_method == "ctc_greedy":
             result_transcripts = ds2_model.decode_batch_greedy(
@@ -118,6 +116,7 @@ def evaluate():
           (args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
 
     ds2_model.logger.info("finish evaluation")
+
 
 def main():
     print_arguments(args)

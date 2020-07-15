@@ -165,13 +165,11 @@ def start_server():
                 (1, mask_shape0, mask_max_len)),
             32,
             axis=0)
-        feature = (np.array([feature[0]]).astype('float32'),
+        feature = [np.array([feature[0]]).astype('float32'),
                    None,
                    np.array([audio_len]).astype('int64').reshape([-1, 1]),
-                   np.array([mask]).astype('float32'))
-        probs_split = ds2_model.infer_batch_probs(
-            infer_data=feature,
-            feeding_dict=data_generator.feeding)
+                   np.array([mask]).astype('float32')]
+        probs_split = ds2_model.infer_batch_probs(infer_data=feature)
 
         if args.decoding_method == "ctc_greedy":
             result_transcript = ds2_model.decode_batch_greedy(

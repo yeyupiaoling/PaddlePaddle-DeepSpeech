@@ -98,7 +98,6 @@ def train():
     ds2_model.train(
         train_batch_reader=train_batch_reader,
         dev_batch_reader=dev_batch_reader,
-        feeding_dict=train_generator.feeding,
         learning_rate=args.learning_rate,
         gradient_clipping=400,
         batch_size=args.batch_size,

@@ -85,7 +85,7 @@ class DeepSpeech2Model(object):
             input_fields = {
                 'names': ['audio_data', 'text_data', 'seq_len_data', 'masks'],
                 'shapes':
-                [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
+                    [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
                 'dtypes': ['float32', 'int32', 'int64', 'float32'],
                 'lod_levels': [0, 1, 0, 0]
             }
@@ -160,7 +160,7 @@ class DeepSpeech2Model(object):
         pre_epoch = 0
         dir_name = self._init_from_pretrained_model.split('_')
         if len(dir_name) >= 2 and dir_name[-2].endswith('epoch') and dir_name[
-                -1].isdigit():
+            -1].isdigit():
             pre_epoch = int(dir_name[-1])
 
         return pre_epoch + 1
@@ -184,14 +184,12 @@ class DeepSpeech2Model(object):
 
         return True
 
-    def test(self, exe, dev_batch_reader, test_program, test_reader,
+    def test(self, exe, test_program, test_reader,
              fetch_list):
         '''Test the model.
 
         :param exe:The executor of program.
         :type exe: Executor
-        :param dev_batch_reader: The reader of test dataa.
-        :type dev_batch_reader: read generator 
         :param test_program: The program of test.
         :type test_program: Program
         :param test_reader: Reader of test.
@@ -205,12 +203,10 @@ class DeepSpeech2Model(object):
         epoch_loss = []
         while True:
             try:
-                each_loss = exe.run(
-                    program=test_program,
-                    fetch_list=fetch_list,
-                    return_numpy=False)
+                each_loss = exe.run(program=test_program,
+                                    fetch_list=fetch_list,
+                                    return_numpy=False)
                 epoch_loss.extend(np.array(each_loss[0]))
-
             except fluid.core.EOFException:
                 test_reader.reset()
                 break
@@ -219,7 +215,6 @@ class DeepSpeech2Model(object):
     def train(self,
               train_batch_reader,
               dev_batch_reader,
-              feeding_dict,
               learning_rate,
               gradient_clipping,
               num_epoch,
@@ -234,9 +229,6 @@ class DeepSpeech2Model(object):
         :type train_batch_reader: callable
         :param dev_batch_reader: Validation data reader.
         :type dev_batch_reader: callable
-        :param feeding_dict: Feeding is a map of field name and tuple index
-                             of the data that reader returns.
-        :type feeding_dict: dict|list
         :param learning_rate: Learning rate for ADAM optimizer.
         :type learning_rate: float
         :param gradient_clipping: Gradient clipping threshold.
@@ -258,9 +250,6 @@ class DeepSpeech2Model(object):
         # prepare model output directory
         if not os.path.exists(self._output_model_dir):
             mkpath(self._output_model_dir)
-
-        # adapt the feeding dict according to the network
-        adapted_feeding_dict = self._adapt_feeding_dict(feeding_dict)
 
         if isinstance(self._place, fluid.CUDAPlace):
             dev_count = fluid.core.get_cuda_device_count()
@@ -290,7 +279,6 @@ class DeepSpeech2Model(object):
                 test_reader, _, ctc_loss = self.create_network()
 
         test_prog = test_prog.clone(for_test=True)
-
         exe = fluid.Executor(self._place)
         exe.run(startup_prog)
 
@@ -303,11 +291,10 @@ class DeepSpeech2Model(object):
         exec_strategy = fluid.ExecutionStrategy()
 
         # pass the build_strategy to with_data_parallel API
-        compiled_prog = compiler.CompiledProgram(
-            train_program).with_data_parallel(
-                loss_name=ctc_loss.name,
-                build_strategy=build_strategy,
-                exec_strategy=exec_strategy)
+        compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(
+            loss_name=ctc_loss.name,
+            build_strategy=build_strategy,
+            exec_strategy=exec_strategy)
 
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
@@ -318,16 +305,14 @@ class DeepSpeech2Model(object):
             epoch_loss = []
             time_begin = time.time()
             batch_id = 0
-            step = 0
             while True:
                 try:
                     fetch_list = [ctc_loss.name]
 
                     if batch_id % num_iterations_print == 0:
-                        fetch = exe.run(
-                            program=compiled_prog,
-                            fetch_list=fetch_list,
-                            return_numpy=False)
+                        fetch = exe.run(program=compiled_prog,
+                                        fetch_list=fetch_list,
+                                        return_numpy=False)
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
@@ -336,10 +321,9 @@ class DeepSpeech2Model(object):
                                np.mean(each_loss[0]) / batch_size))
 
                     else:
-                        each_loss = exe.run(
-                            program=compiled_prog,
-                            fetch_list=[],
-                            return_numpy=False)
+                        _ = exe.run(program=compiled_prog,
+                                    fetch_list=[],
+                                    return_numpy=False)
 
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
@@ -355,7 +339,6 @@ class DeepSpeech2Model(object):
                 print('\n----------Begin test...')
                 test_loss = self.test(
                     exe,
-                    dev_batch_reader=dev_batch_reader,
                     test_program=test_prog,
                     test_reader=test_reader,
                     fetch_list=[ctc_loss])
@@ -364,14 +347,13 @@ class DeepSpeech2Model(object):
                     % (used_time, epoch_id + pre_epoch,
                        np.mean(np.array(epoch_loss)), test_loss / batch_size))
             if (epoch_id + 1) % save_epoch == 0:
-                self.save_param(exe, train_program,
-                                "epoch_" + str(epoch_id + pre_epoch))
+                self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
         self.save_param(exe, train_program, "step_final")
 
         print("\n------------Training finished!!!-------------")
 
-    def infer_batch_probs(self, infer_data, feeding_dict):
+    def infer_batch_probs(self, infer_data):
         """Infer the prob matrices for a batch of speech utterances.
         :param infer_data: List of utterances to infer, with each utterance
                            consisting of a tuple of audio features and
@@ -387,9 +369,6 @@ class DeepSpeech2Model(object):
         # define inferer
         infer_program = fluid.Program()
         startup_prog = fluid.Program()
-
-        # adapt the feeding dict according to the network
-        adapted_feeding_dict = self._adapt_feeding_dict(feeding_dict)
 
         # prepare the network
         with fluid.program_guard(infer_program, startup_prog):
@@ -510,7 +489,7 @@ class DeepSpeech2Model(object):
         :return: List of transcription texts.
         :rtype: List of basestring
         """
-        if self._ext_scorer != None:
+        if self._ext_scorer is not None:
             self._ext_scorer.reset_params(beam_alpha, beam_beta)
         # beam search decode
         num_processes = min(num_processes, len(probs_split))
@@ -525,35 +504,3 @@ class DeepSpeech2Model(object):
 
         results = [result[0][1] for result in beam_search_results]
         return results
-
-    def _adapt_feeding_dict(self, feeding_dict):
-        """Adapt feeding dict according to network struct.
-
-        To remove impacts from padding part, we add scale_sub_region layer and
-        sub_seq layer. For sub_seq layer, 'sequence_offset' and
-        'sequence_length' fields are appended. For each scale_sub_region layer
-        'convN_index_range' field is appended.
-
-        :param feeding_dict: Feeding is a map of field name and tuple index
-                             of the data that reader returns.
-        :type feeding_dict: dict|list
-        :return: Adapted feeding dict.
-        :rtype: dict|list
-        """
-        adapted_feeding_dict = copy.deepcopy(feeding_dict)
-        if isinstance(feeding_dict, dict):
-            adapted_feeding_dict["sequence_offset"] = len(adapted_feeding_dict)
-            adapted_feeding_dict["sequence_length"] = len(adapted_feeding_dict)
-            for i in range(self._num_conv_layers):
-                adapted_feeding_dict["conv%d_index_range" %i] = \
-                        len(adapted_feeding_dict)
-        elif isinstance(feeding_dict, list):
-            adapted_feeding_dict.append("sequence_offset")
-            adapted_feeding_dict.append("sequence_length")
-            for i in range(self._num_conv_layers):
-                adapted_feeding_dict.append("conv%d_index_range" % i)
-        else:
-            raise ValueError("Type of feeding_dict is %s, not supported." %
-                             type(feeding_dict))
-
-        return adapted_feeding_dict
