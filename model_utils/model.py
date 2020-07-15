@@ -99,11 +99,10 @@ class DeepSpeech2Model(object):
                 for i in range(len(input_fields['names']))
             ]
 
-            reader = fluid.io.DataLoader.from_generator(
-                feed_list=inputs,
-                capacity=64,
-                iterable=False,
-                use_double_buffer=True)
+            reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
+                                                        capacity=64,
+                                                        iterable=False,
+                                                        use_double_buffer=False)
 
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
@@ -123,8 +122,7 @@ class DeepSpeech2Model(object):
                 dtype='float32',
                 lod_level=0)
             text_data = None
-            reader = fluid.DataFeeder([audio_data, seq_len_data, masks],
-                                      self._place)
+            reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
 
         log_probs, loss = deep_speech_v2_network(
             audio_data=audio_data,
@@ -147,7 +145,6 @@ class DeepSpeech2Model(object):
         if not os.path.exists(self._init_from_pretrained_model):
             print(self._init_from_pretrained_model)
             raise Warning("The pretrained params do not exist.")
-            return False
         fluid.io.load_params(
             exe,
             self._init_from_pretrained_model,
@@ -159,8 +156,7 @@ class DeepSpeech2Model(object):
 
         pre_epoch = 0
         dir_name = self._init_from_pretrained_model.split('_')
-        if len(dir_name) >= 2 and dir_name[-2].endswith('epoch') and dir_name[
-            -1].isdigit():
+        if len(dir_name) >= 2 and dir_name[-2].endswith('epoch') and dir_name[-1].isdigit():
             pre_epoch = int(dir_name[-1])
 
         return pre_epoch + 1
@@ -385,7 +381,6 @@ class DeepSpeech2Model(object):
         self.init_from_pretrained_model(exe, infer_program)
 
         infer_results = []
-        time_begin = time.time()
 
         # run inference
         for i in range(infer_data[0].shape[0]):
@@ -426,7 +421,6 @@ class DeepSpeech2Model(object):
             output_transcription = ctc_greedy_decoder(
                 probs_seq=probs, vocabulary=vocab_list)
             results.append(output_transcription)
-        print(results)
         return results
 
     def init_ext_scorer(self, beam_alpha, beam_beta, language_model_path,
