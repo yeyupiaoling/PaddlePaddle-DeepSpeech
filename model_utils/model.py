@@ -1,8 +1,8 @@
+"""Contains DeepSpeech2 model."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import copy
 import logging
 import os
 import time
@@ -42,7 +42,7 @@ class DeepSpeech2Model(object):
     :param init_from_pretrained_model: Pretrained model path. If None, will train
                                   from stratch.
     :type init_from_pretrained_model: string|None
-    :param output_model_dir: Output model directory. If None, output to current directory. 
+    :param output_model_dir: Output model directory. If None, output to current directory.
     :type output_model_dir: string|None
     """
 
@@ -72,7 +72,7 @@ class DeepSpeech2Model(object):
     def create_network(self, is_infer=False):
         """Create data layers and model network.
         :param is_training: Whether to create a network for training.
-        :type is_training: bool 
+        :type is_training: bool
         :return reader: Reader for input.
         :rtype reader: read generater
         :return log_probs: An output unnormalized log probability layer.
@@ -102,7 +102,7 @@ class DeepSpeech2Model(object):
             reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
                                                         capacity=64,
                                                         iterable=False,
-                                                        use_double_buffer=False)
+                                                        use_double_buffer=True)
 
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
@@ -122,7 +122,8 @@ class DeepSpeech2Model(object):
                 dtype='float32',
                 lod_level=0)
             text_data = None
-            reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
+            reader = fluid.DataFeeder([audio_data, seq_len_data, masks],
+                                      self._place)
 
         log_probs, loss = deep_speech_v2_network(
             audio_data=audio_data,
@@ -186,13 +187,15 @@ class DeepSpeech2Model(object):
 
         :param exe:The executor of program.
         :type exe: Executor
+        :param dev_batch_reader: The reader of test dataa.
+        :type dev_batch_reader: read generator
         :param test_program: The program of test.
         :type test_program: Program
         :param test_reader: Reader of test.
         :type test_reader: Reader
         :param fetch_list: Fetch list.
         :type fetch_list: list
-        :return: An output unnormalized log probability. 
+        :return: An output unnormalized log probability.
         :rtype: array
         '''
         test_reader.start()
@@ -225,6 +228,9 @@ class DeepSpeech2Model(object):
         :type train_batch_reader: callable
         :param dev_batch_reader: Validation data reader.
         :type dev_batch_reader: callable
+        :param feeding_dict: Feeding is a map of field name and tuple index
+                             of the data that reader returns.
+        :type feeding_dict: dict|list
         :param learning_rate: Learning rate for ADAM optimizer.
         :type learning_rate: float
         :param gradient_clipping: Gradient clipping threshold.
@@ -295,7 +301,7 @@ class DeepSpeech2Model(object):
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
 
-        # run train 
+        # run train
         for epoch_id in range(num_epoch):
             train_reader.start()
             epoch_loss = []
@@ -323,7 +329,6 @@ class DeepSpeech2Model(object):
 
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
-                    print('Finish the %d epoch' % epoch_id)
                     train_reader.reset()
                     break
             time_end = time.time()
@@ -392,7 +397,7 @@ class DeepSpeech2Model(object):
                 return_numpy=False)
             infer_results.extend(np.array(each_log_probs[0]))
 
-        # slice result 
+        # slice result
         infer_results = np.array(infer_results)
         seq_len = (infer_data[2] - 1) // 3 + 1
 
