@@ -4,14 +4,10 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-import os
 import numpy as np
 import argparse
 import functools
-import gzip
-import logging
 import paddle.fluid as fluid
-import _init_paths
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
 from utils.error_rate import char_errors, word_errors
@@ -20,33 +16,33 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
-add_arg('num_batches', int, -1, "# of batches tuning on. Default -1, on whole dev set.")
-add_arg('batch_size', int, 64, "# of samples per batch.")
-add_arg('trainer_count', int, 8, "# of Trainers (CPUs or GPUs).")
-add_arg('beam_size', int, 500, "Beam search width.")
-add_arg('num_proc_bsearch', int, 8, "# of CPUs for beam search.")
-add_arg('num_conv_layers', int, 2, "# of convolution layers.")
-add_arg('num_rnn_layers', int, 3, "# of recurrent layers.")
-add_arg('rnn_layer_size', int, 2048, "# of recurrent cells per layer.")
-add_arg('num_alphas', int, 45, "# of alpha candidates for tuning.")
-add_arg('num_betas', int, 8, "# of beta candidates for tuning.")
-add_arg('alpha_from', float, 1.0, "Where alpha starts tuning from.")
-add_arg('alpha_to', float, 3.2, "Where alpha ends tuning with.")
-add_arg('beta_from', float, 0.1, "Where beta starts tuning from.")
-add_arg('beta_to', float, 0.45, "Where beta ends tuning with.")
-add_arg('cutoff_prob', float, 1.0, "Cutoff probability for pruning.")
-add_arg('cutoff_top_n', int, 40, "Cutoff number for pruning.")
-add_arg('use_gru', bool, False, "Use GRUs instead of simple RNNs.")
-add_arg('use_gpu', bool, True, "Use GPU or not.")
-add_arg('share_rnn_weights', bool, True, "Share input-hidden weights across bi-directional RNNs. Not for GRU.")
-add_arg('tune_manifest', str, './dataset/manifest.dev', "Filepath of manifest to tune.")
-add_arg('mean_std_path', str, './dataset/mean_std.npz', "Filepath of normalizer's mean & std.")
-add_arg('vocab_path', str, './dataset/zh_vocab.txt', "Filepath of vocabulary.")
-add_arg('lang_model_path', str, './models/zhidao_giga.klm', "Filepath for language model.")
-add_arg('model_path', str, './models/checkpoints/srep_final',
+add_arg('num_batches',      int,   -1,   "# of batches tuning on. Default -1, on whole dev set.")
+add_arg('batch_size',       int,   64,   "# of samples per batch.")
+add_arg('trainer_count',    int,   8,    "# of Trainers (CPUs or GPUs).")
+add_arg('beam_size',        int,   500,  "Beam search width.")
+add_arg('num_proc_bsearch', int,   8,    "# of CPUs for beam search.")
+add_arg('num_conv_layers',  int,   2,    "# of convolution layers.")
+add_arg('num_rnn_layers',   int,   3,    "# of recurrent layers.")
+add_arg('rnn_layer_size',   int,   2048, "# of recurrent cells per layer.")
+add_arg('num_alphas',       int,   45,   "# of alpha candidates for tuning.")
+add_arg('num_betas',        int,   8,    "# of beta candidates for tuning.")
+add_arg('alpha_from',       float, 1.0,  "Where alpha starts tuning from.")
+add_arg('alpha_to',         float, 3.2,  "Where alpha ends tuning with.")
+add_arg('beta_from',        float, 0.1,  "Where beta starts tuning from.")
+add_arg('beta_to',          float, 0.45, "Where beta ends tuning with.")
+add_arg('cutoff_prob',      float, 1.0,  "Cutoff probability for pruning.")
+add_arg('cutoff_top_n',     int,   40,   "Cutoff number for pruning.")
+add_arg('use_gru',          bool,  False, "Use GRUs instead of simple RNNs.")
+add_arg('use_gpu',          bool,  True,  "Use GPU or not.")
+add_arg('share_rnn_weights', bool, True,  "Share input-hidden weights across bi-directional RNNs. Not for GRU.")
+add_arg('tune_manifest',     str,  './dataset/manifest.dev',   "Filepath of manifest to tune.")
+add_arg('mean_std_path',     str,  './dataset/mean_std.npz',   "Filepath of normalizer's mean & std.")
+add_arg('vocab_path',        str,  './dataset/zh_vocab.txt',   "Filepath of vocabulary.")
+add_arg('lang_model_path',   str,  './models/zhidao_giga.klm', "Filepath for language model.")
+add_arg('model_path',        str,  './models/checkpoints/srep_final',
         "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
-add_arg('error_rate_type', str, 'wer', "Error rate type for evaluation.", choices=['wer', 'cer'])
-add_arg('specgram_type', str, 'linear', "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
+add_arg('error_rate_type',   str,  'wer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
+add_arg('specgram_type',     str,  'linear', "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 # yapf: disable
 args = parser.parse_args()
 

@@ -2,6 +2,7 @@
 __pycache__/
 dataset/
 models/
+lm/
 audios_cache/
 data_utils/*.pyc
 data_utils/featurizer/*.pyc

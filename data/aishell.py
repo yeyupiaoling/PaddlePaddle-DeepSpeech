@@ -1,35 +1,24 @@
-"""Prepare Aishell mandarin dataset
-
-Download, unpack and create data list.
-i.e.
-cd ../
-PYTHONPATH=.:$PYTHONPATH python data/aishell.py
-"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import codecs
 import os
-from data_utils.utility import download, unpack
+import functools
+from utility import download, unpack
+from utility import add_arguments, print_arguments
 
 URL_ROOT = 'http://www.openslr.org/resources/33'
-# URL_ROOT = 'http://192.168.88.128:55000'
 DATA_URL = URL_ROOT + '/data_aishell.tgz'
 MD5_DATA = '2f494334227864a8a8fec932999db9d8'
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument(
-    "--target_dir",
-    default="./dataset/audio/",
-    type=str,
-    help="Directory to save the dataset. (default: %(default)s)")
-parser.add_argument(
-    "--annotation_text",
-    default="./dataset/annotation/",
-    type=str,
-    help="Sound annotation text save path. (default: %(default)s)")
+add_arg = functools.partial(add_arguments, argparser=parser)
+parser.add_argument("--target_dir",
+                    default="../dataset/audio/",
+                    type=str,
+                    help="Directory to save the dataset. (default: %(default)s)")
+parser.add_argument("--annotation_text",
+                    default="../dataset/annotation/",
+                    type=str,
+                    help="Sound annotation text save path. (default: %(default)s)")
 args = parser.parse_args()
 
 
@@ -58,7 +47,7 @@ def create_annotation_text(data_dir, annotation_path):
                 if audio_id not in transcript_dict:
                     continue
                 text = transcript_dict[audio_id]
-                f_a.write(audio_path + '\t' + text + '\n')
+                f_a.write(audio_path[3:] + '\t' + text + '\n')
     f_a.close()
 
 
@@ -80,14 +69,14 @@ def prepare_dataset(url, md5sum, target_dir, annotation_path):
 
 
 def main():
+    print_arguments(args)
     if args.target_dir.startswith('~'):
         args.target_dir = os.path.expanduser(args.target_dir)
 
-    prepare_dataset(
-        url=DATA_URL,
-        md5sum=MD5_DATA,
-        target_dir=args.target_dir,
-        annotation_path=args.annotation_text)
+    prepare_dataset(url=DATA_URL,
+                    md5sum=MD5_DATA,
+                    target_dir=args.target_dir,
+                    annotation_path=args.annotation_text)
 
 
 if __name__ == '__main__':

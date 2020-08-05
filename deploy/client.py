@@ -11,8 +11,8 @@ import argparse
 import pyaudio
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--host_ip", default="192.168.1.119", type=str, help="Server IP address. (default: %(default)s)")
-parser.add_argument("--host_port", default=10086, type=int, help="Server Port. (default: %(default)s)")
+parser.add_argument("--host_ip", default="localhost", type=str, help="Server IP address. (default: %(default)s)")
+parser.add_argument("--host_port", default=5000, type=int, help="Server Port. (default: %(default)s)")
 args = parser.parse_args()
 
 is_recording = False
@@ -62,12 +62,11 @@ def callback(in_data, frame_count, time_info, status):
 def main():
     # prepare audio recorder
     p = pyaudio.PyAudio()
-    stream = p.open(
-        format=pyaudio.paInt32,
-        channels=1,
-        rate=16000,
-        input=True,
-        stream_callback=callback)
+    stream = p.open(format=pyaudio.paInt32,
+                    channels=1,
+                    rate=16000,
+                    input=True,
+                    stream_callback=callback)
     stream.start_stream()
 
     # prepare keyboard listener
