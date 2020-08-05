@@ -81,15 +81,14 @@ class DataGenerator(object):
         self._max_duration = max_duration
         self._min_duration = min_duration
         self._normalizer = FeatureNormalizer(mean_std_filepath)
-        self._augmentation_pipeline = AugmentationPipeline(
-            augmentation_config=augmentation_config, random_seed=random_seed)
-        self._speech_featurizer = SpeechFeaturizer(
-            vocab_filepath=vocab_filepath,
-            specgram_type=specgram_type,
-            stride_ms=stride_ms,
-            window_ms=window_ms,
-            max_freq=max_freq,
-            use_dB_normalization=use_dB_normalization)
+        self._augmentation_pipeline = AugmentationPipeline(augmentation_config=augmentation_config,
+                                                           random_seed=random_seed)
+        self._speech_featurizer = SpeechFeaturizer(vocab_filepath=vocab_filepath,
+                                                   specgram_type=specgram_type,
+                                                   stride_ms=stride_ms,
+                                                   window_ms=window_ms,
+                                                   max_freq=max_freq,
+                                                   use_dB_normalization=use_dB_normalization)
         self._rng = random.Random(random_seed)
         self._keep_transcription_text = keep_transcription_text
         self._epoch = 0
@@ -171,24 +170,21 @@ class DataGenerator(object):
 
         def batch_reader():
             # read manifest
-            manifest = read_manifest(
-                manifest_path=manifest_path,
-                max_duration=self._max_duration,
-                min_duration=self._min_duration)
+            manifest = read_manifest(manifest_path=manifest_path,
+                                     max_duration=self._max_duration,
+                                     min_duration=self._min_duration)
             # sort (by duration) or batch-wise shuffle the manifest
             if self._epoch == 0 and sortagrad:
                 manifest.sort(key=lambda x: x["duration"])
 
             else:
                 if shuffle_method == "batch_shuffle":
-                    manifest = self._batch_shuffle(
-                        manifest, batch_size, clipped=False)
+                    manifest = self._batch_shuffle(manifest, batch_size, clipped=False)
                 elif shuffle_method == "batch_shuffle_clipped":
-                    manifest = self._batch_shuffle(
-                        manifest, batch_size, clipped=True)
+                    manifest = self._batch_shuffle(manifest, batch_size, clipped=True)
                 elif shuffle_method == "instance_shuffle":
                     self._rng.shuffle(manifest)
-                elif shuffle_method == None:
+                elif shuffle_method is None:
                     pass
                 else:
                     raise ValueError("Unknown shuffle method %s." %

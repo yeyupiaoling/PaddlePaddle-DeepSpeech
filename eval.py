@@ -53,29 +53,26 @@ def evaluate():
     else:
         place = fluid.CPUPlace()
 
-    data_generator = DataGenerator(
-        vocab_filepath=args.vocab_path,
-        mean_std_filepath=args.mean_std_path,
-        augmentation_config='{}',
-        specgram_type=args.specgram_type,
-        keep_transcription_text=True,
-        place = place,
-        is_training = False)
-    batch_reader = data_generator.batch_reader_creator(
-        manifest_path=args.test_manifest,
-        batch_size=args.batch_size,
-        sortagrad=False,
-        shuffle_method=None)
+    data_generator = DataGenerator(vocab_filepath=args.vocab_path,
+                                   mean_std_filepath=args.mean_std_path,
+                                   augmentation_config='{}',
+                                   specgram_type=args.specgram_type,
+                                   keep_transcription_text=True,
+                                   place=place,
+                                   is_training=False)
+    batch_reader = data_generator.batch_reader_creator(manifest_path=args.test_manifest,
+                                                       batch_size=args.batch_size,
+                                                       sortagrad=False,
+                                                       shuffle_method=None)
 
-    ds2_model = DeepSpeech2Model(
-        vocab_size=data_generator.vocab_size,
-        num_conv_layers=args.num_conv_layers,
-        num_rnn_layers=args.num_rnn_layers,
-        rnn_layer_size=args.rnn_layer_size,
-        use_gru=args.use_gru,
-        share_rnn_weights=args.share_rnn_weights,
-        place=place,
-        init_from_pretrained_model=args.model_path)
+    ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
+                                 num_conv_layers=args.num_conv_layers,
+                                 num_rnn_layers=args.num_rnn_layers,
+                                 rnn_layer_size=args.rnn_layer_size,
+                                 use_gru=args.use_gru,
+                                 share_rnn_weights=args.share_rnn_weights,
+                                 place=place,
+                                 init_from_pretrained_model=args.model_path)
 
     # decoders only accept string encoded in utf-8
     vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
@@ -90,19 +87,17 @@ def evaluate():
         probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
         if args.decoding_method == "ctc_greedy":
-            result_transcripts = ds2_model.decode_batch_greedy(
-                probs_split=probs_split,
-                vocab_list=vocab_list)
+            result_transcripts = ds2_model.decode_batch_greedy(probs_split=probs_split,
+                                                               vocab_list=vocab_list)
         else:
-            result_transcripts = ds2_model.decode_batch_beam_search(
-                probs_split=probs_split,
-                beam_alpha=args.alpha,
-                beam_beta=args.beta,
-                beam_size=args.beam_size,
-                cutoff_prob=args.cutoff_prob,
-                cutoff_top_n=args.cutoff_top_n,
-                vocab_list=vocab_list,
-                num_processes=args.num_proc_bsearch)
+            result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
+                                                                    beam_alpha=args.alpha,
+                                                                    beam_beta=args.beta,
+                                                                    beam_size=args.beam_size,
+                                                                    cutoff_prob=args.cutoff_prob,
+                                                                    cutoff_top_n=args.cutoff_top_n,
+                                                                    vocab_list=vocab_list,
+                                                                    num_processes=args.num_proc_bsearch)
         target_transcripts = infer_data[1]
 
         for target, result in zip(target_transcripts, result_transcripts):

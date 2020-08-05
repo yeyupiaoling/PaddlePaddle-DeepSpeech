@@ -59,53 +59,47 @@ def train():
     else:
         place = fluid.CPUPlace()
 
-    train_generator = DataGenerator(
-        vocab_filepath=args.vocab_path,
-        mean_std_filepath=args.mean_std_path,
-        augmentation_config=io.open(args.augment_conf_path, mode='r', encoding='utf8').read(),
-        max_duration=args.max_duration,
-        min_duration=args.min_duration,
-        specgram_type=args.specgram_type,
-        place=place)
-    dev_generator = DataGenerator(
-        vocab_filepath=args.vocab_path,
-        mean_std_filepath=args.mean_std_path,
-        augmentation_config="{}",
-        specgram_type=args.specgram_type,
-        place=place)
-    train_batch_reader = train_generator.batch_reader_creator(
-        manifest_path=args.train_manifest,
-        batch_size=args.batch_size,
-        sortagrad=args.use_sortagrad if args.init_from_pretrained_model is None else False,
-        shuffle_method=args.shuffle_method)
-    dev_batch_reader = dev_generator.batch_reader_creator(
-        manifest_path=args.dev_manifest,
-        batch_size=args.batch_size,
-        sortagrad=False,
-        shuffle_method=None)
+    train_generator = DataGenerator(vocab_filepath=args.vocab_path,
+                                    mean_std_filepath=args.mean_std_path,
+                                    augmentation_config=io.open(args.augment_conf_path, mode='r', encoding='utf8').read(),
+                                    max_duration=args.max_duration,
+                                    min_duration=args.min_duration,
+                                    specgram_type=args.specgram_type,
+                                    place=place)
+    dev_generator = DataGenerator(vocab_filepath=args.vocab_path,
+                                  mean_std_filepath=args.mean_std_path,
+                                  augmentation_config="{}",
+                                  specgram_type=args.specgram_type,
+                                  place=place)
+    train_batch_reader = train_generator.batch_reader_creator(manifest_path=args.train_manifest,
+                                                              batch_size=args.batch_size,
+                                                              sortagrad=args.use_sortagrad if args.init_from_pretrained_model is None else False,
+                                                              shuffle_method=args.shuffle_method)
+    dev_batch_reader = dev_generator.batch_reader_creator(manifest_path=args.dev_manifest,
+                                                          batch_size=args.batch_size,
+                                                          sortagrad=False,
+                                                          shuffle_method=None)
 
-    ds2_model = DeepSpeech2Model(
-        vocab_size=train_generator.vocab_size,
-        num_conv_layers=args.num_conv_layers,
-        num_rnn_layers=args.num_rnn_layers,
-        rnn_layer_size=args.rnn_layer_size,
-        use_gru=args.use_gru,
-        share_rnn_weights=args.share_rnn_weights,
-        place=place,
-        init_from_pretrained_model=args.init_from_pretrained_model,
-        output_model_dir=args.output_model_dir)
+    ds2_model = DeepSpeech2Model(vocab_size=train_generator.vocab_size,
+                                 num_conv_layers=args.num_conv_layers,
+                                 num_rnn_layers=args.num_rnn_layers,
+                                 rnn_layer_size=args.rnn_layer_size,
+                                 use_gru=args.use_gru,
+                                 share_rnn_weights=args.share_rnn_weights,
+                                 place=place,
+                                 init_from_pretrained_model=args.init_from_pretrained_model,
+                                 output_model_dir=args.output_model_dir)
 
-    ds2_model.train(
-        train_batch_reader=train_batch_reader,
-        dev_batch_reader=dev_batch_reader,
-        learning_rate=args.learning_rate,
-        gradient_clipping=400,
-        batch_size=args.batch_size,
-        num_samples=args.num_samples,
-        num_epoch=args.num_epoch,
-        save_epoch=args.save_epoch,
-        num_iterations_print=args.num_iter_print,
-        test_off=args.test_off)
+    ds2_model.train(train_batch_reader=train_batch_reader,
+                    dev_batch_reader=dev_batch_reader,
+                    learning_rate=args.learning_rate,
+                    gradient_clipping=400,
+                    batch_size=args.batch_size,
+                    num_samples=args.num_samples,
+                    num_epoch=args.num_epoch,
+                    save_epoch=args.save_epoch,
+                    num_iterations_print=args.num_iter_print,
+                    test_off=args.test_off)
 
 
 def main():
