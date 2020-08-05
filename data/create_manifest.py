@@ -11,7 +11,6 @@ from __future__ import print_function
 
 import os
 import codecs
-import wave
 
 import soundfile
 import json

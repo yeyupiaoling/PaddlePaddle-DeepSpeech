@@ -16,7 +16,7 @@ fi
 # Compute mean and std
 PYTHONPATH=.:$PYTHONPATH python tools/compute_mean_std.py \
 --num_samples=2000 \
---specgram_type='mfcc' \
+--specgram_type='linear' \
 --manifest_path='./dataset/manifest.train' \
 --output_path='./dataset/mean_std.npz'
 
