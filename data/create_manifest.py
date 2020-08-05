@@ -55,17 +55,6 @@ def create_manifest(annotation_path, manifest_path_prefix, old_vocab_path):
         for line in lines:
             audio_path = line.split('\t')[0]
 
-            # change nchannels, sampwidth, framerate, nframes
-            f = wave.open(audio_path, "rb")
-            str_data = f.readframes(f.getnframes())
-            f.close()
-            file = wave.open(audio_path, 'wb')
-            file.setnchannels(1)
-            file.setsampwidth(4)
-            file.setframerate(16000)
-            file.writeframes(str_data)
-            file.close()
-
             text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
             if old_vocab_path is not None:
                 for c in text:
