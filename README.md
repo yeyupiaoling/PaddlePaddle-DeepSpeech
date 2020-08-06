@@ -85,6 +85,11 @@ sh setup.sh
 pip2 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
+- git clone 本项目源码
+```shell script
+git clone https://github.com/yeyupiaoling/DeepSpeech.git
+```
+
  - 切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
 ```shell script
 sudo sh setup.sh
