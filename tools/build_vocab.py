@@ -7,12 +7,10 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import functools
 import codecs
-import json
+import functools
 from collections import Counter
-import os.path
-import _init_paths
+
 from data_utils.utility import read_manifest
 from utils.utility import add_arguments, print_arguments
 

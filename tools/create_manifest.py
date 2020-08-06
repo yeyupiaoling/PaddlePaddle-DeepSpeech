@@ -4,12 +4,14 @@ from __future__ import print_function
 
 import os
 import codecs
-
+import functools
 import soundfile
 import json
 import argparse
+from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_arg = functools.partial(add_arguments, argparser=parser)
 parser.add_argument("--annotation_path",
                     default="./dataset/annotation/",
                     type=str,
@@ -82,6 +84,7 @@ def is_uchar(uchar):
 
 
 def main():
+    print_arguments(args)
     create_manifest(annotation_path=args.annotation_path,
                     manifest_path_prefix=args.manifest_prefix)
 
