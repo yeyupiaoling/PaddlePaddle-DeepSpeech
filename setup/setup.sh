@@ -58,6 +58,8 @@ if [ ! -d ThreadPool ]; then
     echo -e "\n"
 fi
 
+cp ../decoders/swig/* ./
+
 echo "Install decoders ..."
 python setup.py install --num_processes 4
 
