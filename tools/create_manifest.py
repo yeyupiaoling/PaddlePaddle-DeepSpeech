@@ -33,17 +33,20 @@ def create_manifest(annotation_path, manifest_path_prefix):
         for line in lines:
             audio_path = line.split('\t')[0]
 
-            text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
-            audio_data, samplerate = soundfile.read(audio_path)
-            duration = float(len(audio_data) / samplerate)
-            json_lines.append(
-                json.dumps(
-                    {
-                        'audio_filepath': audio_path,
-                        'duration': duration,
-                        'text': text
-                    },
-                    ensure_ascii=False))
+            try:
+                text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
+                audio_data, samplerate = soundfile.read(audio_path)
+                duration = float(len(audio_data) / samplerate)
+                json_lines.append(
+                    json.dumps(
+                        {
+                            'audio_filepath': audio_path,
+                            'duration': duration,
+                            'text': text
+                        },
+                        ensure_ascii=False))
+            except:
+                continue
 
     f_train = codecs.open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', 'utf-8')
     f_dev = codecs.open(os.path.join(manifest_path_prefix, 'manifest.dev'), 'w', 'utf-8')

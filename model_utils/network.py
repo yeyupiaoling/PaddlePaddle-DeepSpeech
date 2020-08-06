@@ -6,7 +6,7 @@ import paddle.fluid as fluid
 import numpy as np
 
 
-def conv_bn_layer(input, filter_size, num_channels_in, num_channels_out, stride,
+def conv_bn_layer(input, filter_size, num_channels_out, stride,
                   padding, act, masks, name):
     """Convolution layer with batch normalization.
 
@@ -15,8 +15,6 @@ def conv_bn_layer(input, filter_size, num_channels_in, num_channels_out, stride,
     :param filter_size: The x dimension of a filter kernel. Or input a tuple for
                         two image dimension.
     :type filter_size: int|tuple|list
-    :param num_channels_in: Number of input channels.
-    :type num_channels_in: int
     :param num_channels_out: Number of output channels.
     :type num_channels_out: int
     :param stride: The x dimension of the stride. Or input a tuple for two 
@@ -35,23 +33,20 @@ def conv_bn_layer(input, filter_size, num_channels_in, num_channels_out, stride,
     :rtype: Variable
 
     """
-    conv_layer = fluid.layers.conv2d(
-        input=input,
-        num_filters=num_channels_out,
-        filter_size=filter_size,
-        stride=stride,
-        padding=padding,
-        param_attr=fluid.ParamAttr(name=name + '_conv2d_weight'),
-        act=None,
-        bias_attr=False)
+    conv_layer = fluid.layers.conv2d(input=input,
+                                     num_filters=num_channels_out,
+                                     filter_size=filter_size,
+                                     stride=stride,
+                                     padding=padding,
+                                     param_attr=fluid.ParamAttr(name=name + '_conv2d_weight'),
+                                     bias_attr=False)
 
-    batch_norm = fluid.layers.batch_norm(
-        input=conv_layer,
-        act=act,
-        param_attr=fluid.ParamAttr(name=name + '_batch_norm_weight'),
-        bias_attr=fluid.ParamAttr(name=name + '_batch_norm_bias'),
-        moving_mean_name=name + '_batch_norm_moving_mean',
-        moving_variance_name=name + '_batch_norm_moving_variance')
+    batch_norm = fluid.layers.batch_norm(input=conv_layer,
+                                         act=act,
+                                         param_attr=fluid.ParamAttr(name=name + '_batch_norm_weight'),
+                                         bias_attr=fluid.ParamAttr(name=name + '_batch_norm_bias'),
+                                         moving_mean_name=name + '_batch_norm_moving_mean',
+                                         moving_variance_name=name + '_batch_norm_moving_variance')
 
     # reset padding part to 0
     padding_reset = fluid.layers.elementwise_mul(batch_norm, masks)
@@ -93,12 +88,11 @@ class RNNCell(fluid.layers.RNNCell):
         self.name = name
 
     def call(self, inputs, states):
-        new_hidden = fluid.layers.fc(
-            input=states,
-            size=self.hidden_size,
-            act=self.hidden_activation,
-            param_attr=self.param_attr,
-            bias_attr=self.bias_attr)
+        new_hidden = fluid.layers.fc(input=states,
+                                     size=self.hidden_size,
+                                     act=self.hidden_activation,
+                                     param_attr=self.param_attr,
+                                     bias_attr=self.bias_attr)
         new_hidden = fluid.layers.elementwise_add(new_hidden, inputs)
         new_hidden = self.activation(new_hidden)
 
@@ -266,7 +260,6 @@ def conv_group(input, num_stacks, seq_len_data, masks):
     padding = (20, 5)
     conv = conv_bn_layer(input=input,
                          filter_size=filter_size,
-                         num_channels_in=1,
                          num_channels_out=32,
                          stride=stride,
                          padding=padding,
@@ -284,7 +277,6 @@ def conv_group(input, num_stacks, seq_len_data, masks):
         masks = fluid.layers.slice(masks, axes=[2], starts=[0], ends=[output_height])
         conv = conv_bn_layer(input=conv,
                              filter_size=(21, 11),
-                             num_channels_in=32,
                              num_channels_out=32,
                              stride=(2, 1),
                              padding=(10, 5),
@@ -394,7 +386,6 @@ def deep_speech_v2_network(audio_data,
                                  share_rnn_weights=share_rnn_weights)
     fc = fluid.layers.fc(input=rnn_group_output,
                          size=dict_size + 1,
-                         act=None,
                          param_attr=fluid.ParamAttr(
                              name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_weight'),
                          bias_attr=fluid.ParamAttr(

@@ -284,10 +284,9 @@ class DeepSpeech2Model(object):
         exec_strategy = fluid.ExecutionStrategy()
 
         # pass the build_strategy to with_data_parallel API
-        compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(
-            loss_name=ctc_loss.name,
-            build_strategy=build_strategy,
-            exec_strategy=exec_strategy)
+        compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
+                                                                                   build_strategy=build_strategy,
+                                                                                   exec_strategy=exec_strategy)
 
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
@@ -329,11 +328,10 @@ class DeepSpeech2Model(object):
                       (used_time, epoch_id, np.mean(np.array(epoch_loss))))
             else:
                 print('\n----------Begin test...')
-                test_loss = self.test(
-                    exe,
-                    test_program=test_prog,
-                    test_reader=test_reader,
-                    fetch_list=[ctc_loss])
+                test_loss = self.test(exe=exe,
+                                      test_program=test_prog,
+                                      test_reader=test_reader,
+                                      fetch_list=[ctc_loss])
                 print(
                     "--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
                     % (used_time, epoch_id + pre_epoch,
@@ -380,12 +378,11 @@ class DeepSpeech2Model(object):
 
         # run inference
         for i in range(infer_data[0].shape[0]):
-            each_log_probs = exe.run(
-                program=infer_program,
-                feed=feeder.feed(
-                    [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
-                fetch_list=[log_probs],
-                return_numpy=False)
+            each_log_probs = exe.run(program=infer_program,
+                                     feed=feeder.feed(
+                                         [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
+                                     fetch_list=[log_probs],
+                                     return_numpy=False)
             infer_results.extend(np.array(each_log_probs[0]))
 
         # slice result
@@ -483,14 +480,13 @@ class DeepSpeech2Model(object):
             self._ext_scorer.reset_params(beam_alpha, beam_beta)
         # beam search decode
         num_processes = min(num_processes, len(probs_split))
-        beam_search_results = ctc_beam_search_decoder_batch(
-            probs_split=probs_split,
-            vocabulary=vocab_list,
-            beam_size=beam_size,
-            num_processes=num_processes,
-            ext_scoring_func=self._ext_scorer,
-            cutoff_prob=cutoff_prob,
-            cutoff_top_n=cutoff_top_n)
+        beam_search_results = ctc_beam_search_decoder_batch(probs_split=probs_split,
+                                                            vocabulary=vocab_list,
+                                                            beam_size=beam_size,
+                                                            num_processes=num_processes,
+                                                            ext_scoring_func=self._ext_scorer,
+                                                            cutoff_prob=cutoff_prob,
+                                                            cutoff_top_n=cutoff_top_n)
 
         results = [result[0][1] for result in beam_search_results]
         return results
