@@ -16,7 +16,7 @@ import paddle.fluid as fluid
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
-add_arg('batch_size',      int,   32, "Minibatch size.")
+add_arg('batch_size',      int,   64, "Minibatch size.")
 add_arg('num_epoch',       int,   200, "# of training epochs.")
 add_arg('num_conv_layers', int,   2, "# of convolution layers.")
 add_arg('num_rnn_layers',  int,   3, "# of recurrent layers.")

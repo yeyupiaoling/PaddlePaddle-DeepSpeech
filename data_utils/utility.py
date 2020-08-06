@@ -5,13 +5,6 @@ from __future__ import print_function
 
 import json
 import codecs
-import os
-import tarfile
-import time
-from Queue import Queue
-from threading import Thread
-from multiprocessing import Process, Manager, Value
-from paddle.dataset.common import md5file
 
 
 def read_manifest(manifest_path, max_duration=float('inf'), min_duration=0.0):

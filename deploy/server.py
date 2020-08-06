@@ -54,12 +54,10 @@ class AsrTCPServer(SocketServer.TCPServer):
                  server_address,
                  RequestHandlerClass,
                  speech_save_dir,
-                 audio_process_handler,
-                 bind_and_activate=True):
+                 audio_process_handler):
         self.speech_save_dir = speech_save_dir
         self.audio_process_handler = audio_process_handler
-        SocketServer.TCPServer.__init__(
-            self, server_address, RequestHandlerClass, bind_and_activate=True)
+        SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate=True)
 
 
 class AsrRequestHandler(SocketServer.BaseRequestHandler):
@@ -125,24 +123,22 @@ def start_server():
     else:
         place = fluid.CPUPlace()
 
-    data_generator = DataGenerator(
-        vocab_filepath=args.vocab_path,
-        mean_std_filepath=args.mean_std_path,
-        augmentation_config='{}',
-        specgram_type=args.specgram_type,
-        keep_transcription_text=True,
-        place=place,
-        is_training=False)
+    data_generator = DataGenerator(vocab_filepath=args.vocab_path,
+                                   mean_std_filepath=args.mean_std_path,
+                                   augmentation_config='{}',
+                                   specgram_type=args.specgram_type,
+                                   keep_transcription_text=True,
+                                   place=place,
+                                   is_training=False)
     # prepare ASR model
-    ds2_model = DeepSpeech2Model(
-        vocab_size=data_generator.vocab_size,
-        num_conv_layers=args.num_conv_layers,
-        num_rnn_layers=args.num_rnn_layers,
-        rnn_layer_size=args.rnn_layer_size,
-        use_gru=args.use_gru,
-        init_from_pretrained_model=args.model_path,
-        place=place,
-        share_rnn_weights=args.share_rnn_weights)
+    ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
+                                 num_conv_layers=args.num_conv_layers,
+                                 num_rnn_layers=args.num_rnn_layers,
+                                 rnn_layer_size=args.rnn_layer_size,
+                                 use_gru=args.use_gru,
+                                 init_from_pretrained_model=args.model_path,
+                                 place=place,
+                                 share_rnn_weights=args.share_rnn_weights)
 
     vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
 
@@ -159,12 +155,8 @@ def start_server():
         mask_max_len = (audio_len - 1) // 3 + 1
         mask_ones = np.ones((mask_shape0, mask_shape1))
         mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
-        mask = np.repeat(
-            np.reshape(
-                np.concatenate((mask_ones, mask_zeros), axis=1),
-                (1, mask_shape0, mask_max_len)),
-            32,
-            axis=0)
+        mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
+                                    (1, mask_shape0, mask_max_len)), 32, axis=0)
         feature = [np.array([feature[0]]).astype('float32'),
                    None,
                    np.array([audio_len]).astype('int64').reshape([-1, 1]),
@@ -172,36 +164,32 @@ def start_server():
         probs_split = ds2_model.infer_batch_probs(infer_data=feature)
 
         if args.decoding_method == "ctc_greedy":
-            result_transcript = ds2_model.decode_batch_greedy(
-                probs_split=probs_split,
-                vocab_list=vocab_list)
+            result_transcript = ds2_model.decode_batch_greedy(probs_split=probs_split,
+                                                              vocab_list=vocab_list)
         else:
-            result_transcript = ds2_model.decode_batch_beam_search(
-                probs_split=probs_split,
-                beam_alpha=args.alpha,
-                beam_beta=args.beta,
-                beam_size=args.beam_size,
-                cutoff_prob=args.cutoff_prob,
-                cutoff_top_n=args.cutoff_top_n,
-                vocab_list=vocab_list,
-                num_processes=1)
+            result_transcript = ds2_model.decode_batch_beam_search(probs_split=probs_split,
+                                                                   beam_alpha=args.alpha,
+                                                                   beam_beta=args.beta,
+                                                                   beam_size=args.beam_size,
+                                                                   cutoff_prob=args.cutoff_prob,
+                                                                   cutoff_top_n=args.cutoff_top_n,
+                                                                   vocab_list=vocab_list,
+                                                                   num_processes=1)
         return result_transcript[0]
 
     # warming up with utterrances sampled from Librispeech
     print('-----------------------------------------------------------')
     print('Warming up ...')
-    warm_up_test(
-        audio_process_handler=file_to_transcript,
-        manifest_path=args.warmup_manifest,
-        num_test_cases=3)
+    warm_up_test(audio_process_handler=file_to_transcript,
+                 manifest_path=args.warmup_manifest,
+                 num_test_cases=3)
     print('-----------------------------------------------------------')
 
     # start the server
-    server = AsrTCPServer(
-        server_address=(args.host_ip, args.host_port),
-        RequestHandlerClass=AsrRequestHandler,
-        speech_save_dir=args.speech_save_dir,
-        audio_process_handler=file_to_transcript)
+    server = AsrTCPServer(server_address=(args.host_ip, args.host_port),
+                          RequestHandlerClass=AsrRequestHandler,
+                          speech_save_dir=args.speech_save_dir,
+                          audio_process_handler=file_to_transcript)
     print("ASR Server Started.")
     server.serve_forever()
 
