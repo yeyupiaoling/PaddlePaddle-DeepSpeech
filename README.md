@@ -58,9 +58,9 @@ wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nv
 sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
 ```
 
- - 下载 PaddlePaddle Docker 镜像
+ - 拉取PaddlePaddle 1.8.0镜像，因为这个项目必须要在 PaddlePaddle 1.8.0 版本以上才可以运行。
 ```shell script
-sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu
+sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-cudnn7
 ```
 
 - git clone 本项目源码
@@ -68,14 +68,14 @@ sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-g
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
-- 运行 PaddlePaddle Docker 镜像，这里设置与主机共同拥有IP和端口号。
+- 运行PaddlePaddle 1.8.0镜像，这里设置与主机共同拥有IP和端口号。
 ```shell script
-sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu /bin/bash
+sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
- - 安装 PaddlePaddle 1.8.0，因为这个项目必须要在 PaddlePaddle 1.8.0 版本以上才可以运行。
+ - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
 ```shell script
-pip2 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
+sh setup.sh
 ```
 
 ### 搭建本地环境
@@ -85,10 +85,9 @@ pip2 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/
 pip2 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
- - 切换到`DeepSpeech/setup/`目录下，执行`setup.sh`脚本，注意在执行之后需要输入root用户密码，等待安装即可
+ - 切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
 ```shell script
-cd DeepSpeech/setup/
-sh setup.sh
+sudo sh setup.sh
 ```
 
 ## 数据准备

@@ -2,7 +2,7 @@
 
 
 # install dependencies
-sudo apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig
+apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig
 if [ $? != 0 ]; then
     echo "Install dependencies failed !!!"
     exit 1
@@ -36,7 +36,7 @@ if [ $? != 0 ]; then
     rm libsndfile-1.0.28.tar.gz
 fi
 
-cd ../decoders/swig
+cd decoders/swig/
 # install decoders
 if [ ! -d kenlm ]; then
     git clone https://github.com/kpu/kenlm.git
