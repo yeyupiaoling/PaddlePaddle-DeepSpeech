@@ -21,11 +21,7 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
 add_arg('count_threshold',  int,    0,  "Truncation threshold for char counts.")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt', "Filepath to write the vocabulary.")
-add_arg('manifest_paths',   str,    './dataset/manifest.train',
-        "Filepaths of manifests for building vocabulary. "
-        "You can provide multiple manifest files.",
-        nargs='+',
-        required=True)
+add_arg('manifest_path',   str,    './dataset/manifest.train', "Filepaths of manifests for building vocabulary. You can provide multiple manifest files.")
 # yapf: disable
 args = parser.parse_args()
 
@@ -41,8 +37,7 @@ def main():
     print_arguments(args)
 
     counter = Counter()
-    for manifest_path in args.manifest_paths:
-        count_manifest(counter, manifest_path)
+    count_manifest(counter, args.manifest_path)
 
     count_sorted = sorted(counter.items(), key=lambda x: x[1], reverse=True)
     with codecs.open(args.vocab_path, 'w', 'utf-8') as fout:
