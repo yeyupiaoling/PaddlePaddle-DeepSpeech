@@ -84,8 +84,7 @@ class DeepSpeech2Model(object):
         if not is_infer:
             input_fields = {
                 'names': ['audio_data', 'text_data', 'seq_len_data', 'masks'],
-                'shapes':
-                    [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
+                'shapes': [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
                 'dtypes': ['float32', 'int32', 'int64', 'float32'],
                 'lod_levels': [0, 1, 0, 0]
             }
@@ -106,36 +105,31 @@ class DeepSpeech2Model(object):
 
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
-            audio_data = fluid.data(
-                name='audio_data',
-                shape=[None, 161, None],
-                dtype='float32',
-                lod_level=0)
-            seq_len_data = fluid.data(
-                name='seq_len_data',
-                shape=[None, 1],
-                dtype='int64',
-                lod_level=0)
-            masks = fluid.data(
-                name='masks',
-                shape=[None, 32, 81, None],
-                dtype='float32',
-                lod_level=0)
+            audio_data = fluid.data(name='audio_data',
+                                    shape=[None, 161, None],
+                                    dtype='float32',
+                                    lod_level=0)
+            seq_len_data = fluid.data(name='seq_len_data',
+                                      shape=[None, 1],
+                                      dtype='int64',
+                                      lod_level=0)
+            masks = fluid.data(name='masks',
+                               shape=[None, 32, 81, None],
+                               dtype='float32',
+                               lod_level=0)
             text_data = None
-            reader = fluid.DataFeeder([audio_data, seq_len_data, masks],
-                                      self._place)
+            reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
 
-        log_probs, loss = deep_speech_v2_network(
-            audio_data=audio_data,
-            text_data=text_data,
-            seq_len_data=seq_len_data,
-            masks=masks,
-            dict_size=self._vocab_size,
-            num_conv_layers=self._num_conv_layers,
-            num_rnn_layers=self._num_rnn_layers,
-            rnn_size=self._rnn_layer_size,
-            use_gru=self._use_gru,
-            share_rnn_weights=self._share_rnn_weights)
+        log_probs, loss = deep_speech_v2_network(audio_data=audio_data,
+                                                 text_data=text_data,
+                                                 seq_len_data=seq_len_data,
+                                                 masks=masks,
+                                                 dict_size=self._vocab_size,
+                                                 num_conv_layers=self._num_conv_layers,
+                                                 num_rnn_layers=self._num_rnn_layers,
+                                                 rnn_size=self._rnn_layer_size,
+                                                 use_gru=self._use_gru,
+                                                 share_rnn_weights=self._share_rnn_weights)
         return reader, log_probs, loss
 
     def init_from_pretrained_model(self, exe, program):
@@ -146,14 +140,12 @@ class DeepSpeech2Model(object):
         if not os.path.exists(self._init_from_pretrained_model):
             print(self._init_from_pretrained_model)
             raise Warning("The pretrained params do not exist.")
-        fluid.io.load_params(
-            exe,
-            self._init_from_pretrained_model,
-            main_program=program,
-            filename="params.pdparams")
+        fluid.io.load_params(executor=exe,
+                             dirname=self._init_from_pretrained_model,
+                             main_program=program,
+                             filename="params.pdparams")
 
-        print("finish initing model from pretrained params from %s" %
-              (self._init_from_pretrained_model))
+        print("finish initing model from pretrained params from %s" % self._init_from_pretrained_model)
 
         pre_epoch = 0
         dir_name = self._init_from_pretrained_model.split('_')
@@ -172,11 +164,10 @@ class DeepSpeech2Model(object):
         if not os.path.exists(param_dir):
             os.mkdir(param_dir)
 
-        fluid.io.save_params(
-            exe,
-            os.path.join(param_dir, dirname),
-            main_program=program,
-            filename="params.pdparams")
+        fluid.io.save_params(executor=exe,
+                             dirname=os.path.join(param_dir, dirname),
+                             main_program=program,
+                             filename="params.pdparams")
         print("save parameters at %s" % (os.path.join(param_dir, dirname)))
 
         return True
