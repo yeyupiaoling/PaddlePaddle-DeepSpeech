@@ -36,7 +36,7 @@ if [ $? != 0 ]; then
     rm libsndfile-1.0.28.tar.gz
 fi
 
-
+cd ../decoders/swig
 # install decoders
 if [ ! -d kenlm ]; then
     git clone https://github.com/kpu/kenlm.git
@@ -58,7 +58,6 @@ if [ ! -d ThreadPool ]; then
     echo -e "\n"
 fi
 
-cp ../decoders/swig/* ./
 
 echo "Install decoders ..."
 python setup.py install --num_processes 4
