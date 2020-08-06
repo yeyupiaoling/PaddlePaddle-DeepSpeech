@@ -4,7 +4,7 @@
 
 本项目使用的环境：
  - Python 2.7
- - PaddlePaddle 1.8.0
+ - PaddlePaddle 1.8
 
 ## 目录
 
@@ -58,7 +58,7 @@ wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nv
 sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
 ```
 
- - 拉取PaddlePaddle 1.8.0镜像，因为这个项目必须要在 PaddlePaddle 1.8.0 版本以上才可以运行。
+ - 拉取PaddlePaddle 1.8镜像，因为这个项目必须要在 PaddlePaddle 1.8版本以上才可以运行。
 ```shell script
 sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-cudnn7
 ```
@@ -68,7 +68,7 @@ sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
-- 运行PaddlePaddle 1.8.0镜像，这里设置与主机共同拥有IP和端口号。
+- 运行PaddlePaddle 1.8镜像，这里设置与主机共同拥有IP和端口号。
 ```shell script
 sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-cudnn7 /bin/bash
 ```
@@ -80,7 +80,7 @@ sh setup.sh
 
 ### 搭建本地环境
 
- - 并不建议使用本地进行训练和预测，但是如何开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先需要正确安装 PaddlePaddle 1.8.0 的GPU版本，并安装相关的CUDA和CUDNN。
+ - 并不建议使用本地进行训练和预测，但是如何开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先需要正确安装 PaddlePaddle 1.8的GPU版本，并安装相关的CUDA和CUDNN。
 ```shell script
 pip2 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
 ```

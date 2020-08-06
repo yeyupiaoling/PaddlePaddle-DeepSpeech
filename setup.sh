@@ -2,7 +2,7 @@
 
 
 # install dependencies
-apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig
+apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig libsndfile1
 if [ $? != 0 ]; then
     echo "Install dependencies failed !!!"
     exit 1
@@ -11,7 +11,7 @@ echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost
 
 
 # install python dependencies
-pip2 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features -i https://mirrors.aliyun.com/pypi/simple/ --user
+pip2 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features -i https://mirrors.aliyun.com/pypi/simple/
 if [ $? != 0 ]; then
     echo "Install python dependencies failed !!!"
     exit 1
