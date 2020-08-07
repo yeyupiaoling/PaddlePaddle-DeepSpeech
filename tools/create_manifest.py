@@ -25,6 +25,7 @@ args = parser.parse_args()
 
 def create_manifest(annotation_path, manifest_path_prefix):
     json_lines = []
+    durations = []
     for annotation_text in os.listdir(annotation_path):
         print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
@@ -37,6 +38,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
                 audio_data, samplerate = soundfile.read(audio_path)
                 duration = float(len(audio_data) / samplerate)
+                durations.append(durations)
                 json_lines.append(
                     json.dumps(
                         {
@@ -62,6 +64,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
     f_train.close()
     f_dev.close()
     f_test.close()
+    print("Create manifest done. All audio for [%d] hours!" % sum(durations))
 
 
 def is_ustr(in_str):
