@@ -111,13 +111,11 @@ class DataGenerator(object):
         :rtype: tuple of (2darray, list)
         """
         if isinstance(audio_file, basestring) and audio_file.startswith('tar:'):
-            speech_segment = SpeechSegment.from_file(
-                self._subfile_from_tar(audio_file), transcript)
+            speech_segment = SpeechSegment.from_file(self._subfile_from_tar(audio_file), transcript)
         else:
             speech_segment = SpeechSegment.from_file(audio_file, transcript)
         self._augmentation_pipeline.transform_audio(speech_segment)
-        specgram, transcript_part = self._speech_featurizer.featurize(
-            speech_segment, self._keep_transcription_text)
+        specgram, transcript_part = self._speech_featurizer.featurize(speech_segment, self._keep_transcription_text)
         specgram = self._normalizer.apply(specgram)
         return specgram, transcript_part
 
@@ -319,11 +317,8 @@ class DataGenerator(object):
             mask_ones = np.ones((mask_shape0, mask_shape1))
             mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
             mask = np.repeat(
-                np.reshape(
-                    np.concatenate((mask_ones, mask_zeros), axis=1),
-                    (1, mask_shape0, mask_max_len)),
-                32,
-                axis=0)
+                np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
+                           (1, mask_shape0, mask_max_len)), 32, axis=0)
             masks.append(mask)
         padded_audios = np.array(padded_audios).astype('float32')
         if self._is_training:
