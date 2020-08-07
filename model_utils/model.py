@@ -117,7 +117,8 @@ class DeepSpeech2Model(object):
                                dtype='float32',
                                lod_level=0)
             text_data = None
-            reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
+            # reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
+            reader = [audio_data, seq_len_data, masks]
 
         log_probs, loss = deep_speech_v2_network(audio_data=audio_data,
                                                  text_data=text_data,
@@ -171,8 +172,7 @@ class DeepSpeech2Model(object):
 
         return True
 
-    def test(self, exe, test_program, test_reader,
-             fetch_list):
+    def test(self, exe, test_program, test_reader, fetch_list):
         '''Test the model.
 
         :param exe:The executor of program.
@@ -188,17 +188,28 @@ class DeepSpeech2Model(object):
         :return: An output unnormalized log probability.
         :rtype: array
         '''
-        test_reader.start()
+        # test_reader.start()
+        # epoch_loss = []
+        # while True:
+        #     try:
+        #         each_loss = exe.run(program=test_program,
+        #                             fetch_list=fetch_list,
+        #                             return_numpy=False)
+        #         epoch_loss.extend(np.array(each_loss[0]))
+        #     except fluid.core.EOFException:
+        #         test_reader.reset()
+        #         break
+
         epoch_loss = []
-        while True:
-            try:
-                each_loss = exe.run(program=test_program,
-                                    fetch_list=fetch_list,
-                                    return_numpy=False)
-                epoch_loss.extend(np.array(each_loss[0]))
-            except fluid.core.EOFException:
-                test_reader.reset()
-                break
+        for data in test_reader():
+            each_loss = exe.run(program=test_program,
+                                fetch_list={fetch_list[0].name: data[0],
+                                            fetch_list[1].name: data[1],
+                                            fetch_list[2].name: data[2],
+                                            fetch_list[3].name: data[3]},
+                                return_numpy=False)
+            epoch_loss.extend(np.array(each_loss[0]))
+
         return np.mean(np.array(epoch_loss))
 
     def train(self,
@@ -334,10 +345,9 @@ class DeepSpeech2Model(object):
                                       test_program=test_prog,
                                       test_reader=test_reader,
                                       fetch_list=[ctc_loss])
-                print(
-                    "--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
-                    % (used_time, epoch_id + pre_epoch,
-                       np.mean(np.array(epoch_loss)), test_loss / batch_size))
+                print("--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
+                      % (used_time, epoch_id + pre_epoch,
+                         np.mean(np.array(epoch_loss)), test_loss / batch_size))
             if (epoch_id + 1) % save_epoch == 0:
                 self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
