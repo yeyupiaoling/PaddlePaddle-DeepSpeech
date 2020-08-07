@@ -96,13 +96,13 @@ class DeepSpeech2Model(object):
                            lod_level=input_fields['lod_levels'][i])
                 for i in range(len(input_fields['names']))
             ]
-            # reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
-            #                                             capacity=64,
-            #                                             iterable=False,
-            #                                             use_double_buffer=True)
+
+            reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
+                                                        capacity=64,
+                                                        iterable=False,
+                                                        use_double_buffer=True)
+
             (audio_data, text_data, seq_len_data, masks) = inputs
-            # reader = fluid.DataFeeder([audio_data, text_data, seq_len_data, masks], self._place)
-            reader = inputs
         else:
             audio_data = fluid.data(name='audio_data',
                                     shape=[None, 161, None],
@@ -265,12 +265,12 @@ class DeepSpeech2Model(object):
                         clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
-        # test_prog = fluid.Program()
-        # with fluid.program_guard(test_prog, startup_prog):
-        #    with fluid.unique_name.guard():
-        #        test_reader, _, ctc_loss = self.create_network()
+        test_prog = fluid.Program()
+        with fluid.program_guard(test_prog, startup_prog):
+            with fluid.unique_name.guard():
+                test_reader, _, ctc_loss = self.create_network()
 
-        # test_prog = test_prog.clone(for_test=True)
+        test_prog = test_prog.clone(for_test=True)
         exe = fluid.Executor(self._place)
         exe.run(startup_prog)
 
@@ -279,88 +279,70 @@ class DeepSpeech2Model(object):
         if self._init_from_pretrained_model:
             pre_epoch = self.init_from_pretrained_model(exe, train_program)
 
-        # build_strategy = compiler.BuildStrategy()
-        # exec_strategy = fluid.ExecutionStrategy()
-        #
-        # build_strategy.fuse_relu_depthwise_conv = True
-        # exec_strategy.num_threads = 4
-        # exec_strategy.num_iteration_per_drop_scope = 10
-        #
-        # # pass the build_strategy to with_data_parallel API
-        # compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
-        #                                                                            build_strategy=build_strategy,
-        #                                                                            exec_strategy=exec_strategy)
+        build_strategy = compiler.BuildStrategy()
+        exec_strategy = fluid.ExecutionStrategy()
 
-        fetch_list = [ctc_loss.name]
-        for epoch_id in range(num_epoch):
-            epoch_loss = []
-            for batch_id, data in enumerate(train_batch_reader()):
-                fetch = exe.run(program=train_program,
-                                feed={train_reader[0].name: data[0],
-                                      train_reader[1].name: data[1],
-                                      train_reader[2].name: data[2],
-                                      train_reader[3].name: data[3]},
-                                fetch_list=fetch_list,
-                                return_numpy=False)
-                each_loss = fetch[0]
-                epoch_loss.extend(np.array(each_loss[0]) / batch_size)
-                if batch_id % 100 == 0:
-                    print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
-                          (datetime.now(), epoch_id, batch_id,
-                           np.mean(each_loss[0]) / batch_size))
+        build_strategy.fuse_relu_depthwise_conv = True
+        exec_strategy.num_threads = 4
+        exec_strategy.num_iteration_per_drop_scope = 10
 
-        # train_reader.set_batch_generator(train_batch_reader)
-        # test_reader.set_batch_generator(dev_batch_reader)
+        # pass the build_strategy to with_data_parallel API
+        compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
+                                                                                   build_strategy=build_strategy,
+                                                                                   exec_strategy=exec_strategy)
+
+        train_reader.set_batch_generator(train_batch_reader)
+        test_reader.set_batch_generator(dev_batch_reader)
 
         # run train
-        # for epoch_id in range(num_epoch):
-        #     train_reader.start()
-        #     epoch_loss = []
-        #     time_begin = time.time()
-        #     batch_id = 0
-        #     while True:
-        #         try:
-        #             fetch_list = [ctc_loss.name]
-        #
-        #             if batch_id % num_iterations_print == 0:
-        #                 fetch = exe.run(program=compiled_prog,
-        #                                 fetch_list=fetch_list,
-        #                                 return_numpy=False)
-        #                 each_loss = fetch[0]
-        #                 epoch_loss.extend(np.array(each_loss[0]) / batch_size)
-        #
-        #                 print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
-        #                       (datetime.now(), epoch_id, batch_id,
-        #                        np.mean(each_loss[0]) / batch_size))
-        #
-        #             else:
-        #                 _ = exe.run(program=compiled_prog,
-        #                             fetch_list=[],
-        #                             return_numpy=False)
-        #
-        #             batch_id = batch_id + 1
-        #         except fluid.core.EOFException:
-        #             train_reader.reset()
-        #             break
-        #     time_end = time.time()
-        #     used_time = time_end - time_begin
-        #     if test_off:
-        #         print("\n--------Time: %f sec, epoch: %d, train loss: %f\n" %
-        #               (used_time, epoch_id, np.mean(np.array(epoch_loss))))
-        #     else:
-        #         print('\n----------Begin test...')
-        #         test_loss = self.test(exe=exe,
-        #                               test_program=test_prog,
-        #                               test_reader=test_reader,
-        #                               fetch_list=[ctc_loss])
-        #         print(
-        #             "--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
-        #             % (used_time, epoch_id + pre_epoch,
-        #                np.mean(np.array(epoch_loss)), test_loss / batch_size))
-        #     if (epoch_id + 1) % save_epoch == 0:
-        #         self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
-        #
-        # self.save_param(exe, train_program, "step_final")
+        for epoch_id in range(num_epoch):
+            train_reader.start()
+            epoch_loss = []
+            time_begin = time.time()
+            batch_id = 0
+            while True:
+                try:
+                    fetch_list = [ctc_loss.name]
+
+                    if batch_id % num_iterations_print == 0:
+                        fetch = exe.run(program=compiled_prog,
+                                        fetch_list=fetch_list,
+                                        return_numpy=False)
+                        each_loss = fetch[0]
+                        epoch_loss.extend(np.array(each_loss[0]) / batch_size)
+
+                        print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
+                              (datetime.now(), epoch_id, batch_id,
+                               np.mean(each_loss[0]) / batch_size))
+
+                    else:
+                        _ = exe.run(program=compiled_prog,
+                                    fetch_list=[],
+                                    return_numpy=False)
+
+                    batch_id = batch_id + 1
+                except fluid.core.EOFException:
+                    train_reader.reset()
+                    break
+            time_end = time.time()
+            used_time = time_end - time_begin
+            if test_off:
+                print("\n--------Time: %f sec, epoch: %d, train loss: %f\n" %
+                      (used_time, epoch_id, np.mean(np.array(epoch_loss))))
+            else:
+                print('\n----------Begin test...')
+                test_loss = self.test(exe=exe,
+                                      test_program=test_prog,
+                                      test_reader=test_reader,
+                                      fetch_list=[ctc_loss])
+                print(
+                    "--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
+                    % (used_time, epoch_id + pre_epoch,
+                       np.mean(np.array(epoch_loss)), test_loss / batch_size))
+            if (epoch_id + 1) % save_epoch == 0:
+                self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
+
+        self.save_param(exe, train_program, "step_final")
 
         print("\n------------Training finished!!!-------------")
 
