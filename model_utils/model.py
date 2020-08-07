@@ -302,7 +302,6 @@ class DeepSpeech2Model(object):
                                 return_numpy=False)
                 each_loss = fetch[0]
                 epoch_loss.extend(np.array(each_loss[0]) / batch_size)
-                # 每100个batch打印一次信息
                 if batch_id % 100 == 0:
                     print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
                           (datetime.now(), epoch_id, batch_id,
