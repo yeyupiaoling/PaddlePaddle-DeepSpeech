@@ -281,10 +281,7 @@ class DeepSpeech2Model(object):
 
         build_strategy = compiler.BuildStrategy()
         exec_strategy = fluid.ExecutionStrategy()
-
-        build_strategy.fuse_relu_depthwise_conv = True
         exec_strategy.num_threads = 4
-        exec_strategy.num_iteration_per_drop_scope = 10
 
         # pass the build_strategy to with_data_parallel API
         compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
@@ -319,7 +316,9 @@ class DeepSpeech2Model(object):
                         _ = exe.run(program=compiled_prog,
                                     fetch_list=[],
                                     return_numpy=False)
-
+                    if batch_id > 1900:
+                        train_reader.reset()
+                        break
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
                     train_reader.reset()
