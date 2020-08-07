@@ -1,6 +1,7 @@
 .idea/
 __pycache__/
-dataset/
+dataset/*
+!dataset/test.wav
 models/
 lm/
 audios_cache/
