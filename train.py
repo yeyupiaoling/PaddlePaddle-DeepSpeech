@@ -12,7 +12,6 @@ from data_utils.data import DataGenerator
 from utils.utility import add_arguments, print_arguments
 
 import paddle.fluid as fluid
-
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
@@ -23,6 +22,7 @@ add_arg('num_rnn_layers',  int,   3, "# of recurrent layers.")
 add_arg('rnn_layer_size',  int,   2048, "# of recurrent cells per layer.")
 add_arg('num_iter_print',  int,   100, "Every # batch for printing train cost.")
 add_arg('save_epoch',      int,   10, "# Every # batch for save checkpoint and modle params ")
+add_arg('only_train_batch',int,   None, "Every epoch only train only_train_batch batch")
 add_arg('num_samples',     int,   120000, "The num of train samples.")
 add_arg('learning_rate',   float, 5e-4, "Learning rate.")
 add_arg('max_duration',    float, 27.0, "Longest audio duration allowed.")
@@ -99,6 +99,7 @@ def train():
                     num_epoch=args.num_epoch,
                     save_epoch=args.save_epoch,
                     num_iterations_print=args.num_iter_print,
+                    only_train_batch=args.only_train_batch,
                     test_off=args.test_off)
 
 

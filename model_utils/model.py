@@ -222,6 +222,7 @@ class DeepSpeech2Model(object):
               num_samples,
               save_epoch=100,
               num_iterations_print=100,
+              only_train_batch=None,
               test_off=False):
         """Train the model.
 
@@ -327,7 +328,7 @@ class DeepSpeech2Model(object):
                         _ = exe.run(program=compiled_prog,
                                     fetch_list=[],
                                     return_numpy=False)
-                    if batch_id > 1900:
+                    if only_train_batch is not None and batch_id > only_train_batch:
                         train_reader.reset()
                         break
                     batch_id = batch_id + 1

@@ -54,7 +54,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
     f_dev = codecs.open(os.path.join(manifest_path_prefix, 'manifest.dev'), 'w', 'utf-8')
     f_test = codecs.open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', 'utf-8')
     for i, line in enumerate(json_lines):
-        if i % 50 == 0:
+        if i % 500 == 0:
             if i % 100 == 0:
                 f_dev.write(line + '\n')
             else:
@@ -64,7 +64,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
     f_train.close()
     f_dev.close()
     f_test.close()
-    print("Create manifest done. All audio for [%d] hours!" % sum(durations))
+    print("Create manifest done. All audio for [%d] hours!" % int(sum(durations) / 3600))
 
 
 def is_ustr(in_str):
