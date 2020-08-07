@@ -33,8 +33,8 @@ add_arg('mean_std_path',    str,    './dataset/mean_std.npz',     "Filepath of n
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',     "Filepath of vocabulary.")
 add_arg('model_path',       str,    './models/checkpoints/step_final',    "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
 add_arg('lang_model_path',  str,    './lm/zhidao_giga.klm',     "Filepath for language model.")
-add_arg('decoding_method',  str,    'ctc_beam_search',    "Decoding method. Options: ctc_beam_search, ctc_greedy", choices = ['ctc_beam_search', 'ctc_greedy'])
-add_arg('error_rate_type',  str,    'wer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
+add_arg('decoding_method',  str,    'ctc_beam_search',    "Decoding method. Options: ctc_beam_search, ctc_greedy", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('error_rate_type',  str,    'cer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
 add_arg('specgram_type',    str,    'linear',    "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 # yapf: disable
 args = parser.parse_args()
@@ -78,8 +78,7 @@ def evaluate():
     vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
 
     if args.decoding_method == "ctc_beam_search":
-        ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path,
-                                  vocab_list)
+        ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, vocab_list)
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     errors_sum, len_refs, num_ins = 0.0, 0, 0
     ds2_model.logger.info("start evaluation ...")

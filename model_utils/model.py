@@ -90,11 +90,10 @@ class DeepSpeech2Model(object):
             }
 
             inputs = [
-                fluid.data(
-                    name=input_fields['names'][i],
-                    shape=input_fields['shapes'][i],
-                    dtype=input_fields['dtypes'][i],
-                    lod_level=input_fields['lod_levels'][i])
+                fluid.data(name=input_fields['names'][i],
+                           shape=input_fields['shapes'][i],
+                           dtype=input_fields['dtypes'][i],
+                           lod_level=input_fields['lod_levels'][i])
                 for i in range(len(input_fields['names']))
             ]
 
@@ -284,6 +283,7 @@ class DeepSpeech2Model(object):
         exec_strategy = fluid.ExecutionStrategy()
 
         build_strategy.fuse_relu_depthwise_conv = True
+        exec_strategy.num_threads = 4
         exec_strategy.num_iteration_per_drop_scope = 10
 
         # pass the build_strategy to with_data_parallel API
