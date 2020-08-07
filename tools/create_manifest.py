@@ -38,7 +38,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
                 audio_data, samplerate = soundfile.read(audio_path)
                 duration = float(len(audio_data) / samplerate)
-                durations.append(durations)
+                durations.append(duration)
                 json_lines.append(
                     json.dumps(
                         {
