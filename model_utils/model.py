@@ -96,14 +96,13 @@ class DeepSpeech2Model(object):
                            lod_level=input_fields['lod_levels'][i])
                 for i in range(len(input_fields['names']))
             ]
-
             # reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
             #                                             capacity=64,
             #                                             iterable=False,
             #                                             use_double_buffer=True)
-
-            reader = fluid.DataFeeder(inputs, self._place)
             (audio_data, text_data, seq_len_data, masks) = inputs
+            # reader = fluid.DataFeeder([audio_data, text_data, seq_len_data, masks], self._place)
+            reader = inputs
         else:
             audio_data = fluid.data(name='audio_data',
                                     shape=[None, 161, None],
@@ -266,12 +265,12 @@ class DeepSpeech2Model(object):
                         clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
-        test_prog = fluid.Program()
-        with fluid.program_guard(test_prog, startup_prog):
-            with fluid.unique_name.guard():
-                test_reader, _, ctc_loss = self.create_network()
+        # test_prog = fluid.Program()
+        # with fluid.program_guard(test_prog, startup_prog):
+        #    with fluid.unique_name.guard():
+        #        test_reader, _, ctc_loss = self.create_network()
 
-        test_prog = test_prog.clone(for_test=True)
+        # test_prog = test_prog.clone(for_test=True)
         exe = fluid.Executor(self._place)
         exe.run(startup_prog)
 
@@ -297,7 +296,10 @@ class DeepSpeech2Model(object):
             epoch_loss = []
             for batch_id, data in enumerate(train_batch_reader()):
                 fetch = exe.run(program=train_program,
-                                feed=train_reader.feed(data),
+                                feed={train_reader[0].name: data[0],
+                                      train_reader[1].name: data[1],
+                                      train_reader[2].name: data[2],
+                                      train_reader[3].name: data[3]},
                                 fetch_list=fetch_list,
                                 return_numpy=False)
                 each_loss = fetch[0]
