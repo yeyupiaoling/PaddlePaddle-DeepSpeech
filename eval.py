@@ -31,7 +31,7 @@ add_arg('share_rnn_weights',bool,   False,   "Share input-hidden weights across 
 add_arg('test_manifest',    str,    './dataset/manifest.test',      "Filepath of manifest to evaluate.")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',     "Filepath of normalizer's mean & std.")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',     "Filepath of vocabulary.")
-add_arg('model_path',       str,    './models/checkpoints/step_final',    "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
+add_arg('model_path',       str,    './models/step_final',    "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',     "Filepath for language model.")
 add_arg('decoding_method',  str,    'ctc_beam_search',    "Decoding method. Options: ctc_beam_search, ctc_greedy", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('error_rate_type',  str,    'cer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
