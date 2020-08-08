@@ -1,4 +1,4 @@
-"""Server-end for the ASR demo."""
+# coding:utf-8
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -107,7 +107,7 @@ def predict(filename):
 def main():
     print_arguments(args)
     text = predict(filename=args.wav_path)
-    print("Predict result text: %s" % text)
+    print("Predict result text: %s" % text.encode('utf-8'))
 
 
 if __name__ == "__main__":

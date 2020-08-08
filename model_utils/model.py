@@ -118,7 +118,6 @@ class DeepSpeech2Model(object):
                                lod_level=0)
             text_data = None
             reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
-            # reader = [audio_data, seq_len_data, masks]
 
         log_probs, loss = deep_speech_v2_network(audio_data=audio_data,
                                                  text_data=text_data,
@@ -199,16 +198,6 @@ class DeepSpeech2Model(object):
             except fluid.core.EOFException:
                 test_reader.reset()
                 break
-
-        # epoch_loss = []
-        # for data in test_reader():
-        #     each_loss = exe.run(program=test_program,
-        #                         fetch_list={fetch_list[0].name: data[0],
-        #                                     fetch_list[1].name: data[1],
-        #                                     fetch_list[2].name: data[2],
-        #                                     fetch_list[3].name: data[3]},
-        #                         return_numpy=False)
-        #     epoch_loss.extend(np.array(each_loss[0]))
 
         return np.mean(np.array(epoch_loss))
 
@@ -298,9 +287,10 @@ class DeepSpeech2Model(object):
         exec_strategy.num_threads = 4
 
         # pass the build_strategy to with_data_parallel API
-        compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
+        train_compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
                                                                                    build_strategy=build_strategy,
                                                                                    exec_strategy=exec_strategy)
+        test_compiled_prog = compiler.CompiledProgram(test_prog).with_data_parallel(share_vars_from=train_compiled_prog)
 
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
@@ -316,7 +306,7 @@ class DeepSpeech2Model(object):
                     fetch_list = [ctc_loss.name]
 
                     if batch_id % num_iterations_print == 0:
-                        fetch = exe.run(program=compiled_prog,
+                        fetch = exe.run(program=train_compiled_prog,
                                         fetch_list=fetch_list,
                                         return_numpy=False)
                         each_loss = fetch[0]
@@ -327,7 +317,7 @@ class DeepSpeech2Model(object):
                                np.mean(each_loss[0]) / batch_size))
 
                     else:
-                        _ = exe.run(program=compiled_prog,
+                        _ = exe.run(program=train_compiled_prog,
                                     fetch_list=[],
                                     return_numpy=False)
                     if only_train_batch is not None and batch_id > only_train_batch:
@@ -345,12 +335,11 @@ class DeepSpeech2Model(object):
             else:
                 print('\n----------Begin test...')
                 test_loss = self.test(exe=exe,
-                                      test_program=test_prog,
+                                      test_program=test_compiled_prog,
                                       test_reader=test_reader,
                                       fetch_list=[ctc_loss])
                 print("--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
-                      % (used_time, epoch_id + pre_epoch,
-                         np.mean(np.array(epoch_loss)), test_loss / batch_size))
+                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), test_loss / batch_size))
             if (epoch_id + 1) % save_epoch == 0:
                 self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
