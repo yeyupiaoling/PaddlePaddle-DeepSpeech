@@ -117,8 +117,8 @@ class DeepSpeech2Model(object):
                                dtype='float32',
                                lod_level=0)
             text_data = None
-            # reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
-            reader = [audio_data, seq_len_data, masks]
+            reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
+            # reader = [audio_data, seq_len_data, masks]
 
         log_probs, loss = deep_speech_v2_network(audio_data=audio_data,
                                                  text_data=text_data,
@@ -188,27 +188,27 @@ class DeepSpeech2Model(object):
         :return: An output unnormalized log probability.
         :rtype: array
         '''
-        # test_reader.start()
-        # epoch_loss = []
-        # while True:
-        #     try:
-        #         each_loss = exe.run(program=test_program,
-        #                             fetch_list=fetch_list,
-        #                             return_numpy=False)
-        #         epoch_loss.extend(np.array(each_loss[0]))
-        #     except fluid.core.EOFException:
-        #         test_reader.reset()
-        #         break
-
+        test_reader.start()
         epoch_loss = []
-        for data in test_reader():
-            each_loss = exe.run(program=test_program,
-                                fetch_list={fetch_list[0].name: data[0],
-                                            fetch_list[1].name: data[1],
-                                            fetch_list[2].name: data[2],
-                                            fetch_list[3].name: data[3]},
-                                return_numpy=False)
-            epoch_loss.extend(np.array(each_loss[0]))
+        while True:
+            try:
+                each_loss = exe.run(program=test_program,
+                                    fetch_list=fetch_list,
+                                    return_numpy=False)
+                epoch_loss.extend(np.array(each_loss[0]))
+            except fluid.core.EOFException:
+                test_reader.reset()
+                break
+
+        # epoch_loss = []
+        # for data in test_reader():
+        #     each_loss = exe.run(program=test_program,
+        #                         fetch_list={fetch_list[0].name: data[0],
+        #                                     fetch_list[1].name: data[1],
+        #                                     fetch_list[2].name: data[2],
+        #                                     fetch_list[3].name: data[3]},
+        #                         return_numpy=False)
+        #     epoch_loss.extend(np.array(each_loss[0]))
 
         return np.mean(np.array(epoch_loss))
 
@@ -248,6 +248,8 @@ class DeepSpeech2Model(object):
         :param num_iterations_print: Number of training iterations for printing
                                      a training loss.
         :type num_iteratons_print: int
+        :param only_train_batch:Every epoch only train only_train_batch batch. Avoid insufficient video memory
+        :type only_train_batch:int
         :param test_off: Turn off testing.
         :type test_off: bool
         """
