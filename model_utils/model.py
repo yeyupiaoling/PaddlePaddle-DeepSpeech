@@ -288,8 +288,8 @@ class DeepSpeech2Model(object):
 
         # pass the build_strategy to with_data_parallel API
         train_compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
-                                                                                   build_strategy=build_strategy,
-                                                                                   exec_strategy=exec_strategy)
+                                                                                         build_strategy=build_strategy,
+                                                                                         exec_strategy=exec_strategy)
         test_compiled_prog = compiler.CompiledProgram(test_prog).with_data_parallel(share_vars_from=train_compiled_prog)
 
         train_reader.set_batch_generator(train_batch_reader)
@@ -327,19 +327,21 @@ class DeepSpeech2Model(object):
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
-            time_end = time.time()
-            used_time = time_end - time_begin
+            used_time = time.time() - time_begin
             if test_off:
-                print("\n--------Time: %f sec, epoch: %d, train loss: %f\n" %
+                print('======================last Train=====================')
+                print("Train time: %f sec, epoch: %d, train loss: %f\n" %
                       (used_time, epoch_id, np.mean(np.array(epoch_loss))))
+                print('======================last Train=====================')
             else:
-                print('\n----------Begin test...')
+                print('\n======================Begin test=====================')
                 test_loss = self.test(exe=exe,
                                       test_program=test_compiled_prog,
                                       test_reader=test_reader,
                                       fetch_list=[ctc_loss])
-                print("--------Time: %f sec, epoch: %d, train loss: %f, test loss: %f"
+                print("Train time: %f sec, epoch: %d, train loss: %f, test loss: %f"
                       % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), test_loss / batch_size))
+                print('======================Stop Train=====================\n')
             if (epoch_id + 1) % save_epoch == 0:
                 self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
