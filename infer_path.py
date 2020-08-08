@@ -107,7 +107,7 @@ def predict(filename):
 def main():
     print_arguments(args)
     text = predict(filename=args.wav_path)
-    print("预测结果：%s" % text)
+    print("Predict result text: %s" % text)
 
 
 if __name__ == "__main__":
