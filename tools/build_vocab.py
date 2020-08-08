@@ -19,7 +19,7 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 # yapf: disable
 add_arg('count_threshold',  int,    0,  "Truncation threshold for char counts.")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt', "Filepath to write the vocabulary.")
-add_arg('manifest_paths',   str,    './dataset/manifest.train,./dataset/manifest.dev,', "Filepaths of manifests for building vocabulary. You can provide multiple manifest files.")
+add_arg('manifest_paths',   str,    './dataset/manifest.train,./dataset/manifest.dev', "Filepaths of manifests for building vocabulary. You can provide multiple manifest files.")
 # yapf: disable
 args = parser.parse_args()
 
