@@ -295,6 +295,7 @@ class DeepSpeech2Model(object):
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
 
+        num_batch = -1
         # run train
         for epoch_id in range(num_epoch):
             train_reader.start()
@@ -312,10 +313,8 @@ class DeepSpeech2Model(object):
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("Train [%s] epoch: %d, batch: %d, train loss: %f\n" %
-                              (datetime.now(), epoch_id, batch_id,
-                               np.mean(each_loss[0]) / batch_size))
-
+                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], train loss: %f\n" %
+                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, np.mean(each_loss[0]) / batch_size))
                     else:
                         _ = exe.run(program=train_compiled_prog,
                                     fetch_list=[],
@@ -327,6 +326,7 @@ class DeepSpeech2Model(object):
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
+            num_batch = batch_id
             used_time = time.time() - time_begin
             if test_off:
                 print('======================last Train=====================')
