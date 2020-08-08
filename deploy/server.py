@@ -40,7 +40,7 @@ add_arg('warmup_manifest',  str,    './dataset/manifest.test',        "Filepath 
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',        "Filepath of normalizer's mean & std.")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',        "Filepath of vocabulary.")
 add_arg('model_path',       str,    './models/checkpoints/step_final/',        "If None, the training starts from scratch,  otherwise, it resumes from the pre-trained model.")
-add_arg('lang_model_path',  str,    './lm/zhidao_giga.klm',        "Filepath for language model.")
+add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',        "Filepath for language model.")
 add_arg('decoding_method',  str,    'ctc_beam_search',        "Decoding method. Options: ctc_beam_search, ctc_greedy", choices = ['ctc_beam_search', 'ctc_greedy'])
 add_arg('specgram_type',    str,    'linear',        "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 # yapf: disable
