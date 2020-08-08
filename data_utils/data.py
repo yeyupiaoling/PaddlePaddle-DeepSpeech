@@ -174,7 +174,6 @@ class DataGenerator(object):
             # sort (by duration) or batch-wise shuffle the manifest
             if self._epoch == 0 and sortagrad:
                 manifest.sort(key=lambda x: x["duration"])
-
             else:
                 if shuffle_method == "batch_shuffle":
                     manifest = self._batch_shuffle(manifest, batch_size, clipped=False)
@@ -185,8 +184,7 @@ class DataGenerator(object):
                 elif shuffle_method is None:
                     pass
                 else:
-                    raise ValueError("Unknown shuffle method %s." %
-                                     shuffle_method)
+                    raise ValueError("Unknown shuffle method %s." % shuffle_method)
             # prepare batches
             batch = []
             instance_reader = self._instance_reader_creator(manifest)
@@ -354,7 +352,7 @@ class DataGenerator(object):
         batch_manifest = zip(*[iter(manifest[shift_len:])] * batch_size)
         self._rng.shuffle(batch_manifest)
         batch_manifest = [item for batch in batch_manifest for item in batch]
-        if not clipped:
+        if clipped:
             res_len = len(manifest) - shift_len - len(batch_manifest)
             batch_manifest.extend(manifest[-res_len:])
             batch_manifest.extend(manifest[0:shift_len])
