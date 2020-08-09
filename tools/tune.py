@@ -32,16 +32,16 @@ add_arg('beta_from',        float, 0.1,  "Where beta starts tuning from.")
 add_arg('beta_to',          float, 0.45, "Where beta ends tuning with.")
 add_arg('cutoff_prob',      float, 1.0,  "Cutoff probability for pruning.")
 add_arg('cutoff_top_n',     int,   40,   "Cutoff number for pruning.")
-add_arg('use_gru',          bool,  False, "Use GRUs instead of simple RNNs.")
+add_arg('use_gru',          bool,  True, "Use GRUs instead of simple RNNs.")
 add_arg('use_gpu',          bool,  True,  "Use GPU or not.")
-add_arg('share_rnn_weights', bool, True,  "Share input-hidden weights across bi-directional RNNs. Not for GRU.")
+add_arg('share_rnn_weights', bool, False,  "Share input-hidden weights across bi-directional RNNs. Not for GRU.")
 add_arg('tune_manifest',     str,  './dataset/manifest.dev',   "Filepath of manifest to tune.")
 add_arg('mean_std_path',     str,  './dataset/mean_std.npz',   "Filepath of normalizer's mean & std.")
 add_arg('vocab_path',        str,  './dataset/zh_vocab.txt',   "Filepath of vocabulary.")
-add_arg('lang_model_path',   str,  './models/zhidao_giga.klm', "Filepath for language model.")
-add_arg('model_path',        str,  './models/checkpoints/srep_final',
+add_arg('lang_model_path',   str,  './lm/zh_giga.no_cna_cmn.prune01244.klm', "Filepath for language model.")
+add_arg('model_path',        str,  './models/srep_final',
         "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
-add_arg('error_rate_type',   str,  'wer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
+add_arg('error_rate_type',   str,  'cer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
 add_arg('specgram_type',     str,  'linear', "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 # yapf: disable
 args = parser.parse_args()
@@ -59,30 +59,27 @@ def tune():
     else:
         place = fluid.CPUPlace()
 
-    data_generator = DataGenerator(
-        vocab_filepath=args.vocab_path,
-        mean_std_filepath=args.mean_std_path,
-        augmentation_config='{}',
-        specgram_type=args.specgram_type,
-        keep_transcription_text=True,
-        place=place,
-        is_training=False)
+    data_generator = DataGenerator(vocab_filepath=args.vocab_path,
+                                   mean_std_filepath=args.mean_std_path,
+                                   augmentation_config='{}',
+                                   specgram_type=args.specgram_type,
+                                   keep_transcription_text=True,
+                                   place=place,
+                                   is_training=False)
 
-    batch_reader = data_generator.batch_reader_creator(
-        manifest_path=args.tune_manifest,
-        batch_size=args.batch_size,
-        sortagrad=False,
-        shuffle_method=None)
+    batch_reader = data_generator.batch_reader_creator(manifest_path=args.tune_manifest,
+                                                       batch_size=args.batch_size,
+                                                       sortagrad=False,
+                                                       shuffle_method=None)
 
-    ds2_model = DeepSpeech2Model(
-        vocab_size=data_generator.vocab_size,
-        num_conv_layers=args.num_conv_layers,
-        num_rnn_layers=args.num_rnn_layers,
-        rnn_layer_size=args.rnn_layer_size,
-        use_gru=args.use_gru,
-        place=place,
-        init_from_pretrained_model=args.model_path,
-        share_rnn_weights=args.share_rnn_weights)
+    ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
+                                 num_conv_layers=args.num_conv_layers,
+                                 num_rnn_layers=args.num_rnn_layers,
+                                 rnn_layer_size=args.rnn_layer_size,
+                                 use_gru=args.use_gru,
+                                 place=place,
+                                 init_from_pretrained_model=args.model_path,
+                                 share_rnn_weights=args.share_rnn_weights)
 
     # decoders only accept string encoded in utf-8
     vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
@@ -90,16 +87,14 @@ def tune():
     # create grid for search
     cand_alphas = np.linspace(args.alpha_from, args.alpha_to, args.num_alphas)
     cand_betas = np.linspace(args.beta_from, args.beta_to, args.num_betas)
-    params_grid = [(alpha, beta) for alpha in cand_alphas
-                   for beta in cand_betas]
+    params_grid = [(alpha, beta) for alpha in cand_alphas for beta in cand_betas]
 
     err_sum = [0.0 for i in range(len(params_grid))]
     err_ave = [0.0 for i in range(len(params_grid))]
     num_ins, len_refs, cur_batch = 0, 0, 0
     # initialize external scorer
-    ds2_model.init_ext_scorer(args.alpha_from, args.beta_from,
-                              args.lang_model_path, vocab_list)
-    ## incremental tuning parameters over multiple batches
+    ds2_model.init_ext_scorer(args.alpha_from, args.beta_from, args.lang_model_path, vocab_list)
+    # incremental tuning parameters over multiple batches
     ds2_model.logger.info("start tuning ...")
     for infer_data in batch_reader():
         if (args.num_batches >= 0) and (cur_batch >= args.num_batches):
@@ -110,15 +105,14 @@ def tune():
         num_ins += len(target_transcripts)
         # grid search
         for index, (alpha, beta) in enumerate(params_grid):
-            result_transcripts = ds2_model.decode_batch_beam_search(
-                probs_split=probs_split,
-                beam_alpha=alpha,
-                beam_beta=beta,
-                beam_size=args.beam_size,
-                cutoff_prob=args.cutoff_prob,
-                cutoff_top_n=args.cutoff_top_n,
-                vocab_list=vocab_list,
-                num_processes=args.num_proc_bsearch)
+            result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
+                                                                    beam_alpha=alpha,
+                                                                    beam_beta=beta,
+                                                                    beam_size=args.beam_size,
+                                                                    cutoff_prob=args.cutoff_prob,
+                                                                    cutoff_top_n=args.cutoff_top_n,
+                                                                    vocab_list=vocab_list,
+                                                                    num_processes=args.num_proc_bsearch)
             for target, result in zip(target_transcripts, result_transcripts):
                 errors, len_ref = errors_func(target, result)
                 err_sum[index] += errors
@@ -136,24 +130,20 @@ def tune():
         err_ave_min = min(err_ave)
         min_index = err_ave.index(err_ave_min)
         print("\nBatch %d [%d/?], current opt (alpha, beta) = (%s, %s), "
-              " min [%s] = %f" % (cur_batch, num_ins,
-                                  "%.3f" % params_grid[min_index][0],
-                                  "%.3f" % params_grid[min_index][1],
-                                  args.error_rate_type, err_ave_min))
+              " min [%s] = %f" % (cur_batch, num_ins, "%.3f" % params_grid[min_index][0],
+                                  "%.3f" % params_grid[min_index][1], args.error_rate_type, err_ave_min))
         cur_batch += 1
 
     # output WER/CER at every (alpha, beta)
     print("\nFinal %s:\n" % args.error_rate_type)
     for index in range(len(params_grid)):
         print("(alpha, beta) = (%s, %s), [%s] = %f"
-              % ("%.3f" % params_grid[index][0], "%.3f" % params_grid[index][1],
-                 args.error_rate_type, err_ave[index]))
+              % ("%.3f" % params_grid[index][0], "%.3f" % params_grid[index][1], args.error_rate_type, err_ave[index]))
 
     err_ave_min = min(err_ave)
     min_index = err_ave.index(err_ave_min)
     print("\nFinish tuning on %d batches, final opt (alpha, beta) = (%s, %s)"
-          % (cur_batch, "%.3f" % params_grid[min_index][0],
-             "%.3f" % params_grid[min_index][1]))
+          % (cur_batch, "%.3f" % params_grid[min_index][0], "%.3f" % params_grid[min_index][1]))
 
     ds2_model.logger.info("finish tuning")
 

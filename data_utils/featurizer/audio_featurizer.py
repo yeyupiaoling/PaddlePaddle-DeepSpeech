@@ -75,8 +75,8 @@ class AudioFeaturizer(object):
         # upsampling or downsampling
         if ((audio_segment.sample_rate > self._target_sample_rate and
              allow_downsampling) or
-            (audio_segment.sample_rate < self._target_sample_rate and
-             allow_upsampling)):
+                (audio_segment.sample_rate < self._target_sample_rate and
+                 allow_upsampling)):
             audio_segment.resample(self._target_sample_rate)
         if audio_segment.sample_rate != self._target_sample_rate:
             raise ValueError("Audio sample rate is not supported. "
@@ -91,15 +91,11 @@ class AudioFeaturizer(object):
     def _compute_specgram(self, samples, sample_rate):
         """Extract various audio features."""
         if self._specgram_type == 'linear':
-            return self._compute_linear_specgram(
-                samples, sample_rate, self._stride_ms, self._window_ms,
-                self._max_freq)
+            return self._compute_linear_specgram(samples, sample_rate, self._stride_ms, self._window_ms, self._max_freq)
         elif self._specgram_type == 'mfcc':
-            return self._compute_mfcc(samples, sample_rate, self._stride_ms,
-                                      self._window_ms, self._max_freq)
+            return self._compute_mfcc(samples, sample_rate, self._stride_ms, self._window_ms, self._max_freq)
         else:
-            raise ValueError("Unknown specgram_type %s. "
-                             "Supported values: linear." % self._specgram_type)
+            raise ValueError("Unknown specgram_type %s. Supported values: linear." % self._specgram_type)
 
     def _compute_linear_specgram(self,
                                  samples,
@@ -119,11 +115,10 @@ class AudioFeaturizer(object):
                              "window size.")
         stride_size = int(0.001 * sample_rate * stride_ms)
         window_size = int(0.001 * sample_rate * window_ms)
-        specgram, freqs = self._specgram_real(
-            samples,
-            window_size=window_size,
-            stride_size=stride_size,
-            sample_rate=sample_rate)
+        specgram, freqs = self._specgram_real(samples,
+                                              window_size=window_size,
+                                              stride_size=stride_size,
+                                              sample_rate=sample_rate)
         ind = np.where(freqs <= max_freq)[0][-1] + 1
         return np.log(specgram[:ind, :] + eps)
 
@@ -134,16 +129,14 @@ class AudioFeaturizer(object):
         samples = samples[:len(samples) - truncate_size]
         nshape = (window_size, (len(samples) - window_size) // stride_size + 1)
         nstrides = (samples.strides[0], samples.strides[0] * stride_size)
-        windows = np.lib.stride_tricks.as_strided(
-            samples, shape=nshape, strides=nstrides)
-        assert np.all(
-            windows[:, 1] == samples[stride_size:(stride_size + window_size)])
+        windows = np.lib.stride_tricks.as_strided(samples, shape=nshape, strides=nstrides)
+        assert np.all(windows[:, 1] == samples[stride_size:(stride_size + window_size)])
         # window weighting, squared Fast Fourier Transform (fft), scaling
         weighting = np.hanning(window_size)[:, None]
         fft = np.fft.rfft(windows * weighting, axis=0)
         fft = np.absolute(fft)
-        fft = fft**2
-        scale = np.sum(weighting**2) * sample_rate
+        fft = fft ** 2
+        scale = np.sum(weighting ** 2) * sample_rate
         fft[1:-1, :] *= (2.0 / scale)
         fft[(0, -1), :] /= scale
         # prepare fft frequency list
@@ -160,19 +153,16 @@ class AudioFeaturizer(object):
         if max_freq is None:
             max_freq = sample_rate / 2
         if max_freq > sample_rate / 2:
-            raise ValueError("max_freq must not be greater than half of "
-                             "sample rate.")
+            raise ValueError("max_freq must not be greater than half of sample rate.")
         if stride_ms > window_ms:
-            raise ValueError("Stride size must not be greater than "
-                             "window size.")
+            raise ValueError("Stride size must not be greater than window size.")
         # compute the 13 cepstral coefficients, and the first one is replaced
         # by log(frame energy)
-        mfcc_feat = mfcc(
-            signal=samples,
-            samplerate=sample_rate,
-            winlen=0.001 * window_ms,
-            winstep=0.001 * stride_ms,
-            highfreq=max_freq)
+        mfcc_feat = mfcc(signal=samples,
+                         samplerate=sample_rate,
+                         winlen=0.001 * window_ms,
+                         winstep=0.001 * stride_ms,
+                         highfreq=max_freq)
         # Deltas
         d_mfcc_feat = delta(mfcc_feat, 2)
         # Deltas-Deltas

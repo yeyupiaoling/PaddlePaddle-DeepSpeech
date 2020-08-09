@@ -50,14 +50,13 @@ class SpeechFeaturizer(object):
                  target_sample_rate=16000,
                  use_dB_normalization=True,
                  target_dB=-20):
-        self._audio_featurizer = AudioFeaturizer(
-            specgram_type=specgram_type,
-            stride_ms=stride_ms,
-            window_ms=window_ms,
-            max_freq=max_freq,
-            target_sample_rate=target_sample_rate,
-            use_dB_normalization=use_dB_normalization,
-            target_dB=target_dB)
+        self._audio_featurizer = AudioFeaturizer(specgram_type=specgram_type,
+                                                 stride_ms=stride_ms,
+                                                 window_ms=window_ms,
+                                                 max_freq=max_freq,
+                                                 target_sample_rate=target_sample_rate,
+                                                 use_dB_normalization=use_dB_normalization,
+                                                 target_dB=target_dB)
         self._text_featurizer = TextFeaturizer(vocab_filepath)
 
     def featurize(self, speech_segment, keep_transcription_text):

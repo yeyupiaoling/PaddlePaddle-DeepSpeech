@@ -146,7 +146,7 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
 ## 评估和预测
 
- - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。
+ - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。最后输出的`alpha`，`beta`这两个参数的值需要在之后的推理中使用这个参数值，以获得最好的识别准确率。
 ```shell script
 CUDA_VISIBLE_DEVICES=0,1 python tools/tune.py
 ```
