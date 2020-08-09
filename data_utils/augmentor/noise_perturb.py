@@ -42,8 +42,6 @@ class NoisePerturbAugmentor(AugmentorBase):
         diff_duration = noise_json['duration'] - audio_segment.duration
         start = self._rng.uniform(0, diff_duration)
         end = start + audio_segment.duration
-        noise_segment = AudioSegment.slice_from_file(
-            noise_json['audio_filepath'], start=start, end=end)
+        noise_segment = AudioSegment.slice_from_file(noise_json['audio_filepath'], start=start, end=end)
         snr_dB = self._rng.uniform(self._min_snr_dB, self._max_snr_dB)
-        audio_segment.add_noise(
-            noise_segment, snr_dB, allow_downsampling=True, rng=self._rng)
+        audio_segment.add_noise(noise_segment, snr_dB, allow_downsampling=True, rng=self._rng)

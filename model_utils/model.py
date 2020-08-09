@@ -290,7 +290,7 @@ class DeepSpeech2Model(object):
         train_compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
                                                                                          build_strategy=build_strategy,
                                                                                          exec_strategy=exec_strategy)
-        test_compiled_prog = compiler.CompiledProgram(test_prog).with_data_parallel(share_vars_from=train_compiled_prog)
+        # test_compiled_prog = compiler.CompiledProgram(test_prog).with_data_parallel(share_vars_from=train_compiled_prog)
 
         train_reader.set_batch_generator(train_batch_reader)
         test_reader.set_batch_generator(dev_batch_reader)
@@ -336,7 +336,7 @@ class DeepSpeech2Model(object):
             else:
                 print('\n======================Begin test=====================')
                 test_loss = self.test(exe=exe,
-                                      test_program=test_compiled_prog,
+                                      test_program=test_prog,
                                       test_reader=test_reader,
                                       fetch_list=[ctc_loss])
                 print("Train time: %f sec, epoch: %d, train loss: %f, test loss: %f"

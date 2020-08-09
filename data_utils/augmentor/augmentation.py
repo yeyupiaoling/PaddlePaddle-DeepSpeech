@@ -12,7 +12,7 @@ from data_utils.augmentor.noise_perturb import NoisePerturbAugmentor
 from data_utils.augmentor.impulse_response import ImpulseResponseAugmentor
 from data_utils.augmentor.resample import ResampleAugmentor
 from data_utils.augmentor.online_bayesian_normalization import \
-     OnlineBayesianNormalizationAugmentor
+    OnlineBayesianNormalizationAugmentor
 
 
 class AugmentationPipeline(object):
@@ -75,8 +75,7 @@ class AugmentationPipeline(object):
 
     def __init__(self, augmentation_config, random_seed=0):
         self._rng = random.Random(random_seed)
-        self._augmentors, self._rates = self._parse_pipeline_from(
-            augmentation_config)
+        self._augmentors, self._rates = self._parse_pipeline_from(augmentation_config)
 
     def transform_audio(self, audio_segment):
         """Run the pre-processing pipeline for data augmentation.
@@ -94,10 +93,7 @@ class AugmentationPipeline(object):
         """Parse the config json to build a augmentation pipelien."""
         try:
             configs = json.loads(config_json)
-            augmentors = [
-                self._get_augmentor(config["type"], config["params"])
-                for config in configs
-            ]
+            augmentors = [self._get_augmentor(config["type"], config["params"]) for config in configs]
             rates = [config["prob"] for config in configs]
         except Exception as e:
             raise ValueError("Failed to parse the augmentation config json: "
