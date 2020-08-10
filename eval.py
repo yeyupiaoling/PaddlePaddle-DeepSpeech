@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import functools
+import codecs
 import paddle.fluid as fluid
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
@@ -76,7 +77,7 @@ def evaluate():
 
     # decoders only accept string encoded in utf-8
     vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
-    with open(args.test_manifest, 'r', encoding='utf-8') as f_m:
+    with codecs.open(args.test_manifest, 'r', encoding='utf-8') as f_m:
         test_len = len(f_m.readlines())
 
     if args.decoding_method == "ctc_beam_search":

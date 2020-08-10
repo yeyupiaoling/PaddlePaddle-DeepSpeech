@@ -130,7 +130,7 @@ PYTHONPATH=.:$PYTHONPATH python tools/build_vocab.py
 
 ## 训练模型
 
- - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/checkpoints`目录下。
+ - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下。
 ```shell script
 CUDA_VISIBLE_DEVICES=0,1 python train.py
 ```

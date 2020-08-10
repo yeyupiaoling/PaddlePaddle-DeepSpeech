@@ -66,7 +66,11 @@ class AudioSegment(object):
         :return: Audio segment instance.
         :rtype: AudioSegment
         """
-        if isinstance(file, basestring) and re.findall(r".seqbin_\d+$", file):
+        try:
+            is_str = isinstance(file, basestring)
+        except:
+            is_str = isinstance(file, str)
+        if is_str and re.findall(r".seqbin_\d+$", file):
             return cls.from_sequence_file(file)
         else:
             samples, sample_rate = soundfile.read(file, dtype='float32')

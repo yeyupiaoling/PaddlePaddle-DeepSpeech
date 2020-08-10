@@ -3,20 +3,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import time
-import random
 import argparse
 import functools
-from time import gmtime, strftime
-import SocketServer
-import struct
-import wave
-import paddle.fluid as fluid
 import numpy as np
+import paddle.fluid as fluid
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
-from data_utils.utility import read_manifest
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -34,7 +26,6 @@ add_arg('cutoff_top_n',     int,    40,     "Cutoff number for pruning.")
 add_arg('use_gru',          bool,   True,  "Use GRUs instead of simple RNNs.")
 add_arg('use_gpu',          bool,   True,   "Use GPU or not.")
 add_arg('share_rnn_weights',bool,   False,   "Share input-hidden weights across bi-directional RNNs. Not for GRU.")
-add_arg('host_ip',          str,    'localhost',         "Server's IP address.")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',        "Filepath of normalizer's mean & std.")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',        "Filepath of vocabulary.")
 add_arg('model_path',       str,    './models/step_final/',        "If None, the training starts from scratch,  otherwise, it resumes from the pre-trained model.")
