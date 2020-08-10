@@ -8,6 +8,7 @@ import numpy as np
 import argparse
 import functools
 import paddle.fluid as fluid
+from tqdm import tqdm
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
 from utils.error_rate import char_errors, word_errors
@@ -104,7 +105,7 @@ def tune():
 
         num_ins += len(target_transcripts)
         # grid search
-        for index, (alpha, beta) in enumerate(params_grid):
+        for index, (alpha, beta) in enumerate(tqdm(params_grid)):
             result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
                                                                     beam_alpha=alpha,
                                                                     beam_beta=beta,
@@ -122,9 +123,6 @@ def tune():
                     len_refs += len_ref
 
             err_ave[index] = err_sum[index] / len_refs
-            if index % 2 == 0:
-                sys.stdout.write('.')
-                sys.stdout.flush()
 
         # output on-line tuning result at the end of current batch
         err_ave_min = min(err_ave)
