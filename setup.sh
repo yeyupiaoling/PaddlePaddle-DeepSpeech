@@ -2,7 +2,7 @@
 
 
 # install dependencies
-apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig libsndfile1 git vim
+sudo apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig libsndfile1 git vim
 if [ $? != 0 ]; then
     echo "Install dependencies failed !!!"
     exit 1

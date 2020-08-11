@@ -9,3 +9,5 @@ data_utils/*.pyc
 data_utils/featurizer/*.pyc
 decoders/*.pyc
 model_utils/*.pyc
+nohup.out
+test.py

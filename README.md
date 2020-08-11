@@ -94,7 +94,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
  - 切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
 ```shell script
 cd DeepSpeech/
-sh setup.sh
+sudo sh setup.sh
 ```
 
 ## 数据准备
