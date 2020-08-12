@@ -8,13 +8,13 @@
 
 ## 目录
 
-- [环境搭建](#环境搭建)
+- [搭建Docker环境](#搭建Docker环境)
 - [数据准备](#数据准备)
 - [训练模型](#训练模型)
 - [评估和预测](#评估和预测)
 - [项目部署](#项目部署)
 
-## 环境搭建
+## 搭建Docker环境
 
  - 请提前安装好显卡驱动，然后执行下面的命令。
 ```shell script
@@ -73,7 +73,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.3-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
- - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
+ - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。
 ```shell script
 cd DeepSpeech/
 sh setup.sh
