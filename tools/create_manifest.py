@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -89,6 +90,30 @@ def is_uchar(uchar):
     return False
 
 
+# 生成噪声的数据列表
+def create_noise(path='dataset/audio/noise'):
+    json_lines = []
+    for file in os.listdir(path):
+        audio_path = os.path.join(path, file)
+        try:
+            text = ""
+            audio_data, samplerate = soundfile.read(audio_path)
+            duration = float(len(audio_data) / samplerate)
+            json_lines.append(
+                json.dumps(
+                    {
+                        'audio_filepath': audio_path,
+                        'duration': duration,
+                        'text': text
+                    },
+                    ensure_ascii=False))
+        except:
+            continue
+    with codecs.open(os.path.join(args.manifest_prefix, 'manifest.noise'), 'w', 'utf-8') as f_noise:
+        for json_line in json_lines:
+            f_noise.write(json_line + '\n')
+
+
 def main():
     print_arguments(args)
     create_manifest(annotation_path=args.annotation_path,
@@ -97,3 +122,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # create_noise()
