@@ -110,7 +110,11 @@ class DataGenerator(object):
                  where transcription part could be token ids or text.
         :rtype: tuple of (2darray, list)
         """
-        if isinstance(audio_file, basestring) and audio_file.startswith('tar:'):
+        try:
+            is_str = isinstance(audio_file, basestring)
+        except:
+            is_str = isinstance(audio_file, str)
+        if is_str and audio_file.startswith('tar:'):
             speech_segment = SpeechSegment.from_file(self._subfile_from_tar(audio_file), transcript)
         else:
             speech_segment = SpeechSegment.from_file(audio_file, transcript)
