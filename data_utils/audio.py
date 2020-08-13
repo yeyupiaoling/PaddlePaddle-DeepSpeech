@@ -400,8 +400,7 @@ class AudioSegment(object):
                        'kaiser_fast'}.
         :type filter: str
         """
-        self._samples = resampy.resample(
-            self.samples, self.sample_rate, target_sample_rate, filter=filter)
+        self._samples = resampy.resample(self.samples, self.sample_rate, target_sample_rate, filter=filter)
         self._sample_rate = target_sample_rate
 
     def pad_silence(self, duration, sides='both'):
@@ -584,7 +583,7 @@ class AudioSegment(object):
         """
         rng = random.Random() if rng is None else rng
         if allow_downsampling and noise.sample_rate > self.sample_rate:
-            noise = noise.resample(self.sample_rate)
+            noise.resample(self.sample_rate)
         if noise.sample_rate != self.sample_rate:
             raise ValueError("Noise sample rate (%d Hz) is not equal to base "
                              "signal sample rate (%d Hz)." % (noise.sample_rate,
