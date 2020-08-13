@@ -8,7 +8,6 @@ import codecs
 import functools
 import soundfile
 import json
-import decimal
 import argparse
 from utils.utility import add_arguments, print_arguments
 
@@ -39,7 +38,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
             try:
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
                 audio_data, samplerate = soundfile.read(audio_path)
-                duration = decimal.Decimal(len(audio_data)) / decimal.Decimal(samplerate)
+                duration = float(len(audio_data) / samplerate)
                 durations.append(duration)
                 json_lines.append(
                     json.dumps(
@@ -99,7 +98,7 @@ def create_noise(path='dataset/audio/noise'):
         try:
             text = ""
             audio_data, samplerate = soundfile.read(audio_path)
-            duration = decimal.Decimal(len(audio_data)) / decimal.Decimal(samplerate)
+            duration = float(len(audio_data) / samplerate)
             json_lines.append(
                 json.dumps(
                     {
@@ -123,4 +122,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # create_noise()
+    create_noise()
