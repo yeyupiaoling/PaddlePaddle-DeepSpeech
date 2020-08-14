@@ -127,6 +127,17 @@ PYTHONPATH=.:$PYTHONPATH python tools/compute_mean_std.py
 PYTHONPATH=.:$PYTHONPATH python tools/build_vocab.py
 ```
 
+在生成数据列表的是要注意，该程序除了生成训练数据列表，还提供对音频帧率的转换和生成噪声数据列表，前提是要有噪声数据集。
+```python
+if __name__ == '__main__':
+    # 改变音频的帧率为16000Hz
+    # change_audio_rate(args.annotation_path)
+    # 生成噪声的数据列表
+    # create_noise()
+    # 生成训练数据列表
+    main()
+```
+
 
 ## 训练模型
 

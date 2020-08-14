@@ -144,6 +144,9 @@ def main():
 
 
 if __name__ == '__main__':
+    # 改变音频的帧率为16000Hz
     # change_audio_rate(args.annotation_path)
-    main()
+    # 生成噪声的数据列表
     # create_noise()
+    # 生成训练数据列表
+    main()
