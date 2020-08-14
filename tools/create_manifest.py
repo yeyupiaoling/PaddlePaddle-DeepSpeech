@@ -6,6 +6,8 @@ from __future__ import print_function
 import os
 import codecs
 import functools
+import wave
+
 import soundfile
 import json
 import argparse
@@ -88,6 +90,29 @@ def is_uchar(uchar):
     return False
 
 
+# 改变音频的帧率为16000Hz
+def change_audio_rate(annotation_path):
+    for annotation_text in os.listdir(annotation_path):
+        print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
+        annotation_text = os.path.join(annotation_path, annotation_text)
+        with codecs.open(annotation_text, 'r', 'utf-8') as f:
+            lines = f.readlines()
+        for line in lines:
+            audio_path = line.split('\t')[0]
+            sndfile = soundfile.SoundFile(audio_path)
+            samplerate = sndfile.samplerate
+            if samplerate != 16000:
+                f = wave.open(audio_path, "rb")
+                str_data = f.readframes(f.getnframes())
+                f.close()
+                file = wave.open(audio_path, 'wb')
+                file.setnchannels(1)
+                file.setsampwidth(4)
+                file.setframerate(16000)
+                file.writeframes(str_data)
+                file.close()
+
+
 # 生成噪声的数据列表
 def create_noise(path='dataset/audio/noise'):
     json_lines = []
@@ -119,5 +144,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # change_audio_rate(args.annotation_path)
     main()
-    create_noise()
+    # create_noise()
