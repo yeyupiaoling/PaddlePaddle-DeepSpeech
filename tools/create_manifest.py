@@ -56,10 +56,8 @@ def create_manifest(annotation_path, manifest_path_prefix):
     f_test = codecs.open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', 'utf-8')
     for i, line in enumerate(json_lines):
         if i % 500 == 0:
-            if i % 2 == 0:
-                f_dev.write(line + '\n')
-            else:
-                f_test.write(line + '\n')
+            f_dev.write(line + '\n')
+            f_test.write(line + '\n')
         else:
             f_train.write(line + '\n')
     f_train.close()
