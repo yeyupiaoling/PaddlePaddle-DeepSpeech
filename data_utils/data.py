@@ -178,6 +178,7 @@ class DataGenerator(object):
             # sort (by duration) or batch-wise shuffle the manifest
             if self._epoch == 0 and sortagrad:
                 manifest.sort(key=lambda x: x["duration"])
+                manifest.reverse()
             else:
                 if shuffle_method == "batch_shuffle":
                     manifest = self._batch_shuffle(manifest, batch_size, clipped=False)
