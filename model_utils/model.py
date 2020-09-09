@@ -283,7 +283,6 @@ class DeepSpeech2Model(object):
 
         build_strategy = compiler.BuildStrategy()
         exec_strategy = fluid.ExecutionStrategy()
-        exec_strategy.num_threads = 4
 
         # pass the build_strategy to with_data_parallel API
         train_compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
