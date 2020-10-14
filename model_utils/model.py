@@ -263,8 +263,8 @@ class DeepSpeech2Model(object):
                         decay_steps=num_samples / batch_size / dev_count,
                         decay_rate=0.83,
                         staircase=True),
-                    grad_clip=fluid.clip.GradientClipByGlobalNorm(
-                        clip_norm=gradient_clipping))
+                    regularization=fluid.regularizer.L2Decay(0.01),
+                    grad_clip=fluid.clip.GradientClipByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
         test_prog = fluid.Program()
