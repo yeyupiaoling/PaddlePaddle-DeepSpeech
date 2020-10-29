@@ -184,4 +184,4 @@ python deploy/client.py
 | 模型 | 下载地址 |
 | :---: | :---: |
 | 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
-| 自训练超大数据集的模型 | [点击下载](https://share.weiyun.com/kSgNTKeH) |
+| 自训练超大数据集的模型 | [点击下载](https://share.weiyun.com/augQttoq) |
