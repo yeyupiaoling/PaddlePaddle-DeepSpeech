@@ -159,12 +159,12 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
  - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。最后输出的`alpha`，`beta`这两个参数的值需要在之后的推理中使用这个参数值，以获得最好的识别准确率。
 ```shell script
-PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0,1 python tools/tune.py
+PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0 python tools/tune.py
 ```
 
  - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。
 ```shell script
-CUDA_VISIBLE_DEVICES=0,1 python eval.py
+CUDA_VISIBLE_DEVICES=0 python eval.py
 ```
 
 
@@ -172,7 +172,7 @@ CUDA_VISIBLE_DEVICES=0,1 python eval.py
 
  - 启动语音识别服务，使用Socket通讯。需要注意的是`host_ip`参数是电脑本机的IP地址，其他使用默认就可以。
 ```shell script
-CUDA_VISIBLE_DEVICES=0,1 python deploy/server.py
+CUDA_VISIBLE_DEVICES=0 python deploy/server.py
 ```
 
  - 测试服务，执行下面这个程序调用语音识别服务。在控制台中，按下`空格键`，按住并开始讲话。讲话完毕请释放该键以让控制台中显示语音的文本结果。要退出客户端，只需按`ESC键`。

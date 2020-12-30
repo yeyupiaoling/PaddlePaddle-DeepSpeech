@@ -40,7 +40,7 @@ add_arg('tune_manifest',     str,  './dataset/manifest.dev',   "Filepath of mani
 add_arg('mean_std_path',     str,  './dataset/mean_std.npz',   "Filepath of normalizer's mean & std.")
 add_arg('vocab_path',        str,  './dataset/zh_vocab.txt',   "Filepath of vocabulary.")
 add_arg('lang_model_path',   str,  './lm/zh_giga.no_cna_cmn.prune01244.klm', "Filepath for language model.")
-add_arg('model_path',        str,  './models/srep_final',
+add_arg('model_path',        str,  './models/step_final',
         "If None, the training starts from scratch, otherwise, it resumes from the pre-trained model.")
 add_arg('error_rate_type',   str,  'cer',    "Error rate type for evaluation.", choices=['wer', 'cer'])
 add_arg('specgram_type',     str,  'linear', "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
