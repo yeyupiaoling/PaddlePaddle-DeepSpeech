@@ -3,8 +3,8 @@
 本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目修改的，方便训练中文自定义数据集。
 
 本项目使用的环境：
- - Python >= 3.5
- - PaddlePaddle 1.8
+ - Python 3.7
+ - PaddlePaddle 1.8.5
 
 ## 目录
 
@@ -87,7 +87,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.5-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
- - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。
+ - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。还有将`scipy==1.5.4 resampy==0.2.2`的版本改为`scipy==1.2.1 resampy==0.1.5`。
 ```shell script
 cd DeepSpeech/
 sh setup.sh

@@ -13,16 +13,16 @@ if [ $? != 0 ]; then
     echo "Install dependencies failed !!!"
     exit 1
 fi
-echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig"
+echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig..."
 
 
 # install python dependencies
-pip3 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features flask flask-cors paddlepaddle-gpu==1.8.5.post107 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 install scipy==1.5.4 resampy==0.2.2 SoundFile==0.9.0.post1 python_speech_features==0.6 flask flask-cors paddlepaddle-gpu==1.8.5.post107 -i https://mirrors.aliyun.com/pypi/simple/
 if [ $? != 0 ]; then
     echo "Install python dependencies failed !!!"
     exit 1
 fi
-echo "Success install scipy resampy SoundFile python_speech_features"
+echo "Success install scipy resampy SoundFile python_speech_features..."
 
 
 # install package libsndfile
