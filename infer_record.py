@@ -2,8 +2,6 @@ import argparse
 import functools
 import time
 import wave
-
-import numpy as np
 import paddle.fluid as fluid
 import pyaudio
 

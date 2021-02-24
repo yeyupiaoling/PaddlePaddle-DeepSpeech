@@ -1,8 +1,6 @@
 import argparse
 import functools
 import time
-
-import numpy as np
 import paddle.fluid as fluid
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model

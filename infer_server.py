@@ -2,8 +2,6 @@ import argparse
 import functools
 import os
 import time
-
-import numpy as np
 import paddle.fluid as fluid
 from flask import request, Flask, render_template
 from flask_cors import CORS

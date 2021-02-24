@@ -10,7 +10,6 @@ import SocketServer
 import struct
 import wave
 import paddle.fluid as fluid
-import numpy as np
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
 from data_utils.utility import read_manifest
