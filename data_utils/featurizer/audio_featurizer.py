@@ -1,10 +1,6 @@
 """Contains the audio featurizer class."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import numpy as np
-from data_utils.utility import read_manifest
 from data_utils.audio import AudioSegment
 from python_speech_features import mfcc
 from python_speech_features import delta

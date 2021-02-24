@@ -1,9 +1,5 @@
 """Contains the text featurizer class."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import os
 import codecs
 
 
@@ -16,7 +12,7 @@ class TextFeaturizer(object):
 
     :param vocab_filepath: Filepath to load vocabulary for token indices
                            conversion.
-    :type specgram_type: basestring
+    :type specgram_type: str
     """
 
     def __init__(self, vocab_filepath):
@@ -28,7 +24,7 @@ class TextFeaturizer(object):
         that the token indexing order follows the given vocabulary file.
 
         :param text: Text to process.
-        :type text: basestring
+        :type text: str
         :return: List of char-level token indices.
         :rtype: list
         """

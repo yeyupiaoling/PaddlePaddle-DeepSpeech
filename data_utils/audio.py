@@ -1,18 +1,15 @@
 """Contains the audio segment class."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import numpy as np
-import io
-import struct
-import re
-import soundfile
-import resampy
-from scipy import signal
-import random
 import copy
 import io
+import random
+import re
+import struct
+
+import numpy as np
+import resampy
+import soundfile
+from scipy import signal
 
 
 class AudioSegment(object):
@@ -62,15 +59,11 @@ class AudioSegment(object):
         """Create audio segment from audio file.
         
         :param filepath: Filepath or file object to audio file.
-        :type filepath: basestring|file
+        :type filepath: str|file
         :return: Audio segment instance.
         :rtype: AudioSegment
         """
-        try:
-            is_str = isinstance(file, basestring)
-        except:
-            is_str = isinstance(file, str)
-        if is_str and re.findall(r".seqbin_\d+$", file):
+        if isinstance(file, str) and re.findall(r".seqbin_\d+$", file):
             return cls.from_sequence_file(file)
         else:
             samples, sample_rate = soundfile.read(file, dtype='float32')
@@ -82,7 +75,7 @@ class AudioSegment(object):
         the entire file into the memory which can be incredibly wasteful.
 
         :param file: Input audio filepath or file object.
-        :type file: basestring|file
+        :type file: str|file
         :param start: Start time in seconds. If start is negative, it wraps
                       around from the end. If not provided, this function 
                       reads from the very beginning.
@@ -101,7 +94,7 @@ class AudioSegment(object):
         sample_rate = sndfile.samplerate
         duration = float(len(sndfile)) / sample_rate
         start = 0. if start is None else start
-        end = 0. if end is None else end
+        end = duration if end is None else end
         if start < 0.0:
             start += duration
         if end < 0.0:
@@ -147,7 +140,7 @@ class AudioSegment(object):
         sequence file (starting from 1).
 
         :param filepath: Filepath of sequence file.
-        :type filepath: basestring
+        :type filepath: str
         :return: Audio segment instance.
         :rtype: AudioSegment
         """
@@ -240,7 +233,7 @@ class AudioSegment(object):
         
         :param filepath: WAV filepath or file object to save the
                          audio segment.
-        :type filepath: basestring|file
+        :type filepath: str|file
         :param dtype: Subtype for audio file. Options: 'int16', 'int32',
                       'float32', 'float64'. Default is 'float32'.
         :type dtype: str
@@ -373,9 +366,9 @@ class AudioSegment(object):
         # Estimate total RMS online.
         startup_sample_idx = min(self.num_samples - 1,
                                  int(self.sample_rate * startup_delay))
-        prior_mean_squared = 10.**(prior_db / 10.)
+        prior_mean_squared = 10. ** (prior_db / 10.)
         prior_sum_of_squares = prior_mean_squared * prior_samples
-        cumsum_of_squares = np.cumsum(self.samples**2)
+        cumsum_of_squares = np.cumsum(self.samples ** 2)
         sample_count = np.arange(self.num_samples) + 1
         if startup_sample_idx > 0:
             cumsum_of_squares[:startup_sample_idx] = \
@@ -583,7 +576,7 @@ class AudioSegment(object):
         """
         rng = random.Random() if rng is None else rng
         if allow_downsampling and noise.sample_rate > self.sample_rate:
-            noise.resample(self.sample_rate)
+            noise = noise.resample(self.sample_rate)
         if noise.sample_rate != self.sample_rate:
             raise ValueError("Noise sample rate (%d Hz) is not equal to base "
                              "signal sample rate (%d Hz)." % (noise.sample_rate,
@@ -642,7 +635,7 @@ class AudioSegment(object):
         :rtype: float
         """
         # square root => multiply by 10 instead of 20 for dBs
-        mean_square = np.mean(self._samples**2)
+        mean_square = np.mean(self._samples ** 2)
         return 10 * np.log10(mean_square)
 
     def _convert_samples_to_float32(self, samples):
@@ -654,7 +647,7 @@ class AudioSegment(object):
         float32_samples = samples.astype('float32')
         if samples.dtype in np.sctypes['int']:
             bits = np.iinfo(samples.dtype).bits
-            float32_samples *= (1. / 2**(bits - 1))
+            float32_samples *= (1. / 2 ** (bits - 1))
         elif samples.dtype in np.sctypes['float']:
             pass
         else:
@@ -663,7 +656,7 @@ class AudioSegment(object):
 
     def _convert_samples_from_float32(self, samples, dtype):
         """Convert sample type from float32 to dtype.
-        
+
         Audio sample type is usually integer or float-point. For integer
         type, float32 will be rescaled from [-1, 1] to the maximum range
         supported by the integer type.
@@ -674,7 +667,7 @@ class AudioSegment(object):
         output_samples = samples.copy()
         if dtype in np.sctypes['int']:
             bits = np.iinfo(dtype).bits
-            output_samples *= (2**(bits - 1) / 1.)
+            output_samples *= (2 ** (bits - 1) / 1.)
             min_val = np.iinfo(dtype).min
             max_val = np.iinfo(dtype).max
             output_samples[output_samples > max_val] = max_val

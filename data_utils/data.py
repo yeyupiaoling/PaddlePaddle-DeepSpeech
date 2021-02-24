@@ -1,13 +1,9 @@
 """Contains data generator for orgnaizing various audio data preprocessing
 pipeline and offering data reader interface of PaddlePaddle requirements.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import random
 import tarfile
-import multiprocessing
 import numpy as np
 import paddle.fluid as fluid
 from threading import local
@@ -25,9 +21,9 @@ class DataGenerator(object):
 
     :param vocab_filepath: Vocabulary filepath for indexing tokenized
                            transcripts.
-    :type vocab_filepath: basestring
+    :type vocab_filepath: str
     :param mean_std_filepath: File containing the pre-computed mean and stddev.
-    :type mean_std_filepath: None|basestring
+    :type mean_std_filepath: None|str
     :param augmentation_config: Augmentation configuration in json string.
                                 Details see AugmentationPipeline.__doc__.
     :type augmentation_config: str
@@ -58,9 +54,9 @@ class DataGenerator(object):
     :type keep_transcription_text: bool
     :param place: The place to run the program.
     :type place: CPUPlace or CUDAPlace
-    :param is_training: If set to True, generate text data for training, 
+    :param is_training: If set to True, generate text data for training,
                         otherwise,  generate text data for infer.
-    :type is_training: bool 
+    :type is_training: bool
     """
 
     def __init__(self,
@@ -103,18 +99,14 @@ class DataGenerator(object):
         """Load, augment, featurize and normalize for speech data.
 
         :param audio_file: Filepath or file object of audio file.
-        :type audio_file: basestring | file
+        :type audio_file: str | file
         :param transcript: Transcription text.
-        :type transcript: basestring
+        :type transcript: str
         :return: Tuple of audio feature tensor and data of transcription part,
                  where transcription part could be token ids or text.
         :rtype: tuple of (2darray, list)
         """
-        try:
-            is_str = isinstance(audio_file, basestring)
-        except:
-            is_str = isinstance(audio_file, str)
-        if is_str and audio_file.startswith('tar:'):
+        if isinstance(audio_file, str) and audio_file.startswith('tar:'):
             speech_segment = SpeechSegment.from_file(self._subfile_from_tar(audio_file), transcript)
         else:
             speech_segment = SpeechSegment.from_file(audio_file, transcript)
@@ -138,7 +130,7 @@ class DataGenerator(object):
         same shape, or a user-defined shape.
 
         :param manifest_path: Filepath of manifest for audio files.
-        :type manifest_path: basestring
+        :type manifest_path: str
         :param batch_size: Number of instances in a batch.
         :type batch_size: int
         :param padding_to:  If set -1, the maximun shape in the batch
@@ -273,8 +265,8 @@ class DataGenerator(object):
         def reader():
             for instance in manifest:
                 inst = self.process_utterance(instance["audio_filepath"],
-                                              instance["text"]),
-                yield inst[0]
+                                              instance["text"])
+                yield inst
 
         return reader
 
@@ -354,10 +346,10 @@ class DataGenerator(object):
         """
         manifest.sort(key=lambda x: x["duration"])
         shift_len = self._rng.randint(0, batch_size - 1)
-        batch_manifest = zip(*[iter(manifest[shift_len:])] * batch_size)
+        batch_manifest = list(zip(*[iter(manifest[shift_len:])] * batch_size))
         self._rng.shuffle(batch_manifest)
         batch_manifest = [item for batch in batch_manifest for item in batch]
-        if clipped:
+        if not clipped:
             res_len = len(manifest) - shift_len - len(batch_manifest)
             batch_manifest.extend(manifest[-res_len:])
             batch_manifest.extend(manifest[0:shift_len])

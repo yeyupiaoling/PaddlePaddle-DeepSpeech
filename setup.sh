@@ -11,7 +11,7 @@ echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost
 
 
 # install python dependencies
-pip2 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features -i https://mirrors.aliyun.com/pypi/simple/
+pip3 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features -i https://mirrors.aliyun.com/pypi/simple/
 if [ $? != 0 ]; then
     echo "Install python dependencies failed !!!"
     exit 1
@@ -20,7 +20,7 @@ echo "Success install scipy resampy SoundFile python_speech_features"
 
 
 # install package libsndfile
-python -c "import soundfile"
+python3 -c "import soundfile"
 if [ $? != 0 ]; then
     echo "Install package libsndfile into default system path."
     wget "http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.28.tar.gz"
@@ -60,7 +60,7 @@ fi
 
 
 echo "Install decoders ..."
-python setup.py install --num_processes 4
+python3 setup.py install --num_processes 4
 
 echo "Install all dependencies successfully."
 

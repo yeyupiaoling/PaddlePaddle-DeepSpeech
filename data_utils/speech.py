@@ -1,8 +1,6 @@
 """Contains the speech segment class."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
+import numpy as np
 from data_utils.audio import AudioSegment
 
 
@@ -15,7 +13,7 @@ class SpeechSegment(AudioSegment):
     :param sample_rate: Audio sample rate.
     :type sample_rate: int
     :param transcript: Transcript text for the speech.
-    :type transript: basestring
+    :type transript: str
     :raises TypeError: If the sample data type is not float or int.
     """
 
@@ -39,11 +37,11 @@ class SpeechSegment(AudioSegment):
     @classmethod
     def from_file(cls, filepath, transcript):
         """Create speech segment from audio file and corresponding transcript.
-        
+
         :param filepath: Filepath or file object to audio file.
-        :type filepath: basestring|file
+        :type filepath: str|file
         :param transcript: Transcript text for the speech.
-        :type transript: basestring
+        :type transript: str
         :return: Speech segment instance.
         :rtype: SpeechSegment
         """
@@ -54,11 +52,11 @@ class SpeechSegment(AudioSegment):
     def from_bytes(cls, bytes, transcript):
         """Create speech segment from a byte string and corresponding
         transcript.
-        
+
         :param bytes: Byte string containing audio samples.
         :type bytes: str
         :param transcript: Transcript text for the speech.
-        :type transript: basestring
+        :type transript: str
         :return: Speech segment instance.
         :rtype: Speech Segment
         """
@@ -74,7 +72,7 @@ class SpeechSegment(AudioSegment):
         :type *segments: tuple of SpeechSegment
         :return: Speech segment instance.
         :rtype: SpeechSegment
-        :raises ValueError: If the number of segments is zero, or if the 
+        :raises ValueError: If the number of segments is zero, or if the
                             sample_rate of any two segments does not match.
         :raises TypeError: If any segment is not SpeechSegment instance.
         """
@@ -99,18 +97,18 @@ class SpeechSegment(AudioSegment):
         the entire file into the memory which can be incredibly wasteful.
 
         :param filepath: Filepath or file object to audio file.
-        :type filepath: basestring|file
+        :type filepath: str|file
         :param start: Start time in seconds. If start is negative, it wraps
-                      around from the end. If not provided, this function 
+                      around from the end. If not provided, this function
                       reads from the very beginning.
         :type start: float
         :param end: End time in seconds. If end is negative, it wraps around
                     from the end. If not provided, the default behvaior is
                     to read to the end of the file.
         :type end: float
-        :param transcript: Transcript text for the speech. if not provided, 
+        :param transcript: Transcript text for the speech. if not provided,
                            the defaults is an empty string.
-        :type transript: basestring
+        :type transript: str
         :return: SpeechSegment instance of the specified slice of the input
                  speech file.
         :rtype: SpeechSegment
@@ -138,6 +136,6 @@ class SpeechSegment(AudioSegment):
         """Return the transcript text.
 
         :return: Transcript text for the speech.
-        :rtype: basestring
+        :rtype: str
         """
         return self._transcript
