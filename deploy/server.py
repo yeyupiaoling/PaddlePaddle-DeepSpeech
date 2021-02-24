@@ -135,34 +135,20 @@ def start_server():
                                  use_gru=args.use_gru,
                                  init_from_pretrained_model=args.model_path,
                                  place=place,
-                                 share_rnn_weights=args.share_rnn_weights)
-
-    vocab_list = [chars.encode("utf-8") for chars in data_generator.vocab_list]
+                                 share_rnn_weights=args.share_rnn_weights,
+                                 is_infer=True)
 
     if args.decoding_method == "ctc_beam_search":
-        ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path,
-                                  vocab_list)
+        ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
 
     # prepare ASR inference handler
     def file_to_transcript(filename):
         feature = data_generator.process_utterance(filename, "")
-        audio_len = feature[0].shape[1]
-        mask_shape0 = (feature[0].shape[0] - 1) // 2 + 1
-        mask_shape1 = (feature[0].shape[1] - 1) // 3 + 1
-        mask_max_len = (audio_len - 1) // 3 + 1
-        mask_ones = np.ones((mask_shape0, mask_shape1))
-        mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
-        mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
-                                    (1, mask_shape0, mask_max_len)), 32, axis=0)
-        feature = [np.array([feature[0]]).astype('float32'),
-                   None,
-                   np.array([audio_len]).astype('int64').reshape([-1, 1]),
-                   np.array([mask]).astype('float32')]
-        probs_split = ds2_model.infer_batch_probs(infer_data=feature)
+        probs_split = ds2_model.infer(feature=feature)
 
         if args.decoding_method == "ctc_greedy":
             result_transcript = ds2_model.decode_batch_greedy(probs_split=probs_split,
-                                                              vocab_list=vocab_list)
+                                                              vocab_list=data_generator.vocab_list)
         else:
             result_transcript = ds2_model.decode_batch_beam_search(probs_split=probs_split,
                                                                    beam_alpha=args.alpha,
@@ -170,7 +156,7 @@ def start_server():
                                                                    beam_size=args.beam_size,
                                                                    cutoff_prob=args.cutoff_prob,
                                                                    cutoff_top_n=args.cutoff_top_n,
-                                                                   vocab_list=vocab_list,
+                                                                   vocab_list=data_generator.vocab_list,
                                                                    num_processes=1)
         return result_transcript[0]
 

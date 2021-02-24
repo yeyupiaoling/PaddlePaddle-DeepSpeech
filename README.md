@@ -1,6 +1,6 @@
 # 语音识别
 
-本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech)项目修改的，方便训练中文自定义数据集。
+本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目修改的，方便训练中文自定义数据集。
 
 本项目使用的环境：
  - Python >= 3.5
@@ -54,13 +54,27 @@ sudo docker run hello-world
 
  - 安装nvidia-docker
 ```shell script
-wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
-sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
+# 设置stable存储库和GPG密钥
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+   && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \
+   && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+# 更新软件包清单后
+sudo apt-get update
+
+# 安装软件包
+sudo apt-get install -y nvidia-docker2
+
+# 设置默认运行时后，重新启动Docker守护程序以完成安装：
+sudo systemctl restart docker
+
+# 测试
+sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 ```
 
- - 拉取PaddlePaddle语音识别镜像，因为这个项目需要在PaddlePaddle 1.8版本以上才可以运行。
+ - 拉取PaddlePaddle 1.8.5镜像，因为这个项目需要在PaddlePaddle 1.8版本才可以运行。
 ```shell script
-sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu
+sudo nvidia-docker pull hub.baidubce.com/paddlepaddle/paddle:1.8.5-gpu-cuda10.0-cudnn7
 ```
 
 - git clone 本项目源码
@@ -70,7 +84,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 
 - 运行PaddlePaddle语音识别镜像，这里设置与主机共同拥有IP和端口号。
 ```shell script
-sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/deep_speech_fluid:latest-gpu /bin/bash
+sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.5-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
  - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。
@@ -81,9 +95,10 @@ sh setup.sh
 
 ### 搭建本地环境
 
- - 并不建议使用本地进行训练和预测，但是如何开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先需要正确安装 PaddlePaddle 1.8的GPU版本，并安装相关的CUDA和CUDNN。
+ - 并不建议使用本地进行训练和预测，但是如果开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
 ```shell script
-pip3 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/simple/
+cd DeepSpeech/
+sudo sh setup.sh
 ```
 
 - git clone 本项目源码
@@ -91,15 +106,9 @@ pip3 install paddlepaddle-gpu==1.8.0.post107 -i https://mirrors.aliyun.com/pypi/
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
- - 切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。
-```shell script
-cd DeepSpeech/
-sudo sh setup.sh
-```
-
 ## 数据准备
 
-1. 在`data`目录下是公开数据集的下载和制作训练数据列表和字典的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如何想快速训练，也可以只下载其中一个。
+1. 在`data`目录下是公开数据集的下载和制作训练数据列表和字典的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如果想快速训练，也可以只下载其中一个。
 ```shell script
 cd data/
 python3 aishell.py
@@ -141,7 +150,7 @@ if __name__ == '__main__':
 
 ## 训练模型
 
- - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下。
+ - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下，默认会使用噪声音频一起训练的，如果没有这些音频，可以删除`conf/augmentation.config`中的`noise`项。
 ```shell script
 CUDA_VISIBLE_DEVICES=0,1 python3 train.py
 ```
@@ -167,6 +176,21 @@ PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0 python3 tools/tune.py
 CUDA_VISIBLE_DEVICES=0 python3 eval.py
 ```
 
+ - 我们可以使用这个脚本使用模型进行预测，通过传递音频文件的路径进行识别。
+```shell script
+CUDA_VISIBLE_DEVICES=0 python3 infer_path.py --wav_path=./dataset/test.wav
+```
+
+ - 我们可以使用这个脚本使用模型进行预测，通过本地录音然后进行识别。
+```shell script
+CUDA_VISIBLE_DEVICES=0 python3 infer_record.py
+```
+
+ - 我们可以使用这个脚本使用模型进行预测，通过创建一个Web服务，通过提供HTTP接口来实现语音识别，同时还提供了一个页面来测试，可以选择本地音频文件，或者是在线录音。
+```shell script
+CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --host=localhost --port=5000
+```
+
 
 ## 项目部署
 
@@ -184,4 +208,4 @@ python3 deploy/client.py
 | 模型 | 下载地址 |
 | :---: | :---: |
 | 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
-| 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://download.csdn.net/download/qq_33200967/14028498) |
+| 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://resource.doiduoyi.com/#c3cm472) |

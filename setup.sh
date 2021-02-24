@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
 
+sudo apt-get update
+if [ $? != 0 ]; then
+    echo "Update failed !!!"
+    exit 1
+fi
+
 # install dependencies
-sudo apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig libsndfile1 git vim
+sudo apt-get install -y pkg-config libflac-dev libogg-dev libvorbis-dev libboost-dev swig libsndfile1 git vim gcc
 if [ $? != 0 ]; then
     echo "Install dependencies failed !!!"
     exit 1
@@ -11,7 +17,7 @@ echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost
 
 
 # install python dependencies
-pip3 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features -i https://mirrors.aliyun.com/pypi/simple/
+pip3 install scipy==1.2.1 resampy==0.1.5 SoundFile==0.9.0.post1 python_speech_features flask flask-cors paddlepaddle-gpu==1.8.5.post107 -i https://mirrors.aliyun.com/pypi/simple/
 if [ $? != 0 ]; then
     echo "Install python dependencies failed !!!"
     exit 1

@@ -9,7 +9,6 @@ from utils.utility import add_arguments, print_arguments
 import paddle.fluid as fluid
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-# yapf: disable
 add_arg('batch_size',      int,   16, "Minibatch size.")
 add_arg('num_epoch',       int,   200, "# of training epochs.")
 add_arg('num_conv_layers', int,   2, "# of convolution layers.")
@@ -36,7 +35,6 @@ add_arg('output_model_dir',             str,  "./models",       "Directory for s
 add_arg('augment_conf_path',            str,  './conf/augmentation.config',    "Filepath of augmentation configuration file (json-format).")
 add_arg('specgram_type',                str,  'linear',    "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
 add_arg('shuffle_method',               str,  'batch_shuffle_clipped',    "Shuffle method.", choices=['instance_shuffle', 'batch_shuffle', 'batch_shuffle_clipped'])
-# yapf: disable
 args = parser.parse_args()
 
 

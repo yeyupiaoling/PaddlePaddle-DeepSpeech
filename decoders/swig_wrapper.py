@@ -33,7 +33,7 @@ def ctc_greedy_decoder(probs_seq, vocabulary):
     :rtype: str
     """
     result = swig_decoders.ctc_greedy_decoder(probs_seq.tolist(), vocabulary)
-    return result.decode('utf-8')
+    return result
 
 
 def ctc_beam_search_decoder(probs_seq,
@@ -70,7 +70,7 @@ def ctc_beam_search_decoder(probs_seq,
     beam_results = swig_decoders.ctc_beam_search_decoder(
         probs_seq.tolist(), vocabulary, beam_size, cutoff_prob, cutoff_top_n,
         ext_scoring_func)
-    beam_results = [(res[0], res[1].decode('utf-8')) for res in beam_results]
+    beam_results = [(res[0], res[1]) for res in beam_results]
     return beam_results
 
 

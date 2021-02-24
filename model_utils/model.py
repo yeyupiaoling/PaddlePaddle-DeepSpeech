@@ -52,7 +52,8 @@ class DeepSpeech2Model(object):
                  share_rnn_weights=True,
                  place=fluid.CPUPlace(),
                  init_from_pretrained_model=None,
-                 output_model_dir=None):
+                 output_model_dir=None,
+                 is_infer=False):
         self._vocab_size = vocab_size
         self._num_conv_layers = num_conv_layers
         self._num_rnn_layers = num_rnn_layers
@@ -65,6 +66,13 @@ class DeepSpeech2Model(object):
         self._ext_scorer = None
         self.logger = logging.getLogger("")
         self.logger.setLevel(level=logging.INFO)
+        # infer
+        self.infer_program = None
+        self.infer_feeder = None
+        self.infer_log_probs = None
+        self.infer_exe = None
+        if is_infer:
+            self.init_infer_program()
 
     def create_network(self, is_infer=False):
         """Create data layers and model network.
@@ -308,7 +316,8 @@ class DeepSpeech2Model(object):
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
                         print("Train [%s] epoch: [%d/%d], batch: [%d/%d], train loss: %f\n" %
-                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, np.mean(each_loss[0]) / batch_size))
+                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch,
+                               np.mean(each_loss[0]) / batch_size))
                     else:
                         _ = exe.run(program=train_compiled_prog,
                                     fetch_list=[],
@@ -340,6 +349,7 @@ class DeepSpeech2Model(object):
 
         print("\n------------Training finished!!!-------------")
 
+    # 预测一个batch的音频
     def infer_batch_probs(self, infer_data):
         """Infer the prob matrices for a batch of speech utterances.
         :param infer_data: List of utterances to infer, with each utterance
@@ -354,32 +364,14 @@ class DeepSpeech2Model(object):
         :rtype: List of matrix
         """
         # define inferer
-        infer_program = fluid.Program()
-        startup_prog = fluid.Program()
-
-        # prepare the network
-        with fluid.program_guard(infer_program, startup_prog):
-            with fluid.unique_name.guard():
-                feeder, log_probs, _ = self.create_network(is_infer=True)
-
-        infer_program = infer_program.clone(for_test=True)
-        exe = fluid.Executor(self._place)
-        exe.run(startup_prog)
-
-        # init param from pretrained_model
-        if not self._init_from_pretrained_model:
-            exit("No pretrain model file path!")
-        self.init_from_pretrained_model(exe, infer_program)
-
         infer_results = []
-
         # run inference
         for i in range(infer_data[0].shape[0]):
-            each_log_probs = exe.run(program=infer_program,
-                                     feed=feeder.feed(
-                                         [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
-                                     fetch_list=[log_probs],
-                                     return_numpy=False)
+            each_log_probs = self.infer_exe.run(program=self.infer_program,
+                                                feed=self.infer_feeder.feed(
+                                                    [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
+                                                fetch_list=[self.infer_log_probs],
+                                                return_numpy=False)
             infer_results.extend(np.array(each_log_probs[0]))
 
         # slice result
@@ -393,6 +385,68 @@ class DeepSpeech2Model(object):
             infer_results[start_pos[i]:start_pos[i + 1]]
             for i in range(0, infer_data[0].shape[0])
         ]
+
+        return probs_split
+
+    # 初始化预测程序，加预训练模型
+    def init_infer_program(self):
+        # define inferer
+        self.infer_program = fluid.Program()
+        startup_prog = fluid.Program()
+
+        # prepare the network
+        with fluid.program_guard(self.infer_program, startup_prog):
+            with fluid.unique_name.guard():
+                self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
+
+        self.infer_program = self.infer_program.clone(for_test=True)
+        self.infer_exe = fluid.Executor(self._place)
+        self.infer_exe.run(startup_prog)
+
+        # init param from pretrained_model
+        if not self._init_from_pretrained_model:
+            exit("No pretrain model file path!")
+        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+
+    # 单个音频预测
+    def infer(self, feature):
+        """Infer the prob matrices for a batch of speech utterances.
+        :param infer_data: List of utterances to infer, with each utterance
+                           consisting of a tuple of audio features and
+                           transcription text (empty string).
+        :type infer_data: list
+        :param feeding_dict: Feeding is a map of field name and tuple index
+                             of the data that reader returns.
+        :type feeding_dict: dict|list
+        :return: List of 2-D probability matrix, and each consists of prob
+                 vectors for one speech utterancce.
+        :rtype: List of matrix
+        """
+        audio_len = feature[0].shape[1]
+        mask_shape0 = (feature[0].shape[0] - 1) // 2 + 1
+        mask_shape1 = (feature[0].shape[1] - 1) // 3 + 1
+        mask_max_len = (audio_len - 1) // 3 + 1
+        mask_ones = np.ones((mask_shape0, mask_shape1))
+        mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
+        mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
+                                    (1, mask_shape0, mask_max_len)), 32, axis=0)
+        infer_data = [np.array(feature[0]).astype('float32'),
+                      None,
+                      np.array(audio_len).astype('int64'),
+                      np.array(mask).astype('float32')]
+        # run inference
+        each_log_probs = self.infer_exe.run(program=self.infer_program,
+                                            feed=self.infer_feeder.feed(
+                                                [[infer_data[0], infer_data[2], infer_data[3]]]),
+                                            fetch_list=[self.infer_log_probs],
+                                            return_numpy=False)
+        infer_result = np.array(each_log_probs[0])
+
+        # slice result
+        seq_len = (infer_data[2] - 1) // 3 + 1
+        start_pos = [0, 0]
+        start_pos[1] = start_pos[0] + seq_len
+        probs_split = [infer_result[start_pos[0]:start_pos[1]]]
 
         return probs_split
 
@@ -413,8 +467,7 @@ class DeepSpeech2Model(object):
             results.append(output_transcription)
         return results
 
-    def init_ext_scorer(self, beam_alpha, beam_beta, language_model_path,
-                        vocab_list):
+    def init_ext_scorer(self, beam_alpha, beam_beta, language_model_path, vocab_list):
         """Initialize the external scorer.
         :param beam_alpha: Parameter associated with language model.
         :type beam_alpha: float
@@ -429,10 +482,8 @@ class DeepSpeech2Model(object):
         :type vocab_list: list
         """
         if language_model_path != '':
-            self.logger.info("begin to initialize the external scorer "
-                             "for decoding")
-            self._ext_scorer = Scorer(beam_alpha, beam_beta,
-                                      language_model_path, vocab_list)
+            self.logger.info("begin to initialize the external scorer for decoding")
+            self._ext_scorer = Scorer(beam_alpha, beam_beta, language_model_path, vocab_list)
             lm_char_based = self._ext_scorer.is_character_based()
             lm_max_order = self._ext_scorer.get_max_order()
             lm_dict_size = self._ext_scorer.get_dict_size()
@@ -443,8 +494,7 @@ class DeepSpeech2Model(object):
             self.logger.info("end initializing scorer")
         else:
             self._ext_scorer = None
-            self.logger.info("no language model provided, "
-                             "decoding by pure beam search without scorer.")
+            self.logger.info("no language model provided, decoding by pure beam search without scorer.")
 
     def decode_batch_beam_search(self, probs_split, beam_alpha, beam_beta,
                                  beam_size, cutoff_prob, cutoff_top_n,

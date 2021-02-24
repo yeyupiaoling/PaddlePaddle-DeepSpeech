@@ -76,10 +76,9 @@ def tune():
                                  use_gru=args.use_gru,
                                  place=place,
                                  init_from_pretrained_model=args.model_path,
-                                 share_rnn_weights=args.share_rnn_weights)
+                                 share_rnn_weights=args.share_rnn_weights,
+                                 is_infer=True)
 
-    # decoders only accept string encoded in utf-8
-    vocab_list = [chars for chars in data_generator.vocab_list]
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     # create grid for search
     cand_alphas = np.linspace(args.alpha_from, args.alpha_to, args.num_alphas)
@@ -90,7 +89,7 @@ def tune():
     err_ave = [0.0 for i in range(len(params_grid))]
     num_ins, len_refs, cur_batch = 0, 0, 0
     # initialize external scorer
-    ds2_model.init_ext_scorer(args.alpha_from, args.beta_from, args.lang_model_path, vocab_list)
+    ds2_model.init_ext_scorer(args.alpha_from, args.beta_from, args.lang_model_path, data_generator.vocab_list)
     # incremental tuning parameters over multiple batches
     ds2_model.logger.info("start tuning ...")
     for infer_data in batch_reader():
@@ -108,7 +107,7 @@ def tune():
                                                                     beam_size=args.beam_size,
                                                                     cutoff_prob=args.cutoff_prob,
                                                                     cutoff_top_n=args.cutoff_top_n,
-                                                                    vocab_list=vocab_list,
+                                                                    vocab_list=data_generator.vocab_list,
                                                                     num_processes=args.num_proc_bsearch)
             for target, result in zip(target_transcripts, result_transcripts):
                 errors, len_ref = errors_func(target, result)
