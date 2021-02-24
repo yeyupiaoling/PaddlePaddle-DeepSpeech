@@ -184,4 +184,4 @@ python3 deploy/client.py
 | 模型 | 下载地址 |
 | :---: | :---: |
 | 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
-| 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://resource.doiduoyi.com/#c3cm472) |
+| 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://download.csdn.net/download/qq_33200967/14028498) |
