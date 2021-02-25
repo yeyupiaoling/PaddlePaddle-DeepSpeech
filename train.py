@@ -1,6 +1,7 @@
 import argparse
 import functools
 import io
+from datetime import datetime
 from model_utils.model import DeepSpeech2Model
 from model_utils.model_check import check_cuda, check_version
 from data_utils.data import DataGenerator
@@ -82,6 +83,7 @@ def train():
                                  output_model_dir=args.output_model_dir)
     # 获取训练数据数量
     num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
+    print("[%s] 训练数据数量：%d\n" % (datetime.now(), num_samples))
     ds2_model.train(train_batch_reader=train_batch_reader,
                     dev_batch_reader=dev_batch_reader,
                     learning_rate=args.learning_rate,
