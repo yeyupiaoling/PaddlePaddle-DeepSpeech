@@ -1,7 +1,6 @@
 # 语音识别
 
 本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。
-
 本项目使用的环境：
  - Python 3.7
  - PaddlePaddle 1.8.5
@@ -202,12 +201,14 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
 ## 评估和预测
 
- - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。最后输出的`alpha`，`beta`这两个参数的值需要在之后的推理中使用这个参数值，以获得最好的识别准确率。
+这里我也提示几点，在预测中可以提升性能的几个参数，预测包括评估，推理，部署等等一系列使用到模型预测音频的程序。解码方法，通过`decoding_method`选择不同的解码方法，支持`ctc_beam_search`定向搜索和`ctc_greedy`最优路径两种，其中`ctc_beam_search`定向搜索效果是最好的，但是速度就比较慢，这个可以通过`beam_size`参数设置定向搜索的宽度，以提高执行速度，范围[5, 500]，越大准确率就越高，同时执行速度就越慢。如果对准确率没有太严格的要求，可以考虑直接使用`ctc_greedy`最优路径方法，其实准确率也低不了多少。
+
+ - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。该程序主要是为了寻找`ctc_beam_search`定向搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。如果使用的是`ctc_greedy`最优路径，可以直接跳过这一步。
 ```shell script
 PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0 python3 tools/tune.py
 ```
 
- - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。
+ - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。通过这个程序的输出，开发者就可以考虑使用哪种解码方法，以及`ctc_beam_search`定向搜索方法中`beam_size`参数的大小。
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 eval.py
 ```

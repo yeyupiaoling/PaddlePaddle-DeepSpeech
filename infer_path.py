@@ -9,7 +9,7 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('wav_path',         str,    './dataset/test.wav', "Server's IP port.")
-add_arg('beam_size',        int,    500,    "Beam search width.")
+add_arg('beam_size',        int,    10,     "Beam search width. range:[5, 500]")
 add_arg('num_conv_layers',  int,    2,      "# of convolution layers.")
 add_arg('num_rnn_layers',   int,    3,      "# of recurrent layers.")
 add_arg('rnn_layer_size',   int,    2048,   "# of recurrent cells per layer.")

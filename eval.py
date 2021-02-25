@@ -3,6 +3,8 @@
 import argparse
 import functools
 import codecs
+import time
+
 import paddle.fluid as fluid
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
@@ -13,7 +15,7 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('batch_size',       int,    64,     "Minibatch size.")
-add_arg('beam_size',        int,    500,    "Beam search width.")
+add_arg('beam_size',        int,    10,     "Beam search width. range:[5, 500]")
 add_arg('num_proc_bsearch', int,    8,      "# of CPUs for beam search.")
 add_arg('num_conv_layers',  int,    2,      "# of convolution layers.")
 add_arg('num_rnn_layers',   int,    3,      "# of recurrent layers.")
@@ -80,8 +82,8 @@ def evaluate():
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     errors_sum, len_refs, num_ins = 0.0, 0, 0
     ds2_model.logger.info("start evaluation ...")
+    start = time.time()
     for infer_data in batch_reader():
-        print(infer_data[1])
         probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
         if args.decoding_method == "ctc_greedy":
@@ -103,8 +105,9 @@ def evaluate():
             errors_sum += errors
             len_refs += len_ref
             num_ins += 1
-        print("Error rate [%s] (%d/%d) = %f" % (args.error_rate_type, num_ins, test_len, errors_sum / len_refs))
-    print("Final error rate [%s] (%d/%d) = %f" % (args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
+        print("错误率：[%s] (%d/%d) = %f" % (args.error_rate_type, num_ins, test_len, errors_sum / len_refs))
+    end = time.time()
+    print("消耗时间：%dms, 总错误率：[%s] (%d/%d) = %f" % (round((end - start) * 1000), args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
 
     ds2_model.logger.info("finish evaluation")
 
