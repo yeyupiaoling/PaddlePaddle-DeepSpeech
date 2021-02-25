@@ -135,7 +135,7 @@ PYTHONPATH=.:$PYTHONPATH python3 tools/compute_mean_std.py
 PYTHONPATH=.:$PYTHONPATH python3 tools/build_vocab.py
 ```
 
-在生成数据列表的是要注意，该程序除了生成训练数据列表，还提供对音频帧率的转换和生成噪声数据列表，前提是要有噪声数据集。
+在生成数据列表的是要注意，该程序除了生成训练数据列表，还提供对音频帧率的转换和生成噪声数据列表，开发者有些自定义的数据集音频的采样率不是16000Hz的，所以提供了`change_audio_rate()`函数，帮助开发者把指定的数据集的音频采样率转换为16000Hz。提供的生成噪声数据列表`create_noise`函数，前提是要有噪声数据集，使用噪声数据在训练中实现数据增强。
 ```python
 if __name__ == '__main__':
     # 改变音频的帧率为16000Hz
