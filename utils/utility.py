@@ -1,6 +1,7 @@
 """Contains common utility functions."""
 
 import distutils.util
+from data_utils.utility import read_manifest
 
 
 def print_arguments(args):
@@ -42,3 +43,11 @@ def add_arguments(argname, type, default, help, argparser, **kwargs):
         type=type,
         help=help + ' Default: %(default)s.',
         **kwargs)
+
+
+# 获取训练数据长度
+def get_data_len(manifest_path, max_duration, min_duration):
+    manifest = read_manifest(manifest_path=manifest_path,
+                             max_duration=max_duration,
+                             min_duration=min_duration)
+    return len(manifest)

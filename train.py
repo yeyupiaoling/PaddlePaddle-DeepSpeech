@@ -4,7 +4,7 @@ import io
 from model_utils.model import DeepSpeech2Model
 from model_utils.model_check import check_cuda, check_version
 from data_utils.data import DataGenerator
-from utils.utility import add_arguments, print_arguments
+from utils.utility import add_arguments, print_arguments, get_data_len
 
 import paddle.fluid as fluid
 parser = argparse.ArgumentParser(description=__doc__)
@@ -16,7 +16,6 @@ add_arg('num_rnn_layers',  int,   3, "# of recurrent layers.")
 add_arg('rnn_layer_size',  int,   2048, "# of recurrent cells per layer.")
 add_arg('num_iter_print',  int,   100, "Every # batch for printing train cost.")
 add_arg('save_epoch',      int,   1, "# Every # batch for save checkpoint and modle params ")
-add_arg('num_samples',     int,   1100000, "The num of train samples.")
 add_arg('learning_rate',   float, 5e-5, "Learning rate.")
 add_arg('max_duration',    float, 15.0, "Longest audio duration allowed.")
 add_arg('min_duration',    float, 1.0, "Shortest audio duration allowed.")
@@ -81,13 +80,14 @@ def train():
                                  place=place,
                                  init_from_pretrained_model=args.init_from_pretrained_model,
                                  output_model_dir=args.output_model_dir)
-
+    # 获取训练数据数量
+    num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
     ds2_model.train(train_batch_reader=train_batch_reader,
                     dev_batch_reader=dev_batch_reader,
                     learning_rate=args.learning_rate,
                     gradient_clipping=400,
                     batch_size=args.batch_size,
-                    num_samples=args.num_samples,
+                    num_samples=num_samples,
                     num_epoch=args.num_epoch,
                     save_epoch=args.save_epoch,
                     num_iterations_print=args.num_iter_print,
