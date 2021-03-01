@@ -37,12 +37,13 @@ app = Flask(__name__, template_folder="templates", static_folder="static", stati
 # 允许跨越访问
 CORS(app)
 
-
+# 是否使用GPU
 if args.use_gpu:
     place = fluid.CUDAPlace(0)
 else:
     place = fluid.CPUPlace()
 
+# 获取数据生成器，处理数据和获取字典需要
 data_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                mean_std_filepath=args.mean_std_path,
                                augmentation_config='{}',
@@ -50,7 +51,7 @@ data_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                keep_transcription_text=True,
                                place=place,
                                is_training=False)
-# prepare ASR model
+# 获取DeepSpeech2模型，并设置为预测
 ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
                              num_conv_layers=args.num_conv_layers,
                              num_rnn_layers=args.num_rnn_layers,
@@ -61,18 +62,25 @@ ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
                              share_rnn_weights=args.share_rnn_weights,
                              is_infer=True)
 
+# 定向搜索方法的处理
 if args.decoding_method == "ctc_beam_search":
     ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
 
 
+# 开始预测
 def predict(filename):
+    # 加载音频文件，并进行预处理
     feature = data_generator.process_utterance(filename, "")
+    # 执行预测
     probs_split = ds2_model.infer(feature=feature)
 
+    # 执行解码
     if args.decoding_method == "ctc_greedy":
+        # 最优路径解码
         result_transcript = ds2_model.decode_batch_greedy(probs_split=probs_split,
                                                           vocab_list=data_generator.vocab_list)
     else:
+        # 定向搜索解码
         result_transcript = ds2_model.decode_batch_beam_search(probs_split=probs_split,
                                                                beam_alpha=args.alpha,
                                                                beam_beta=args.beta,
@@ -95,6 +103,7 @@ def recognition():
         f.save(file_path)
         try:
             start = time.time()
+            # 执行识别
             text = predict(filename=file_path)
             end = time.time()
             print("识别时间：%dms，识别结果：%s" % (round((end - start) * 1000), text))

@@ -38,19 +38,19 @@ add_arg('specgram_type',    str,    'linear',    "Audio feature type. Options: l
 args = parser.parse_args()
 
 
+# 评估模型
 def evaluate():
-    """Evaluate on whole test data for DeepSpeech2."""
-
-    # check if set use_gpu=True in paddlepaddle cpu version
+    # 检测PaddlePaddle环境
     check_cuda(args.use_gpu)
-    # check if paddlepaddle version is satisfied
     check_version()
 
+    # 是否使用GPU
     if args.use_gpu:
         place = fluid.CUDAPlace(0)
     else:
         place = fluid.CPUPlace()
 
+    # 获取数据生成器
     data_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                    mean_std_filepath=args.mean_std_path,
                                    augmentation_config='{}',
@@ -58,11 +58,12 @@ def evaluate():
                                    keep_transcription_text=True,
                                    place=place,
                                    is_training=False)
+    # 获取评估数据
     batch_reader = data_generator.batch_reader_creator(manifest_path=args.test_manifest,
                                                        batch_size=args.batch_size,
                                                        sortagrad=False,
                                                        shuffle_method=None)
-
+    # 获取DeepSpeech2模型，并设置为预测
     ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
                                  num_conv_layers=args.num_conv_layers,
                                  num_rnn_layers=args.num_rnn_layers,
@@ -73,23 +74,31 @@ def evaluate():
                                  init_from_pretrained_model=args.model_path,
                                  is_infer=True)
 
+    # 读取数据列表
     with codecs.open(args.test_manifest, 'r', encoding='utf-8') as f_m:
         test_len = len(f_m.readlines())
 
+    # 定向搜索方法的处理
     if args.decoding_method == "ctc_beam_search":
         ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
 
+    # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     errors_sum, len_refs, num_ins = 0.0, 0, 0
-    ds2_model.logger.info("start evaluation ...")
+    ds2_model.logger.info("开始评估 ...")
     start = time.time()
+    # 开始评估
     for infer_data in batch_reader():
+        # 获取一批的识别结果
         probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
+        # 执行解码
         if args.decoding_method == "ctc_greedy":
+            # 最优路径解码
             result_transcripts = ds2_model.decode_batch_greedy(probs_split=probs_split,
                                                                vocab_list=data_generator.vocab_list)
         else:
+            # 定向搜索解码
             result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
                                                                     beam_alpha=args.alpha,
                                                                     beam_beta=args.beta,
@@ -100,6 +109,7 @@ def evaluate():
                                                                     num_processes=args.num_proc_bsearch)
         target_transcripts = infer_data[1]
 
+        # 计算字错率
         for target, result in zip(target_transcripts, result_transcripts):
             errors, len_ref = errors_func(target, result)
             errors_sum += errors
@@ -109,7 +119,7 @@ def evaluate():
     end = time.time()
     print("消耗时间：%dms, 总错误率：[%s] (%d/%d) = %f" % (round((end - start) * 1000), args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
 
-    ds2_model.logger.info("finish evaluation")
+    ds2_model.logger.info("完成评估！")
 
 
 def main():

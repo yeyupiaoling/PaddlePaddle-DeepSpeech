@@ -2,12 +2,15 @@
 
 import logging
 import os
+import shutil
 import time
 from datetime import datetime
 from distutils.dir_util import mkpath
 import numpy as np
 import paddle.fluid as fluid
 import paddle.fluid.compiler as compiler
+from visualdl import LogWriter
+from utils.error_rate import char_errors, word_errors
 from decoders.swig_wrapper import Scorer
 from decoders.swig_wrapper import ctc_beam_search_decoder_batch
 from decoders.swig_wrapper import ctc_greedy_decoder
@@ -53,7 +56,9 @@ class DeepSpeech2Model(object):
                  place=fluid.CPUPlace(),
                  init_from_pretrained_model=None,
                  output_model_dir=None,
-                 is_infer=False):
+                 is_infer=False,
+                 error_rate_type='cer',
+                 vocab_list=None):
         self._vocab_size = vocab_size
         self._num_conv_layers = num_conv_layers
         self._num_rnn_layers = num_rnn_layers
@@ -66,7 +71,10 @@ class DeepSpeech2Model(object):
         self._ext_scorer = None
         self.logger = logging.getLogger("")
         self.logger.setLevel(level=logging.INFO)
-        # infer
+        self.writer = LogWriter(logdir='log')
+        self.error_rate_type = error_rate_type
+        self.vocab_list = vocab_list
+        # 预测相关的参数
         self.infer_program = None
         self.infer_feeder = None
         self.infer_log_probs = None
@@ -176,35 +184,31 @@ class DeepSpeech2Model(object):
 
         return True
 
-    def test(self, exe, test_program, test_reader, fetch_list):
+    def test(self, test_reader):
         '''Test the model.
 
-        :param exe:The executor of program.
-        :type exe: Executor
-        :param dev_batch_reader: The reader of test dataa.
-        :type dev_batch_reader: read generator
-        :param test_program: The program of test.
-        :type test_program: Program
         :param test_reader: Reader of test.
         :type test_reader: Reader
-        :param fetch_list: Fetch list.
-        :type fetch_list: list
-        :return: An output unnormalized log probability.
-        :rtype: array
+        :return: Wer/Cer rate.
+        :rtype: float
         '''
-        test_reader.start()
-        epoch_loss = []
-        while True:
-            try:
-                each_loss = exe.run(program=test_program,
-                                    fetch_list=fetch_list,
-                                    return_numpy=False)
-                epoch_loss.extend(np.array(each_loss[0]))
-            except fluid.core.EOFException:
-                test_reader.reset()
-                break
-
-        return np.mean(np.array(epoch_loss))
+        errors_sum, len_refs = 0.0, 0
+        errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
+        # 初始化预测程序
+        self.init_infer_program()
+        for infer_data in test_reader():
+            # 执行预测
+            probs_split = self.infer_batch_probs(infer_data=infer_data)
+            # 使用最优路径解码
+            result_transcripts = self.decode_batch_greedy(probs_split=probs_split,
+                                                          vocab_list=self.vocab_list)
+            target_transcripts = infer_data[1]
+            # 计算字错率
+            for target, result in zip(target_transcripts, result_transcripts):
+                errors, len_ref = errors_func(target, result)
+                errors_sum += errors
+                len_refs += len_ref
+        return errors_sum / len_refs
 
     def train(self,
               train_batch_reader,
@@ -260,7 +264,7 @@ class DeepSpeech2Model(object):
         startup_prog = fluid.Program()
         with fluid.program_guard(train_program, startup_prog):
             with fluid.unique_name.guard():
-                train_reader, log_probs, ctc_loss = self.create_network()
+                train_reader, _, ctc_loss = self.create_network()
                 # prepare optimizer
                 optimizer = fluid.optimizer.AdamOptimizer(
                     learning_rate=fluid.layers.exponential_decay(
@@ -272,12 +276,6 @@ class DeepSpeech2Model(object):
                     grad_clip=fluid.clip.GradientClipByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
-        test_prog = fluid.Program()
-        with fluid.program_guard(test_prog, startup_prog):
-            with fluid.unique_name.guard():
-                test_reader, _, ctc_loss = self.create_network()
-
-        test_prog = test_prog.clone(for_test=True)
         exe = fluid.Executor(self._place)
         exe.run(startup_prog)
 
@@ -295,8 +293,9 @@ class DeepSpeech2Model(object):
                                                                                          exec_strategy=exec_strategy)
 
         train_reader.set_batch_generator(train_batch_reader)
-        test_reader.set_batch_generator(dev_batch_reader)
 
+        train_step = 0
+        test_step = 0
         num_batch = -1
         # run train
         for epoch_id in range(num_epoch):
@@ -318,6 +317,9 @@ class DeepSpeech2Model(object):
                         print("Train [%s] epoch: [%d/%d], batch: [%d/%d], train loss: %f\n" %
                               (datetime.now(), epoch_id, num_epoch, batch_id, num_batch,
                                np.mean(each_loss[0]) / batch_size))
+                        # 记录训练损失值
+                        self.writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
+                        train_step += 1
                     else:
                         _ = exe.run(program=train_compiled_prog,
                                     fetch_list=[],
@@ -335,13 +337,20 @@ class DeepSpeech2Model(object):
                 print('======================last Train=====================')
             else:
                 print('\n======================Begin test=====================')
-                test_loss = self.test(exe=exe,
-                                      test_program=test_prog,
-                                      test_reader=test_reader,
-                                      fetch_list=[ctc_loss])
-                print("Train time: %f sec, epoch: %d, train loss: %f, test loss: %f"
-                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), test_loss / batch_size))
+                # 保存临时模型用于测试
+                self.save_param(exe, train_program, "temp")
+                # 设置临时模型的路径
+                self._init_from_pretrained_model = os.path.join(self._output_model_dir, 'temp')
+                # 支持测试
+                test_result = self.test(test_reader=dev_batch_reader)
+                # 删除临时模型
+                shutil.rmtree(os.path.join(self._output_model_dir, 'temp'))
+                print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
+                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type, test_result))
                 print('======================Stop Train=====================\n')
+                # 记录测试结果
+                self.writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
+                test_step += 1
             if (epoch_id + 1) % save_epoch == 0:
                 self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 

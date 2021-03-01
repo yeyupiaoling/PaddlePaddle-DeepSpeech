@@ -17,7 +17,7 @@ echo "Success installde pkg-config libflac-dev libogg-dev libvorbis-dev libboost
 
 
 # install python dependencies
-pip3 install scipy==1.5.4 resampy==0.2.2 SoundFile==0.9.0.post1 python_speech_features==0.6 flask flask-cors paddlepaddle-gpu==1.8.5.post107 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 install scipy==1.5.4 resampy==0.2.2 SoundFile==0.9.0.post1 python_speech_features==0.6 flask flask-cors paddlepaddle-gpu==1.8.5.post107 visualdl==2.1.1 -i https://mirrors.aliyun.com/pypi/simple/
 if [ $? != 0 ]; then
     echo "Install python dependencies failed !!!"
     exit 1

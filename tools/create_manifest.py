@@ -1,8 +1,8 @@
+"""根据标注文件创建数据列表"""
 import os
-import codecs
 import functools
 import wave
-
+from tqdm import tqdm
 import soundfile
 import json
 import argparse
@@ -21,19 +21,23 @@ parser.add_argument("--manifest_prefix",
 args = parser.parse_args()
 
 
+# 创建数据列表
 def create_manifest(annotation_path, manifest_path_prefix):
     json_lines = []
     durations = []
+    # 获取全部的标注文件
     for annotation_text in os.listdir(annotation_path):
-        print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
+        print('正常创建%s的数量列表，请等待 ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
-        with codecs.open(annotation_text, 'r', 'utf-8') as f:
+        # 读取标注文件
+        with open(annotation_text, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         for line in lines:
             audio_path = line.split('\t')[0]
-
             try:
+                # 过滤非法的字符
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
+                # 获取音频的长度
                 audio_data, samplerate = soundfile.read(audio_path)
                 duration = float(len(audio_data) / samplerate)
                 durations.append(duration)
@@ -48,9 +52,10 @@ def create_manifest(annotation_path, manifest_path_prefix):
             except:
                 continue
 
-    f_train = codecs.open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', 'utf-8')
-    f_dev = codecs.open(os.path.join(manifest_path_prefix, 'manifest.dev'), 'w', 'utf-8')
-    f_test = codecs.open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', 'utf-8')
+    # 将音频的路径，长度和标签写入到数据列表中
+    f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
+    f_dev = open(os.path.join(manifest_path_prefix, 'manifest.dev'), 'w', encoding='utf-8')
+    f_test = open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', encoding='utf-8')
     for i, line in enumerate(json_lines):
         if i % 500 == 0:
             f_dev.write(line + '\n')
@@ -63,6 +68,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
     print("Create manifest done. All audio for [%d] hours!" % int(sum(durations) / 3600))
 
 
+# 过滤非文字的字符
 def is_ustr(in_str):
     out_str = ''
     for i in range(len(in_str)):
@@ -73,6 +79,7 @@ def is_ustr(in_str):
     return ''.join(out_str.split())
 
 
+# 判断是否为文字字符
 def is_uchar(uchar):
     if u'\u4e00' <= uchar <= u'\u9fa5':
         return True
@@ -88,11 +95,11 @@ def is_uchar(uchar):
 # 改变音频的帧率为16000Hz
 def change_audio_rate(annotation_path):
     for annotation_text in os.listdir(annotation_path):
-        print('The %s manifest takes a long time to create. Please wait ...' % annotation_text)
+        print('正在将%s音频的采样率改为16000Hz，将消耗大量的时间，请等待 ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
-        with codecs.open(annotation_text, 'r', 'utf-8') as f:
+        with open(annotation_text, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        for line in lines:
+        for line in tqdm(lines):
             audio_path = line.split('\t')[0]
             sndfile = soundfile.SoundFile(audio_path)
             samplerate = sndfile.samplerate
@@ -114,6 +121,7 @@ def create_noise(path='dataset/audio/noise'):
     for file in os.listdir(path):
         audio_path = os.path.join(path, file)
         try:
+            # 噪声的标签可以标记为空
             text = ""
             audio_data, samplerate = soundfile.read(audio_path)
             duration = float(len(audio_data) / samplerate)
@@ -127,7 +135,7 @@ def create_noise(path='dataset/audio/noise'):
                     ensure_ascii=False))
         except:
             continue
-    with codecs.open(os.path.join(args.manifest_prefix, 'manifest.noise'), 'w', 'utf-8') as f_noise:
+    with open(os.path.join(args.manifest_prefix, 'manifest.noise'), 'w', encoding='utf-8') as f_noise:
         for json_line in json_lines:
             f_noise.write(json_line + '\n')
 
