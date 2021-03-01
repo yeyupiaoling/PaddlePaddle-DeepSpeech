@@ -1,5 +1,5 @@
 """Script to build and install decoder package."""
-
+import setuptools
 from setuptools import setup, Extension, distutils
 import glob
 import platform
@@ -113,4 +113,5 @@ setup(
     version='1.1',
     description="""CTC decoders""",
     ext_modules=decoders_module,
+    packages=setuptools.find_packages(),
     py_modules=['swig_decoders'], )

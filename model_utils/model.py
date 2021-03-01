@@ -11,9 +11,9 @@ import paddle.fluid as fluid
 import paddle.fluid.compiler as compiler
 from visualdl import LogWriter
 from utils.error_rate import char_errors, word_errors
-from decoders.swig_wrapper import Scorer
-from decoders.swig_wrapper import ctc_beam_search_decoder_batch
-from decoders.swig_wrapper import ctc_greedy_decoder
+from ctc_decoders.swig_wrapper import Scorer
+from ctc_decoders.swig_wrapper import ctc_beam_search_decoder_batch
+from ctc_decoders.swig_wrapper import ctc_greedy_decoder
 from model_utils.network import deep_speech_v2_network
 
 logging.basicConfig(
