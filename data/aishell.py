@@ -5,7 +5,7 @@ import functools
 from utility import download, unpack
 from utility import add_arguments, print_arguments
 
-URL_ROOT = 'http://www.openslr.org/resources/33'
+URL_ROOT = 'https://openslr.magicdatatech.com/resources/33'
 DATA_URL = URL_ROOT + '/data_aishell.tgz'
 MD5_DATA = '2f494334227864a8a8fec932999db9d8'
 
@@ -14,11 +14,11 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 parser.add_argument("--target_dir",
                     default="../dataset/audio/",
                     type=str,
-                    help="Directory to save the dataset. (default: %(default)s)")
+                    help="存放音频文件的目录 (默认: %(default)s)")
 parser.add_argument("--annotation_text",
                     default="../dataset/annotation/",
                     type=str,
-                    help="Sound annotation text save path. (default: %(default)s)")
+                    help="存放音频标注文件的目录 (默认: %(default)s)")
 args = parser.parse_args()
 
 
