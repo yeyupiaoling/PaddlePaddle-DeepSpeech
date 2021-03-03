@@ -1,6 +1,5 @@
 import argparse
 import functools
-import codecs
 import os
 from utility import download, unpack
 from utility import add_arguments, print_arguments
@@ -14,22 +13,22 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 parser.add_argument("--target_dir",
                     default="../dataset/audio/",
                     type=str,
-                    help="Directory to save the dataset. (default: %(default)s)")
+                    help="存放音频文件的目录 (默认: %(default)s)")
 parser.add_argument("--annotation_text",
                     default="../dataset/annotation/",
                     type=str,
-                    help="Sound annotation text save path. (default: %(default)s)")
+                    help="存放音频标注文件的目录 (默认: %(default)s)")
 args = parser.parse_args()
 
 
 def create_annotation_text(data_dir, annotation_path):
     print('Create Free ST-Chinese-Mandarin-Corpus annotation text ...')
-    f_a = codecs.open(os.path.join(annotation_path, 'free_st_chinese_mandarin_corpus.txt'), 'w', 'utf-8')
+    f_a = open(os.path.join(annotation_path, 'free_st_chinese_mandarin_corpus.txt'), 'w', encoding='utf-8')
     for subfolder, _, filelist in sorted(os.walk(data_dir)):
         for file in filelist:
             if '.wav' in file:
                 file = os.path.join(subfolder, file)
-                with codecs.open(file[:-4] + '.txt', 'r', 'utf-8') as f:
+                with open(file[:-4] + '.txt', 'r', encoding='utf-8') as f:
                     line = f.readline()
                 f_a.write(file[3:] + '\t' + line + '\n')
     f_a.close()
