@@ -1,7 +1,5 @@
 """Contains the text featurizer class."""
 
-import codecs
-
 
 class TextFeaturizer(object):
     """Text featurizer, for processing or extracting features from text.
@@ -56,7 +54,7 @@ class TextFeaturizer(object):
     def _load_vocabulary_from_file(self, vocab_filepath):
         """Load vocabulary from file."""
         vocab_lines = []
-        with codecs.open(vocab_filepath, 'r', 'utf-8') as file:
+        with open(vocab_filepath, 'r', encoding='utf-8') as file:
             vocab_lines.extend(file.readlines())
         vocab_list = [line[:-1] for line in vocab_lines]
         vocab_dict = dict(

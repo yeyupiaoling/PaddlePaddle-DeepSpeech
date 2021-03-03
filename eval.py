@@ -2,7 +2,6 @@
 
 import argparse
 import functools
-import codecs
 import time
 
 import paddle.fluid as fluid
@@ -75,7 +74,7 @@ def evaluate():
                                  is_infer=True)
 
     # 读取数据列表
-    with codecs.open(args.test_manifest, 'r', encoding='utf-8') as f_m:
+    with open(args.test_manifest, 'r', encoding='utf-8') as f_m:
         test_len = len(f_m.readlines())
 
     # 定向搜索方法的处理

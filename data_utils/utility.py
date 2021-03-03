@@ -1,7 +1,6 @@
 """Contains data helper functions."""
 
 import json
-import codecs
 
 
 def read_manifest(manifest_path, max_duration=float('inf'), min_duration=0.0):
@@ -21,7 +20,7 @@ def read_manifest(manifest_path, max_duration=float('inf'), min_duration=0.0):
     :raises IOError: If failed to parse the manifest.
     """
     manifest = []
-    for json_line in codecs.open(manifest_path, 'r', 'utf-8'):
+    for json_line in open(manifest_path, 'r', encoding='utf-8'):
         try:
             json_data = json.loads(json_line)
         except Exception as e:

@@ -4,7 +4,6 @@
 """
 
 import argparse
-import codecs
 import functools
 from collections import Counter
 
@@ -38,7 +37,7 @@ def main():
         count_manifest(counter, manifest_path)
     # 为每一个字符都生成一个ID
     count_sorted = sorted(counter.items(), key=lambda x: x[1], reverse=True)
-    with codecs.open(args.vocab_path, 'w', 'utf-8') as fout:
+    with open(args.vocab_path, 'w', encoding='utf-8') as fout:
         for char, count in count_sorted:
             # 跳过指定的字符阈值，超过这大小的字符都忽略
             if count < args.count_threshold: break
