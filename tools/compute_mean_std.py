@@ -9,10 +9,10 @@ from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('num_samples',      int,    5000,     "# of samples to for statistics.")
-add_arg('specgram_type',    str,    'linear',   "Audio feature type. Options: linear, mfcc.", choices=['linear', 'mfcc'])
-add_arg('manifest_path',    str,    './dataset/manifest.train',   "Filepath of manifest to compute normalizer's mean and stddev.")
-add_arg('output_path',      str,    './dataset/mean_std.npz',     "Filepath of write mean and stddev to (.npz).")
+add_arg('num_samples',      int,    5000,       "用于计算均值和标准值得音频数量")
+add_arg('specgram_type',    str,    'linear',   "音频特征处理方法，选项: linear, mfcc.", choices=['linear', 'mfcc'])
+add_arg('manifest_path',    str,    './dataset/manifest.train',   "用于计算均值和标准值的训练数据列表")
+add_arg('output_path',      str,    './dataset/mean_std.npz',     "保存均值和标准值得numpy文件路径，后缀 (.npz).")
 args = parser.parse_args()
 
 
@@ -33,6 +33,7 @@ def main():
         num_samples=args.num_samples)
     # 将计算的结果保存的文件中
     normalizer.write_to_file(args.output_path)
+    print('计算完成，文件保存于：%s' % args.output_path)
 
 
 if __name__ == '__main__':

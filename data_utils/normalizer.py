@@ -2,6 +2,7 @@
 
 import numpy as np
 import random
+from tqdm import tqdm
 from data_utils.utility import read_manifest
 from data_utils.audio import AudioSegment
 
@@ -75,7 +76,7 @@ class FeatureNormalizer(object):
         manifest = read_manifest(manifest_path)
         sampled_manifest = self._rng.sample(manifest, num_samples)
         features = []
-        for instance in sampled_manifest:
+        for instance in tqdm(sampled_manifest):
             features.append(
                 featurize_func(
                     AudioSegment.from_file(instance["audio_filepath"])))

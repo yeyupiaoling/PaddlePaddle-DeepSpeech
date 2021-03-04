@@ -1,6 +1,10 @@
 """Contains common utility functions."""
 
 import distutils.util
+
+import librosa
+import soundfile
+
 from data_utils.utility import read_manifest
 
 
@@ -51,3 +55,11 @@ def get_data_len(manifest_path, max_duration, min_duration):
                              max_duration=max_duration,
                              min_duration=min_duration)
     return len(manifest)
+
+
+# 改变音频采样率为16000Hz
+def change_rate(audio_path):
+    data, sr = soundfile.read(audio_path)
+    if sr != 16000:
+        data = librosa.resample(data, sr, target_sr=16000)
+        soundfile.write(audio_path, data, samplerate=16000)

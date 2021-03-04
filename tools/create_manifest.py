@@ -3,21 +3,15 @@ import os
 import functools
 import wave
 from tqdm import tqdm
-import soundfile
 import json
 import argparse
-from utils.utility import add_arguments, print_arguments
+from utils.utility import add_arguments, print_arguments, change_rate
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-parser.add_argument("--annotation_path",
-                    default="./dataset/annotation/",
-                    type=str,
-                    help="Sound annotation text save path. (default: %(default)s)")
-parser.add_argument("--manifest_prefix",
-                    default="./dataset/",
-                    type=str,
-                    help="Filepath prefix for output manifests. (default: %(default)s)")
+add_arg('annotation_path',      str,  'dataset/annotation/',   '标注文件的路径')
+add_arg('manifest_prefix',      str,  'dataset/',              '训练数据清单，包括音频路径和标注信息')
+add_arg('is_change_frame_rate', bool, True,                    '是否统一改变音频为16000Hz，这会消耗大量的时间')
 args = parser.parse_args()
 
 
@@ -27,19 +21,22 @@ def create_manifest(annotation_path, manifest_path_prefix):
     durations = []
     # 获取全部的标注文件
     for annotation_text in os.listdir(annotation_path):
-        print('正常创建%s的数量列表，请等待 ...' % annotation_text)
+        print('正在创建%s的数据列表，请等待 ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
         # 读取标注文件
         with open(annotation_text, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        for line in lines:
+        for line in tqdm(lines):
             audio_path = line.split('\t')[0]
             try:
                 # 过滤非法的字符
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
+                # 重新调整音频格式并保存
+                if args.is_change_frame_rate:
+                    change_rate(audio_path)
                 # 获取音频的长度
-                audio_data, samplerate = soundfile.read(audio_path)
-                duration = float(len(audio_data) / samplerate)
+                f_wave = wave.open(audio_path, "rb")
+                duration = f_wave.getnframes() / f_wave.getframerate()
                 durations.append(duration)
                 json_lines.append(
                     json.dumps(
@@ -92,39 +89,23 @@ def is_uchar(uchar):
     return False
 
 
-# 改变音频的帧率为16000Hz
-def change_audio_rate(annotation_path):
-    for annotation_text in os.listdir(annotation_path):
-        print('正在将%s音频的采样率改为16000Hz，将消耗大量的时间，请等待 ...' % annotation_text)
-        annotation_text = os.path.join(annotation_path, annotation_text)
-        with open(annotation_text, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        for line in tqdm(lines):
-            audio_path = line.split('\t')[0]
-            sndfile = soundfile.SoundFile(audio_path)
-            samplerate = sndfile.samplerate
-            if samplerate != 16000:
-                f = wave.open(audio_path, "rb")
-                str_data = f.readframes(f.getnframes())
-                f.close()
-                file = wave.open(audio_path, 'wb')
-                file.setnchannels(1)
-                file.setsampwidth(4)
-                file.setframerate(16000)
-                file.writeframes(str_data)
-                file.close()
-
-
 # 生成噪声的数据列表
 def create_noise(path='dataset/audio/noise'):
+    if not os.path.exists(path):
+        print('噪声音频文件为空，已跳过！')
+        return
     json_lines = []
-    for file in os.listdir(path):
+    print('正在创建噪声数据列表，路径：%s，请等待 ...' % path)
+    for file in tqdm(os.listdir(path)):
         audio_path = os.path.join(path, file)
         try:
             # 噪声的标签可以标记为空
             text = ""
-            audio_data, samplerate = soundfile.read(audio_path)
-            duration = float(len(audio_data) / samplerate)
+            # 重新调整音频格式并保存
+            if args.is_change_frame_rate:
+                change_rate(audio_path)
+            f_wave = wave.open(audio_path, "rb")
+            duration = f_wave.getnframes() / f_wave.getframerate()
             json_lines.append(
                 json.dumps(
                     {
@@ -147,9 +128,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # 改变音频的帧率为16000Hz
-    # change_audio_rate(args.annotation_path)
     # 生成噪声的数据列表
-    # create_noise()
+    create_noise()
     # 生成训练数据列表
     main()
