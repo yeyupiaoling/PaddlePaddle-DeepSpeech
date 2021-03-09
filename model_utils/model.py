@@ -218,8 +218,6 @@ class DeepSpeech2Model(object):
               num_epoch,
               batch_size,
               num_samples,
-              save_epoch=100,
-              num_iterations_print=100,
               test_off=False):
         """Train the model.
 
@@ -240,8 +238,6 @@ class DeepSpeech2Model(object):
         :type batch_size: int
         :param num_samples: The num of train samples.
         :type num_samples: int
-        :param save_epoch: Number of training iterations for save checkpoint and params.
-        :type save_epoch: int
         :param num_iterations_print: Number of training iterations for printing
                                      a training loss.
         :type num_iteratons_print: int
@@ -306,8 +302,7 @@ class DeepSpeech2Model(object):
             while True:
                 try:
                     fetch_list = [ctc_loss.name]
-
-                    if batch_id % num_iterations_print == 0:
+                    if batch_id % 100 == 0:
                         fetch = exe.run(program=train_compiled_prog,
                                         fetch_list=fetch_list,
                                         return_numpy=False)
@@ -324,6 +319,9 @@ class DeepSpeech2Model(object):
                         _ = exe.run(program=train_compiled_prog,
                                     fetch_list=[],
                                     return_numpy=False)
+                    # 每2000个batch保存一次模型
+                    if batch_id % 2000 == 0 and batch_id != 0:
+                        self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
                     train_reader.reset()
@@ -351,8 +349,7 @@ class DeepSpeech2Model(object):
                 # 记录测试结果
                 self.writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
                 test_step += 1
-            if (epoch_id + 1) % save_epoch == 0:
-                self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
+            self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
         self.save_param(exe, train_program, "step_final")
 

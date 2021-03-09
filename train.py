@@ -16,8 +16,6 @@ add_arg('num_epoch',       int,   200, "# of training epochs.")
 add_arg('num_conv_layers', int,   2, "# of convolution layers.")
 add_arg('num_rnn_layers',  int,   3, "# of recurrent layers.")
 add_arg('rnn_layer_size',  int,   2048, "# of recurrent cells per layer.")
-add_arg('num_iter_print',  int,   100, "Every # batch for printing train cost.")
-add_arg('save_epoch',      int,   1, "# Every # batch for save checkpoint and modle params ")
 add_arg('learning_rate',   float, 5e-5, "Learning rate.")
 add_arg('max_duration',    float, 15.0, "Longest audio duration allowed.")
 add_arg('min_duration',    float, 1.0, "Shortest audio duration allowed.")
@@ -100,8 +98,6 @@ def train():
                     batch_size=args.batch_size,
                     num_samples=num_samples,
                     num_epoch=args.num_epoch,
-                    save_epoch=args.save_epoch,
-                    num_iterations_print=args.num_iter_print,
                     test_off=args.test_off)
 
 
