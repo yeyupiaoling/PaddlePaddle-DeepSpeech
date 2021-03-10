@@ -227,6 +227,37 @@ CUDA_VISIBLE_DEVICES=0 python3 eval.py
 CUDA_VISIBLE_DEVICES=0 python3 infer_path.py --wav_path=./dataset/test.wav
 ```
 
+输出结果：
+```
+W0310 10:09:21.043175 26679 device_context.cc:252] Please NOTE: device: 0, CUDA Capability: 75, Driver API Version: 11.0, Runtime API Version: 10.0
+W0310 10:09:21.075088 26679 device_context.cc:260] device: 0, cuDNN Version: 7.6.
+finish initing model from pretrained params from ./models/step_final/
+[INFO 2021-03-10 10:09:25,055 model.py:491] begin to initialize the external scorer for decoding
+[INFO 2021-03-10 10:09:27,285 model.py:499] language model: is_character_based = 1, max_order = 5, dict_size = 0
+[INFO 2021-03-10 10:09:27,285 model.py:500] end initializing scorer
+-----------  Configuration Arguments -----------
+alpha: 1.2
+beam_size: 10
+beta: 0.35
+cutoff_prob: 1.0
+cutoff_top_n: 40
+decoding_method: ctc_beam_search
+lang_model_path: ./lm/zh_giga.no_cna_cmn.prune01244.klm
+mean_std_path: ./dataset/mean_std.npz
+model_path: ./models/step_final/
+num_conv_layers: 2
+num_rnn_layers: 3
+rnn_layer_size: 2048
+share_rnn_weights: False
+specgram_type: linear
+use_gpu: True
+use_gru: True
+vocab_path: ./dataset/zh_vocab.txt
+wav_path: ./dataset/test.wav
+------------------------------------------------
+消耗时间：1656, 识别结果: 近几年不但我用输给女儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书
+```
+
  - 我们可以使用这个脚本使用模型进行预测，通过本地录音然后进行识别。
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 infer_record.py
@@ -235,19 +266,6 @@ CUDA_VISIBLE_DEVICES=0 python3 infer_record.py
  - 我们可以使用这个脚本使用模型进行预测，通过创建一个Web服务，通过提供HTTP接口来实现语音识别，同时还提供了一个页面来测试，可以选择本地音频文件，或者是在线录音。
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --host=localhost --port=5000
-```
-
-
-## 项目部署
-
- - 启动语音识别服务，使用Socket通讯。需要注意的是`host_ip`参数是电脑本机的IP地址，其他使用默认就可以。
-```shell script
-CUDA_VISIBLE_DEVICES=0 python3 deploy/server.py
-```
-
- - 测试服务，执行下面这个程序调用语音识别服务。在控制台中，按下`空格键`，按住并开始讲话。讲话完毕请释放该键以让控制台中显示语音的文本结果。要退出客户端，只需按`ESC键`。
-```shell script
-python3 deploy/client.py
 ```
 
 ## 模型下载
