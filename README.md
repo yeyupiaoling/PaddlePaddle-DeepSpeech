@@ -273,3 +273,9 @@ CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --host=localhost --port=5000
 | :---: | :---: |
 | 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
 | 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://resource.doiduoyi.com/#c3cm472) |
+
+
+## 在线试用：
+**[点击访问](http://3uj5072792.wicp.vip:57994/deepspeech)** (请不要攻击我可怜的服务器，谢谢！)
+
+>型并没有完全训练完，效果没有达到最好，有没有同学提供多卡服务器笔者训练啊，感激感激!
