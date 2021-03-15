@@ -51,16 +51,13 @@ def create_manifest(annotation_path, manifest_path_prefix):
 
     # 将音频的路径，长度和标签写入到数据列表中
     f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
-    f_dev = open(os.path.join(manifest_path_prefix, 'manifest.dev'), 'w', encoding='utf-8')
     f_test = open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', encoding='utf-8')
     for i, line in enumerate(json_lines):
         if i % 500 == 0:
-            f_dev.write(line + '\n')
             f_test.write(line + '\n')
         else:
             f_train.write(line + '\n')
     f_train.close()
-    f_dev.close()
     f_test.close()
     print("Create manifest done. All audio for [%d] hours!" % int(sum(durations) / 3600))
 
