@@ -7,10 +7,9 @@ import multiprocessing
 
 
 def ctc_greedy_decoder(probs_seq, vocabulary):
-    """CTC greedy (best path) decoder.
+    """CTC贪婪(最佳路径)解码器
 
-    Path consisting of the most probable tokens are further post-processed to
-    remove consecutive repetitions and all blanks.
+    由最可能的令牌组成的路径将被进一步后处理到去掉连续重复和所有空白
 
     :param probs_seq: 2-D list of probabilities over the vocabulary for each
                       character. Each element is a list of float probabilities
@@ -21,10 +20,10 @@ def ctc_greedy_decoder(probs_seq, vocabulary):
     :return: Decoding result string.
     :rtype: baseline
     """
-    # dimension verification
+    # 尺寸校对
     for probs in probs_seq:
         if not len(probs) == len(vocabulary) + 1:
-            raise ValueError("probs_seq dimension mismatchedd with vocabulary")
+            raise ValueError("probs_seq维度与词汇表不匹配")
     # argmax to get the best index for each time step
     max_index_list = list(np.array(probs_seq).argmax(axis=1))
     # remove consecutive duplicate indexes
@@ -43,7 +42,7 @@ def ctc_beam_search_decoder(probs_seq,
                             cutoff_top_n=40,
                             ext_scoring_func=None,
                             nproc=False):
-    """CTC Beam search decoder.
+    """CTC集束搜索解码器
 
     It utilizes beam search to approximately select top best decoding
     labels and returning results in the descending order.
@@ -190,7 +189,7 @@ def ctc_beam_search_decoder_batch(probs_split,
                                   cutoff_prob=1.0,
                                   cutoff_top_n=40,
                                   ext_scoring_func=None):
-    """CTC beam search decoder using multiple processes.
+    """使用多进程的CTC集束搜索解码器
 
     :param probs_seq: 3-D list with each element as an instance of 2-D list
                       of probabilities used by ctc_beam_search_decoder().

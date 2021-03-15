@@ -28,7 +28,7 @@ add_arg('init_from_pretrained_model',   str, None,    "使用预训练模型的�
 add_arg('train_manifest',               str,   './dataset/manifest.train',    "训练的数据列表")
 add_arg('dev_manifest',                 str,  './dataset/manifest.test',      "测试的数据列表")
 add_arg('mean_std_path',                str,  './dataset/mean_std.npz',       "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',                   str,  './dataset/zh_vocab.txt',       "数据集的字典文件路径")
+add_arg('vocab_path',                   str,  './dataset/zh_vocab.txt',       "数据集的词汇表文件路径")
 add_arg('output_model_dir',             str,  "./models",                     "保存训练模型的文件夹")
 add_arg('augment_conf_path',            str,  './conf/augmentation.config',   "数据增强的配置文件，为json格式")
 add_arg('specgram_type',                str,  'linear',    "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])

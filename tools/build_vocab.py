@@ -1,4 +1,4 @@
-"""从数据列表中创建数据字典
+"""从数据列表中创建数据词汇表
 
 每一个字符都有一个对应的ID
 """
@@ -13,7 +13,7 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('count_threshold',  int,    0,  "字符计数的截断阈值，0为不做限制")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',                          "生成的数据字典文件")
+add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',                          "生成的数据词汇表文件")
 add_arg('manifest_paths',   str,    './dataset/manifest.train,./dataset/manifest.dev', "数据列表路径")
 args = parser.parse_args()
 
@@ -42,7 +42,7 @@ def main():
             # 跳过指定的字符阈值，超过这大小的字符都忽略
             if count < args.count_threshold: break
             fout.write(char + '\n')
-    print('数据字典已生成完成，保存与：%s' % args.vocab_path)
+    print('数据词汇表已生成完成，保存与：%s' % args.vocab_path)
 
 
 if __name__ == '__main__':

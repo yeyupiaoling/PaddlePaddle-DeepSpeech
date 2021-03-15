@@ -101,7 +101,7 @@ sh setup.sh
 
 ### 搭建本地环境
 
- - 并不建议使用本地进行训练和预测，但是如果开发者必须使用本地环境，可以执行下面的命令。因为每个电脑的环境不一样，不能保证能够正常使用。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
+ - 执行下面的命令完成本地环境的搭建。因为每个电脑的环境不一样，不能保证能够正常使用，如果出现问题，查看报错信息，安装相应的依赖库。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
 ```shell script
 cd DeepSpeech/
 sudo sh setup.sh
@@ -114,7 +114,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 
 ## 数据准备
 
-1. 在`data`目录下是公开数据集的下载和制作训练数据列表和字典的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如果想快速训练，也可以只下载其中一个。
+1. 在`data`目录下是公开数据集的下载和制作训练数据列表和词汇表的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如果想快速训练，也可以只下载其中一个。
 ```shell script
 cd data/
 python3 aishell.py
@@ -138,7 +138,7 @@ dataset/audio/wav/0175/H0175A0180.wav 把温度加大到十八
 PYTHONPATH=.:$PYTHONPATH python3 tools/create_manifest.py
 # 计算均值和标准差
 PYTHONPATH=.:$PYTHONPATH python3 tools/compute_mean_std.py
-# 构建字典
+# 构建词汇表
 PYTHONPATH=.:$PYTHONPATH python3 tools/build_vocab.py
 ```
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
 ## 训练模型
 
- - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下，默认会使用噪声音频一起训练的，如果没有这些音频，可以删除`conf/augmentation.config`中的`noise`项，噪声是用于数据增强的，关于数据增强，请查看**数据增强**部分。如果没有关闭测试，在每一轮训练结果之后，都会执行一次测试，为了提高测试的速度，测试使用的是最优解码路径解码，这个解码方式结果没有定向搜索的方法准确率高，所以测试的输出的准确率可以理解为保底的准确率。
+ - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下，默认会使用噪声音频一起训练的，如果没有这些音频，可以删除`conf/augmentation.config`中的`noise`项，噪声是用于数据增强的，关于数据增强，请查看**数据增强**部分。如果没有关闭测试，在每一轮训练结果之后，都会执行一次测试，为了提高测试的速度，测试使用的是最优解码路径解码，这个解码方式结果没有集束搜索的方法准确率高，所以测试的输出的准确率可以理解为保底的准确率。
 ```shell script
 CUDA_VISIBLE_DEVICES=0,1 python3 train.py
 ```
@@ -217,14 +217,14 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
 ## 评估和预测
 
-这里我也提示几点，在预测中可以提升性能的几个参数，预测包括评估，推理，部署等等一系列使用到模型预测音频的程序。解码方法，通过`decoding_method`选择不同的解码方法，支持`ctc_beam_search`定向搜索和`ctc_greedy`最优路径两种，其中`ctc_beam_search`定向搜索效果是最好的，但是速度就比较慢，这个可以通过`beam_size`参数设置定向搜索的宽度，以提高执行速度，范围[5, 500]，越大准确率就越高，同时执行速度就越慢。如果对准确率没有太严格的要求，可以考虑直接使用`ctc_greedy`最优路径方法，其实准确率也低不了多少。
+这里我也提示几点，在预测中可以提升性能的几个参数，预测包括评估，推理，部署等等一系列使用到模型预测音频的程序。解码方法，通过`decoding_method`选择不同的解码方法，支持`ctc_beam_search`集束搜索和`ctc_greedy`最优路径两种，其中`ctc_beam_search`集束搜索效果是最好的，但是速度就比较慢，这个可以通过`beam_size`参数设置集束搜索的宽度，以提高执行速度，范围[5, 500]，越大准确率就越高，同时执行速度就越慢。如果对准确率没有太严格的要求，可以考虑直接使用`ctc_greedy`最优路径方法，其实准确率也低不了多少。
 
- - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。该程序主要是为了寻找`ctc_beam_search`定向搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。如果使用的是`ctc_greedy`最优路径，可以直接跳过这一步。
+ - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。该程序主要是为了寻找`ctc_beam_search`集束搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。如果使用的是`ctc_greedy`最优路径，可以直接跳过这一步。
 ```shell script
 PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0 python3 tools/tune.py
 ```
 
- - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。通过这个程序的输出，开发者就可以考虑使用哪种解码方法，以及`ctc_beam_search`定向搜索方法中`beam_size`参数的大小。
+ - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。通过这个程序的输出，开发者就可以考虑使用哪种解码方法，以及`ctc_beam_search`集束搜索方法中`beam_size`参数的大小。
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 eval.py
 ```

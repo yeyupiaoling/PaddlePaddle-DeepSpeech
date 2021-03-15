@@ -5,14 +5,13 @@ from data_utils.audio import AudioSegment
 
 
 class SpeechSegment(AudioSegment):
-    """Speech segment abstraction, a subclass of AudioSegment,
-    with an additional transcript.
+    """语音片段抽象是音频片段的一个子类，附加文字记录。
 
     :param samples: Audio samples [num_samples x num_channels].
     :type samples: ndarray.float32
-    :param sample_rate: Audio sample rate.
+    :param sample_rate: 训练数据的采样率
     :type sample_rate: int
-    :param transcript: Transcript text for the speech.
+    :param transcript: 音频文件对应的文本
     :type transript: str
     :raises TypeError: If the sample data type is not float or int.
     """
@@ -36,11 +35,11 @@ class SpeechSegment(AudioSegment):
 
     @classmethod
     def from_file(cls, filepath, transcript):
-        """Create speech segment from audio file and corresponding transcript.
+        """从音频文件和相应的文本创建语音片段
 
-        :param filepath: Filepath or file object to audio file.
+        :param filepath: 音频文件路径
         :type filepath: str|file
-        :param transcript: Transcript text for the speech.
+        :param transcript: 音频文件对应的文本
         :type transript: str
         :return: Speech segment instance.
         :rtype: SpeechSegment
@@ -50,12 +49,11 @@ class SpeechSegment(AudioSegment):
 
     @classmethod
     def from_bytes(cls, bytes, transcript):
-        """Create speech segment from a byte string and corresponding
-        transcript.
+        """从字节串和相应的文本创建语音片段
 
-        :param bytes: Byte string containing audio samples.
+        :param bytes: 包含音频样本的字节字符串
         :type bytes: str
-        :param transcript: Transcript text for the speech.
+        :param transcript: 音频文件对应的文本
         :type transript: str
         :return: Speech segment instance.
         :rtype: Speech Segment
@@ -65,52 +63,41 @@ class SpeechSegment(AudioSegment):
 
     @classmethod
     def concatenate(cls, *segments):
-        """Concatenate an arbitrary number of speech segments together, both
-        audio and transcript will be concatenated.
+        """将任意数量的语音片段连接在一起，音频和文本都将被连接
 
-        :param *segments: Input speech segments to be concatenated.
+        :param *segments: 要连接的输入语音片段
         :type *segments: tuple of SpeechSegment
-        :return: Speech segment instance.
+        :return: 返回SpeechSegment实例
         :rtype: SpeechSegment
-        :raises ValueError: If the number of segments is zero, or if the
-                            sample_rate of any two segments does not match.
-        :raises TypeError: If any segment is not SpeechSegment instance.
+        :raises ValueError: 不能用不同的抽样率连接片段
+        :raises TypeError: 只有相同类型SpeechSegment实例的语音片段可以连接
         """
         if len(segments) == 0:
-            raise ValueError("No speech segments are given to concatenate.")
+            raise ValueError("音频片段为空")
         sample_rate = segments[0]._sample_rate
         transcripts = ""
         for seg in segments:
             if sample_rate != seg._sample_rate:
-                raise ValueError("Can't concatenate segments with "
-                                 "different sample rates")
+                raise ValueError("不能用不同的抽样率连接片段")
             if type(seg) is not cls:
-                raise TypeError("Only speech segments of the same type "
-                                "instance can be concatenated.")
+                raise TypeError("只有相同类型SpeechSegment实例的语音片段可以连接")
             transcripts += seg._transcript
         samples = np.concatenate([seg.samples for seg in segments])
         return cls(samples, sample_rate, transcripts)
 
     @classmethod
     def slice_from_file(cls, filepath, transcript, start=None, end=None):
-        """Loads a small section of an speech without having to load
-        the entire file into the memory which can be incredibly wasteful.
+        """只加载一小部分SpeechSegment，而不需要将整个文件加载到内存中，这是非常浪费的。
 
-        :param filepath: Filepath or file object to audio file.
+        :param filepath:文件路径或文件对象到音频文件
         :type filepath: str|file
-        :param start: Start time in seconds. If start is negative, it wraps
-                      around from the end. If not provided, this function
-                      reads from the very beginning.
+        :param start: 开始时间，单位为秒。如果start是负的，则它从末尾开始计算。如果没有提供，这个函数将从最开始读取。
         :type start: float
-        :param end: End time in seconds. If end is negative, it wraps around
-                    from the end. If not provided, the default behvaior is
-                    to read to the end of the file.
+        :param end: 结束时间，单位为秒。如果end是负的，则它从末尾开始计算。如果没有提供，默认的行为是读取到文件的末尾。
         :type end: float
-        :param transcript: Transcript text for the speech. if not provided,
-                           the defaults is an empty string.
+        :param transcript: 音频文件对应的文本，如果没有提供，默认值是一个空字符串。
         :type transript: str
-        :return: SpeechSegment instance of the specified slice of the input
-                 speech file.
+        :return: SpeechSegment实例
         :rtype: SpeechSegment
         """
         audio = AudioSegment.slice_from_file(filepath, start, end)
@@ -118,14 +105,13 @@ class SpeechSegment(AudioSegment):
 
     @classmethod
     def make_silence(cls, duration, sample_rate):
-        """Creates a silent speech segment of the given duration and
-        sample rate, transcript will be an empty string.
+        """创建指定安静音频长度和采样率的SpeechSegment实例，音频文件对应的文本将为空字符串。
 
-        :param duration: Length of silence in seconds.
+        :param duration: 安静音频的时间，单位秒
         :type duration: float
-        :param sample_rate: Sample rate.
+        :param sample_rate: 音频采样率
         :type sample_rate: float
-        :return: Silence of the given duration.
+        :return: 安静音频SpeechSegment实例
         :rtype: SpeechSegment
         """
         audio = AudioSegment.make_silence(duration, sample_rate)
@@ -133,9 +119,9 @@ class SpeechSegment(AudioSegment):
 
     @property
     def transcript(self):
-        """Return the transcript text.
+        """返回音频文件对应的文本
 
-        :return: Transcript text for the speech.
+        :return: 音频文件对应的文本
         :rtype: str
         """
         return self._transcript

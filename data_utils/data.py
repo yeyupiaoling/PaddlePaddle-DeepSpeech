@@ -96,20 +96,16 @@ class DataGenerator(object):
         self._place = place
 
     def process_utterance(self, audio_file, transcript):
-        """Load, augment, featurize and normalize for speech data.
+        """对语音数据加载、扩充、特征化和归一化
 
-        :param audio_file: Filepath or file object of audio file.
+        :param audio_file: 音频文件的文件路径或文件对象
         :type audio_file: str | file
-        :param transcript: Transcription text.
+        :param transcript: 音频对应的文本
         :type transcript: str
-        :return: Tuple of audio feature tensor and data of transcription part,
-                 where transcription part could be token ids or text.
+        :return: 经过归一化等预处理的音频数据，音频文件对应文本的ID
         :rtype: tuple of (2darray, list)
         """
-        if isinstance(audio_file, str) and audio_file.startswith('tar:'):
-            speech_segment = SpeechSegment.from_file(self._subfile_from_tar(audio_file), transcript)
-        else:
-            speech_segment = SpeechSegment.from_file(audio_file, transcript)
+        speech_segment = SpeechSegment.from_file(audio_file, transcript)
         self._augmentation_pipeline.transform_audio(speech_segment)
         specgram, transcript_part = self._speech_featurizer.featurize(speech_segment, self._keep_transcription_text)
         specgram = self._normalizer.apply(specgram)
@@ -159,11 +155,11 @@ class DataGenerator(object):
         """
 
         def batch_reader():
-            # read manifest
+            # 读取数据列表
             manifest = read_manifest(manifest_path=manifest_path,
                                      max_duration=self._max_duration,
                                      min_duration=self._min_duration)
-            # sort (by duration) or batch-wise shuffle the manifest
+            # 将数据列表长到短排序
             if self._epoch == 0:
                 manifest.sort(key=lambda x: x["duration"])
                 manifest.reverse()
@@ -178,7 +174,7 @@ class DataGenerator(object):
                     pass
                 else:
                     raise ValueError("Unknown shuffle method %s." % shuffle_method)
-            # prepare batches
+            # 准备批量数据
             batch = []
             instance_reader = self._instance_reader_creator(manifest)
 
@@ -195,9 +191,9 @@ class DataGenerator(object):
 
     @property
     def feeding(self):
-        """Returns data reader's feeding dict.
+        """返回数据读取器的exe读取字典
 
-        :return: Data feeding dict.
+        :return: 数据读取字典
         :rtype: dict
         """
         feeding_dict = {"audio_spectrogram": 0, "transcript_text": 1}
@@ -205,63 +201,32 @@ class DataGenerator(object):
 
     @property
     def vocab_size(self):
-        """Return the vocabulary size.
+        """返回词汇表大小
 
-        :return: Vocabulary size.
+        :return: 词汇表大小
         :rtype: int
         """
         return self._speech_featurizer.vocab_size
 
     @property
     def vocab_list(self):
-        """Return the vocabulary in list.
+        """返回词汇表列表
 
-        :return: Vocabulary in list.
+        :return: 词汇表列表
         :rtype: list
         """
         return self._speech_featurizer.vocab_list
 
-    def _parse_tar(self, file):
-        """Parse a tar file to get a tarfile object
-        and a map containing tarinfoes
-        """
-        result = {}
-        f = tarfile.open(file)
-        for tarinfo in f.getmembers():
-            result[tarinfo.name] = tarinfo
-        return f, result
-
-    def _subfile_from_tar(self, file):
-        """Get subfile object from tar.
-
-        It will return a subfile object from tar file
-        and cached tar file info for next reading request.
-        """
-        tarpath, filename = file.split(':', 1)[1].split('#', 1)
-        if 'tar2info' not in self._local_data.__dict__:
-            self._local_data.tar2info = {}
-        if 'tar2object' not in self._local_data.__dict__:
-            self._local_data.tar2object = {}
-        if tarpath not in self._local_data.tar2info:
-            object, infoes = self._parse_tar(tarpath)
-            self._local_data.tar2info[tarpath] = infoes
-            self._local_data.tar2object[tarpath] = object
-        return self._local_data.tar2object[tarpath].extractfile(
-            self._local_data.tar2info[tarpath][filename])
-
     def _instance_reader_creator(self, manifest):
         """
-        Instance reader creator. Create a callable function to produce
-        instances of data.
+        创建一个数据生成器reader
 
-        Instance: a tuple of ndarray of audio spectrogram and a list of
-        token indices for transcript.
+        Instance: 生成器得到的数据是一个元组，包含了经过预处理音频数据和音频对应文本的ID
         """
 
         def reader():
             for instance in manifest:
-                inst = self.process_utterance(instance["audio_filepath"],
-                                              instance["text"])
+                inst = self.process_utterance(instance["audio_filepath"], instance["text"])
                 yield inst
 
         return reader

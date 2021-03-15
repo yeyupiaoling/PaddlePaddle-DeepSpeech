@@ -21,10 +21,10 @@ add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用R
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('share_rnn_weights',bool,   False,   "是否在RNN上共享权重")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
+add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
 add_arg('model_path',       str,    './models/step_final/',        "训练保存的模型文件夹路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',        "语言模型文件路径")
-add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有定向搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('specgram_type',    str,    'linear',        "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
@@ -52,7 +52,7 @@ ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
                              place=place,
                              share_rnn_weights=args.share_rnn_weights,
                              is_infer=True)
-# 定向搜索方法的处理
+# 集束搜索方法的处理
 if args.decoding_method == "ctc_beam_search":
     ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
 
@@ -70,7 +70,7 @@ def predict(filename):
         result_transcript = ds2_model.decode_batch_greedy(probs_split=probs_split,
                                                           vocab_list=data_generator.vocab_list)
     else:
-        # 定向搜索解码
+        # 集束搜索解码
         result_transcript = ds2_model.decode_batch_beam_search(probs_split=probs_split,
                                                                beam_alpha=args.alpha,
                                                                beam_beta=args.beta,

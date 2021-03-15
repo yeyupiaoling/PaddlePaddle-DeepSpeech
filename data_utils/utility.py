@@ -1,21 +1,19 @@
-"""Contains data helper functions."""
+"""数据工具函数"""
 
 import json
 
 
 def read_manifest(manifest_path, max_duration=float('inf'), min_duration=0.0):
-    """Load and parse manifest file.
+    """解析数据列表
+    持续时间在[min_duration, max_duration]之外的实例将被过滤。
 
-    Instances with durations outside [min_duration, max_duration] will be
-    filtered out.
-
-    :param manifest_path: Manifest file to load and parse.
+    :param manifest_path: 数据列表的路径
     :type manifest_path: str
-    :param max_duration: Maximal duration in seconds for instance filter.
+    :param max_duration: 过滤的最长音频长度
     :type max_duration: float
-    :param min_duration: Minimal duration in seconds for instance filter.
+    :param min_duration: 过滤的最短音频长度
     :type min_duration: float
-    :return: Manifest parsing results. List of dict.
+    :return: 数据列表，JSON格式
     :rtype: list
     :raises IOError: If failed to parse the manifest.
     """

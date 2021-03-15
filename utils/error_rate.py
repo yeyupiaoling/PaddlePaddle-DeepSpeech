@@ -1,6 +1,4 @@
-"""This module provides functions to calculate error rate in different level.
-e.g. wer for word-level, cer for char-level.
-"""
+"""用于计算字错率和词错率"""
 
 import numpy as np
 
