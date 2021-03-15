@@ -20,7 +20,6 @@ add_arg('learning_rate',   float,  5e-5,   "初始学习率")
 add_arg('min_duration',    float,  1.0,    "最短的用于训练的音频长度")
 add_arg('max_duration',    float,  15.0,   "最长的用于训练的音频长度")
 add_arg('test_off',        bool,   False,  "是否关闭测试")
-add_arg('use_sortagrad',   bool,   True,   "是否使用SortaGrad")
 add_arg('use_gru',          bool,  True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,  True,   "是否使用GPU训练")
 add_arg('is_local',        bool,   True,   "是否在本地训练")
@@ -69,12 +68,10 @@ def train():
     # 获取训练数据
     train_batch_reader = train_generator.batch_reader_creator(manifest_path=args.train_manifest,
                                                               batch_size=args.batch_size,
-                                                              sortagrad=args.use_sortagrad if args.init_from_pretrained_model is None else False,
                                                               shuffle_method=args.shuffle_method)
     # 获取测试数据
     test_batch_reader = test_generator.batch_reader_creator(manifest_path=args.dev_manifest,
                                                             batch_size=args.batch_size,
-                                                            sortagrad=False,
                                                             shuffle_method=None)
     # 获取DeepSpeech2模型
     ds2_model = DeepSpeech2Model(vocab_size=train_generator.vocab_size,

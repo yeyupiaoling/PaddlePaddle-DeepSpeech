@@ -67,7 +67,6 @@ def tune():
     # 获取评估数据
     batch_reader = data_generator.batch_reader_creator(manifest_path=args.tune_manifest,
                                                        batch_size=args.batch_size,
-                                                       sortagrad=False,
                                                        shuffle_method=None)
     # 获取DeepSpeech2模型，并设置为预测
     ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,

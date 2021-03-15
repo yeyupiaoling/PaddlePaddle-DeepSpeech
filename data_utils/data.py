@@ -120,7 +120,6 @@ class DataGenerator(object):
                              batch_size,
                              padding_to=-1,
                              flatten=False,
-                             sortagrad=False,
                              shuffle_method="batch_shuffle"):
         """
         Batch data reader creator for audio data. Return a callable generator
@@ -139,9 +138,6 @@ class DataGenerator(object):
         :type padding_to: int
         :param flatten: If set True, audio features will be flatten to 1darray.
         :type flatten: bool
-        :param sortagrad: If set True, sort the instances by audio duration
-                          in the first epoch for speed up training.
-        :type sortagrad: bool
         :param shuffle_method: Shuffle method. Options:
                                 '' or None: no shuffle.
                                 'instance_shuffle': instance-wise shuffle.
@@ -168,7 +164,7 @@ class DataGenerator(object):
                                      max_duration=self._max_duration,
                                      min_duration=self._min_duration)
             # sort (by duration) or batch-wise shuffle the manifest
-            if self._epoch == 0 and sortagrad:
+            if self._epoch == 0:
                 manifest.sort(key=lambda x: x["duration"])
                 manifest.reverse()
             else:
