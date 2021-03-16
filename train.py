@@ -22,7 +22,6 @@ add_arg('max_duration',    float,  15.0,   "最长的用于训练的音频长度
 add_arg('test_off',        bool,   False,  "是否关闭测试")
 add_arg('use_gru',          bool,  True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,  True,   "是否使用GPU训练")
-add_arg('is_local',        bool,   True,   "是否在本地训练")
 add_arg('share_rnn_weights',bool,  False,  "是否在RNN上共享权重")
 add_arg('init_from_pretrained_model',   str, None,    "使用预训练模型的路径，当为None是不使用预训练模型")
 add_arg('train_manifest',               str,   './dataset/manifest.train',    "训练的数据列表")
@@ -43,10 +42,7 @@ def train():
     check_version()
 
     # 是否使用GPU
-    if args.use_gpu:
-        place = fluid.CUDAPlace(0)
-    else:
-        place = fluid.CPUPlace()
+    place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
 
     # 获取训练数据生成器
     train_generator = DataGenerator(vocab_filepath=args.vocab_path,

@@ -37,10 +37,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static", stati
 CORS(app)
 
 # 是否使用GPU
-if args.use_gpu:
-    place = fluid.CUDAPlace(0)
-else:
-    place = fluid.CPUPlace()
+place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
 
 # 获取数据生成器，处理数据和获取字典需要
 data_generator = DataGenerator(vocab_filepath=args.vocab_path,

@@ -32,14 +32,14 @@ add_arg('cutoff_top_n',     int,    40,    "剪枝的最大值")
 add_arg('use_gru',          bool,   True,  "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,   True,  "是否使用GPU训练")
 add_arg('share_rnn_weights',bool,   False, "是否在RNN上共享权重")
-add_arg('tune_manifest',    str,    './dataset/manifest.test',    "需要评估的测试数据列表")
+add_arg('tune_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "语言模型文件路径")
 add_arg('model_path',       str,    './models/step_final/',                     "训练保存的模型文件夹路径")
 add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
-add_arg('specgram_type',    str,    'linear',        "对音频的预处理方式，有: linear, mfcc",     choices=['linear', 'mfcc'])
+add_arg('specgram_type',    str,    'linear', "对音频的预处理方式，有: linear, mfcc",     choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
 
@@ -51,10 +51,7 @@ def tune():
         raise ValueError("num_betas must be non-negative!")
 
     # 是否使用GPU
-    if args.use_gpu:
-        place = fluid.CUDAPlace(0)
-    else:
-        place = fluid.CPUPlace()
+    place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
 
     # 获取数据生成器
     data_generator = DataGenerator(vocab_filepath=args.vocab_path,
