@@ -77,6 +77,7 @@ class DeepSpeech2Model(object):
         self.save_model_path = ''
         # 预测相关的参数
         self.infer_program = None
+        self.infer_compiled_prog = None
         self.infer_feeder = None
         self.infer_log_probs = None
         self.infer_exe = None
@@ -376,14 +377,33 @@ class DeepSpeech2Model(object):
         """
         # define inferer
         infer_results = []
-        # run inference
+        data = []
+        if isinstance(self._place, fluid.CUDAPlace):
+            num_places = fluid.core.get_cuda_device_count()
+        else:
+            num_places = int(os.environ.get('CPU_NUM', 1))
+        # 开始预测
         for i in range(infer_data[0].shape[0]):
-            each_log_probs = self.infer_exe.run(program=self.infer_program,
-                                                feed=self.infer_feeder.feed(
-                                                    [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
-                                                fetch_list=[self.infer_log_probs],
-                                                return_numpy=False)
-            infer_results.extend(np.array(each_log_probs[0]))
+            # 使用多卡推理
+            data.append([[infer_data[0][i], infer_data[2][i], infer_data[3][i]]])
+            if len(data) == num_places:
+                each_log_probs = self.infer_exe.run(program=self.infer_compiled_prog,
+                                                    feed=list(self.infer_feeder.feed_parallel(
+                                                        iterable=data, num_places=num_places)),
+                                                    fetch_list=[self.infer_log_probs],
+                                                    return_numpy=False)
+                data = []
+                infer_results.extend(np.array(each_log_probs[0]))
+        # 如果数据是单数，就获取最后一个计算
+        last_data_num = infer_data[0].shape[0] % num_places
+        if last_data_num != 0:
+            for i in range(infer_data[0].shape[0] - last_data_num, infer_data[0].shape[0]):
+                each_log_probs = self.infer_exe.run(program=self.infer_program,
+                                                    feed=self.infer_feeder.feed(
+                                                        [[infer_data[0][i], infer_data[2][i], infer_data[3][i]]]),
+                                                    fetch_list=[self.infer_log_probs],
+                                                    return_numpy=False)
+                infer_results.extend(np.array(each_log_probs[0]))
 
         # slice result
         infer_results = np.array(infer_results)
@@ -418,6 +438,13 @@ class DeepSpeech2Model(object):
         if not self._init_from_pretrained_model:
             exit("预训练模型文件不存在！")
         self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+
+        # 支持多卡推理
+        build_strategy = compiler.BuildStrategy()
+        exec_strategy = fluid.ExecutionStrategy()
+        self.infer_compiled_prog = compiler.CompiledProgram(self.infer_program).with_data_parallel(
+            build_strategy=build_strategy,
+            exec_strategy=exec_strategy)
 
     # 单个音频预测
     def infer(self, feature):

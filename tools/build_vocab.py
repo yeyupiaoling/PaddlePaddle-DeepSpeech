@@ -13,8 +13,8 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('count_threshold',  int,    0,  "字符计数的截断阈值，0为不做限制")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',                          "生成的数据词汇表文件")
-add_arg('manifest_paths',   str,    './dataset/manifest.train,./dataset/manifest.dev', "数据列表路径")
+add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',                           "生成的数据词汇表文件")
+add_arg('manifest_paths',   str,    './dataset/manifest.train,./dataset/manifest.test', "数据列表路径")
 args = parser.parse_args()
 
 
