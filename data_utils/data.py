@@ -233,24 +233,20 @@ class DataGenerator(object):
 
     def _padding_batch(self, batch, padding_to=-1, flatten=False):
         """
-        Padding audio features with zeros to make them have the same shape (or
-        a user-defined shape) within one bach.
+        用零填充音频功能，使它们在同一个batch具有相同的形状(或一个用户定义的形状)
 
-        If ``padding_to`` is -1, the maximun shape in the batch will be used
-        as the target shape for padding. Otherwise, `padding_to` will be the
-        target shape (only refers to the second axis).
+        如果padding_to为-1，则批处理中的最大形状将被使用 作为填充的目标形状。
+        否则，' padding_to '将是目标形状(仅指第二轴)。
 
-        If `flatten` is True, features will be flatten to 1darray.
+        如果“flatten”为True，特征将被flatten为一维数据
         """
-        new_batch = []
-        # get target shape
+        # 获取目标形状
         max_length = max([audio.shape[1] for audio, text in batch])
         if padding_to != -1:
             if padding_to < max_length:
-                raise ValueError("If padding_to is not -1, it should be larger "
-                                 "than any instance's shape in the batch")
+                raise ValueError("如果padding_to不是-1，它应该大于批处理中任何实例的形状")
             max_length = padding_to
-        # padding
+        # 填充操作
         padded_audios = []
         texts, text_lens = [], []
         audio_lens = []
@@ -285,22 +281,18 @@ class DataGenerator(object):
         return padded_audios, texts, audio_lens, masks
 
     def _batch_shuffle(self, manifest, batch_size, clipped=False):
-        """Put similarly-sized instances into minibatches for better efficiency
-        and make a batch-wise shuffle.
+        """将大小相似的实例放入小批量中可以提高效率，并进行批量打乱
 
-        1. Sort the audio clips by duration.
-        2. Generate a random number `k`, k in [0, batch_size).
-        3. Randomly shift `k` instances in order to create different batches
-           for different epochs. Create minibatches.
-        4. Shuffle the minibatches.
+        1. 按持续时间对音频剪辑进行排序
+        2. 生成一个随机数k， k的范围[0,batch_size)
+        3. 随机移动k实例，为不同的epoch训练创建不同的批次
+        4. 打乱minibatches.
 
-        :param manifest: Manifest contents. List of dict.
+        :param manifest: 数据列表
         :type manifest: list
-        :param batch_size: Batch size. This size is also used for generate
-                           a random number for batch shuffle.
+        :param batch_size: 批量大小。这个大小还用于为批量洗牌生成一个随机数。
         :type batch_size: int
-        :param clipped: Whether to clip the heading (small shift) and trailing
-                        (incomplete batch) instances.
+        :param clipped: 是否剪辑头部(小移位)和尾部(不完整批处理)实例。
         :type clipped: bool
         :return: Batch shuffled mainifest.
         :rtype: list

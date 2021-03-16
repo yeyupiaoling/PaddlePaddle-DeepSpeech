@@ -57,7 +57,7 @@ class SpeechFeaturizer(object):
         self._text_featurizer = TextFeaturizer(vocab_filepath)
 
     def featurize(self, speech_segment, keep_transcription_text):
-        """Extract features for speech segment.
+        """提取语音片段的特征
 
         1. For audio parts, extract the audio features.
         2. For transcript parts, keep the original text or convert text string
@@ -77,7 +77,7 @@ class SpeechFeaturizer(object):
 
     @property
     def vocab_size(self):
-        """Return the vocabulary size.
+        """返回词汇表大小
 
         :return: Vocabulary size.
         :rtype: int
@@ -86,7 +86,7 @@ class SpeechFeaturizer(object):
 
     @property
     def vocab_list(self):
-        """Return the vocabulary in list.
+        """返回词汇表的list
 
         :return: Vocabulary in list.
         :rtype: list

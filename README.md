@@ -1,5 +1,9 @@
 # 语音识别
 
+![License](https://img.shields.io/badge/license-Apache%202-red.svg)
+![python version](https://img.shields.io/badge/python-3.7+-orange.svg)
+![support os](https://img.shields.io/badge/os-linux-yellow.svg)
+
 本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。
 本项目使用的环境：
  - Python 3.7
@@ -156,12 +160,13 @@ if __name__ == '__main__':
 
  - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下，默认会使用噪声音频一起训练的，如果没有这些音频，可以删除`conf/augmentation.config`中的`noise`项，噪声是用于数据增强的，关于数据增强，请查看**数据增强**部分。如果没有关闭测试，在每一轮训练结果之后，都会执行一次测试，为了提高测试的速度，测试使用的是最优解码路径解码，这个解码方式结果没有集束搜索的方法准确率高，所以测试的输出的准确率可以理解为保底的准确率。
 ```shell script
+export FLAGS_sync_nccl_allreduce=0
 CUDA_VISIBLE_DEVICES=0,1 python3 train.py
 ```
 
  - 在训练过程中，程序会使用VisualDL记录训练结果，可以通过以下的命令启动VisualDL。
 ```shell
-visualdl --logdir=log --host 0.0.0.0
+visualdl --logdir=log --host=0.0.0.0
 ```
 
  - 然后再浏览器上访问`http://localhost:8040`可以查看结果显示，如下。
@@ -221,17 +226,59 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
  - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。该程序主要是为了寻找`ctc_beam_search`集束搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。如果使用的是`ctc_greedy`最优路径，可以直接跳过这一步。
 ```shell script
-PYTHONPATH=.:$PYTHONPATH CUDA_VISIBLE_DEVICES=0 python3 tools/tune.py
+PYTHONPATH=.:$PYTHONPATH python3 tools/tune.py --model_path=./models/step_final/
 ```
 
  - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。通过这个程序的输出，开发者就可以考虑使用哪种解码方法，以及`ctc_beam_search`集束搜索方法中`beam_size`参数的大小。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 eval.py
+python3 eval.py --model_path=./models/step_final/
+```
+
+输出结果：
+```
+(PaddlePaddle) psdz@psdz:~/yeyupiaoling/DeepSpeech$ CUDA_VISIBLE_DEVICES=0,1 python3 eval.py --model_path=./models/step_final/
+-----------  Configuration Arguments -----------
+alpha: 1.2
+batch_size: 64
+beam_size: 10
+beta: 0.35
+cutoff_prob: 1.0
+cutoff_top_n: 40
+decoding_method: ctc_beam_search
+error_rate_type: cer
+lang_model_path: ./lm/zh_giga.no_cna_cmn.prune01244.klm
+mean_std_path: ./dataset/mean_std.npz
+model_path: ./models/step_final/
+num_conv_layers: 2
+num_proc_bsearch: 8
+num_rnn_layers: 3
+rnn_layer_size: 2048
+share_rnn_weights: False
+specgram_type: linear
+test_manifest: ./dataset/manifest.test
+use_gpu: True
+use_gru: True
+vocab_path: ./dataset/zh_vocab.txt
+------------------------------------------------
+W0316 11:44:11.708442 32677 device_context.cc:252] Please NOTE: device: 0, CUDA Capability: 75, Driver API Version: 11.0, Runtime API Version: 10.0
+W0316 11:44:11.710579 32677 device_context.cc:260] device: 0, cuDNN Version: 7.6.
+finish initing model from pretrained params from models/epoch_1/
+[INFO 2021-03-16 11:44:13,273 model.py:500] begin to initialize the external scorer for decoding
+[INFO 2021-03-16 11:44:13,340 model.py:508] language model: is_character_based = 1, max_order = 5, dict_size = 0
+[INFO 2021-03-16 11:44:13,340 model.py:509] end initializing scorer
+[INFO 2021-03-16 11:44:13,340 eval.py:83] 开始评估 ...
+错误率：[cer] (64/284) = 0.130435
+错误率：[cer] (128/284) = 0.122273
+错误率：[cer] (192/284) = 0.113173
+错误率：[cer] (256/284) = 0.110085
+错误率：[cer] (284/284) = 0.111763
+消耗时间：60025ms, 总错误率：[cer] (284/284) = 0.111763
+[INFO 2021-03-16 11:45:13,365 eval.py:117] 完成评估！
 ```
 
  - 我们可以使用这个脚本使用模型进行预测，通过传递音频文件的路径进行识别。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_path.py --wav_path=./dataset/test.wav
+python3 infer_path.py --model_path=./models/step_final/ --wav_path=./dataset/test.wav
 ```
 
 输出结果：
@@ -267,12 +314,12 @@ wav_path: ./dataset/test.wav
 
  - 我们可以使用这个脚本使用模型进行预测，通过本地录音然后进行识别。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_record.py
+CUDA_VISIBLE_DEVICES=0 python3 infer_record.py --model_path=./models/step_final/
 ```
 
  - 我们可以使用这个脚本使用模型进行预测，通过创建一个Web服务，通过提供HTTP接口来实现语音识别，同时还提供了一个页面来测试，可以选择本地音频文件，或者是在线录音。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --host=localhost --port=5000
+CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/ --host=localhost --port=5000
 ```
 
 ## 模型下载
@@ -280,3 +327,6 @@ CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --host=localhost --port=5000
 | :---: | :---: |
 | 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
 | 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://resource.doiduoyi.com/#c3cm472) |
+
+
+>有问题欢迎提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues)交流

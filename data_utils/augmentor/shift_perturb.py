@@ -4,7 +4,7 @@ from data_utils.augmentor.base import AugmentorBase
 
 
 class ShiftPerturbAugmentor(AugmentorBase):
-    """Augmentation model for adding random shift perturbation.
+    """添加随机位移扰动的增强模型
     
     :param rng: Random generator object.
     :type rng: random.Random

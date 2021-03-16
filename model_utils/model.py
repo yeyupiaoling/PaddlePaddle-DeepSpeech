@@ -74,6 +74,7 @@ class DeepSpeech2Model(object):
         self.writer = LogWriter(logdir='log')
         self.error_rate_type = error_rate_type
         self.vocab_list = vocab_list
+        self.save_model_path = ''
         # 预测相关的参数
         self.infer_program = None
         self.infer_feeder = None
@@ -111,7 +112,7 @@ class DeepSpeech2Model(object):
             ]
 
             reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
-                                                        capacity=64,
+                                                        capacity=128,
                                                         iterable=False,
                                                         use_double_buffer=True)
 
@@ -157,7 +158,7 @@ class DeepSpeech2Model(object):
                              main_program=program,
                              filename="params.pdparams")
 
-        print("finish initing model from pretrained params from %s" % self._init_from_pretrained_model)
+        print("成功加载了预训练模型：%s" % self._init_from_pretrained_model)
 
         pre_epoch = 0
         dir_name = self._init_from_pretrained_model.split('_')
@@ -176,11 +177,13 @@ class DeepSpeech2Model(object):
         if not os.path.exists(param_dir):
             os.mkdir(param_dir)
 
+        self.save_model_path = os.path.join(param_dir, dirname)
+
         fluid.io.save_params(executor=exe,
                              dirname=os.path.join(param_dir, dirname),
                              main_program=program,
                              filename="params.pdparams")
-        print("save parameters at %s" % (os.path.join(param_dir, dirname)))
+        print("save parameters at %s" % self.save_model_path)
 
         return True
 
@@ -252,6 +255,7 @@ class DeepSpeech2Model(object):
 
         if isinstance(self._place, fluid.CUDAPlace):
             dev_count = fluid.core.get_cuda_device_count()
+            learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
@@ -261,13 +265,15 @@ class DeepSpeech2Model(object):
         with fluid.program_guard(train_program, startup_prog):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
-                # prepare optimizer
-                optimizer = fluid.optimizer.AdamOptimizer(
-                    learning_rate=fluid.layers.exponential_decay(
+                # 学习率
+                learning_rate = fluid.layers.exponential_decay(
                         learning_rate=learning_rate,
                         decay_steps=num_samples / batch_size / dev_count,
                         decay_rate=0.83,
-                        staircase=True),
+                        staircase=True)
+                # 准备优化器
+                optimizer = fluid.optimizer.AdamOptimizer(
+                    learning_rate=learning_rate,
                     regularization=fluid.regularizer.L2Decay(0.0001),
                     grad_clip=fluid.clip.GradientClipByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
@@ -301,19 +307,21 @@ class DeepSpeech2Model(object):
             batch_id = 0
             while True:
                 try:
-                    fetch_list = [ctc_loss.name]
+                    fetch_list = [ctc_loss.name, learning_rate.name]
                     if batch_id % 100 == 0:
                         fetch = exe.run(program=train_compiled_prog,
                                         fetch_list=fetch_list,
                                         return_numpy=False)
                         each_loss = fetch[0]
+                        each_learning_rate = np.array(fetch[1])[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], train loss: %f\n" %
-                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch,
+                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %f, train loss: %f\n" %
+                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, each_learning_rate,
                                np.mean(each_loss[0]) / batch_size))
                         # 记录训练损失值
                         self.writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
+                        self.writer.add_scalar('Learning rate', each_learning_rate, train_step)
                         train_step += 1
                     else:
                         _ = exe.run(program=train_compiled_prog,
@@ -327,6 +335,8 @@ class DeepSpeech2Model(object):
                     train_reader.reset()
                     break
             num_batch = batch_id
+            # 每一个epoch保存一次模型
+            self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
             used_time = time.time() - time_begin
             if test_off:
                 print('======================last Train=====================')
@@ -335,21 +345,16 @@ class DeepSpeech2Model(object):
                 print('======================last Train=====================')
             else:
                 print('\n======================Begin test=====================')
-                # 保存临时模型用于测试
-                self.save_param(exe, train_program, "temp")
                 # 设置临时模型的路径
-                self._init_from_pretrained_model = os.path.join(self._output_model_dir, 'temp')
-                # 支持测试
+                self._init_from_pretrained_model = self.save_model_path
+                # 执行测试
                 test_result = self.test(test_reader=dev_batch_reader)
-                # 删除临时模型
-                shutil.rmtree(os.path.join(self._output_model_dir, 'temp'))
                 print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
                       % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type, test_result))
                 print('======================Stop Train=====================\n')
                 # 记录测试结果
                 self.writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
                 test_step += 1
-            self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
 
         self.save_param(exe, train_program, "step_final")
 
@@ -411,7 +416,7 @@ class DeepSpeech2Model(object):
 
         # init param from pretrained_model
         if not self._init_from_pretrained_model:
-            exit("No pretrain model file path!")
+            exit("预训练模型文件不存在！")
         self.init_from_pretrained_model(self.infer_exe, self.infer_program)
 
     # 单个音频预测

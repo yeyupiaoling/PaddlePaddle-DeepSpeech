@@ -4,7 +4,7 @@ from data_utils.augmentor.base import AugmentorBase
 
 
 class SpeedPerturbAugmentor(AugmentorBase):
-    """Augmentation model for adding speed perturbation.
+    """添加速度扰动的增强模型
 
     See reference paper here:
     http://www.danielpovey.com/files/2015_interspeech_augmentation.pdf

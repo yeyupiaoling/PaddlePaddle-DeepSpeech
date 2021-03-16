@@ -6,7 +6,7 @@ from data_utils.audio import AudioSegment
 
 
 class NoisePerturbAugmentor(AugmentorBase):
-    """Augmentation model for adding background noise.
+    """用于添加背景噪声的增强模型
 
     :param rng: Random generator object.
     :type rng: random.Random

@@ -59,7 +59,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
             f_train.write(line + '\n')
     f_train.close()
     f_test.close()
-    print("Create manifest done. All audio for [%d] hours!" % int(sum(durations) / 3600))
+    print("创建数量列表完成，全部数据一共[%d]小时!" % int(sum(durations) / 3600))
 
 
 # 过滤非文字的字符

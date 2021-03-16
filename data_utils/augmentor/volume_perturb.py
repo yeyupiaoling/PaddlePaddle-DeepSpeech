@@ -4,7 +4,7 @@ from data_utils.augmentor.base import AugmentorBase
 
 
 class VolumePerturbAugmentor(AugmentorBase):
-    """Augmentation model for adding random volume perturbation.
+    """添加随机体积扰动的增强模型
     
     This is used for multi-loudness training of PCEN. See
 

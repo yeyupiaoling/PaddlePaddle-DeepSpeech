@@ -6,7 +6,7 @@ from data_utils.audio import AudioSegment
 
 
 class ImpulseResponseAugmentor(AugmentorBase):
-    """Augmentation model for adding impulse response effect.
+    """增加脉冲响应效应的增强模型
 
     :param rng: Random generator object.
     :type rng: random.Random

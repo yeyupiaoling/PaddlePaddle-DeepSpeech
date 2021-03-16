@@ -132,7 +132,7 @@ def tune():
 
     err_ave_min = min(err_ave)
     min_index = err_ave.index(err_ave_min)
-    print("\nFinish tuning on %d batches, final opt (alpha, beta) = (%s, %s)"
+    print("\n一共使用了 %d 批数据推理, 最优的参数为 (alpha, beta) = (%s, %s)"
           % (cur_batch, "%.3f" % params_grid[min_index][0], "%.3f" % params_grid[min_index][1]))
 
     ds2_model.logger.info("finish tuning")

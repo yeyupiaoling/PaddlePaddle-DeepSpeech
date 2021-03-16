@@ -4,7 +4,7 @@ from data_utils.augmentor.base import AugmentorBase
 
 
 class ResampleAugmentor(AugmentorBase):
-    """Augmentation model for resampling.
+    """重采样的增强模型
 
     See more info here:
     https://ccrma.stanford.edu/~jos/resample/index.html
