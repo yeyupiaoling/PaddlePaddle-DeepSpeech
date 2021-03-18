@@ -171,6 +171,7 @@ visualdl --logdir=log --host=0.0.0.0
 
  - 然后再浏览器上访问`http://localhost:8040`可以查看结果显示，如下。
 
+![Learning rate](https://img-blog.csdnimg.cn/20210318165719805.png)
 ![Test Cer](https://s3.ax1x.com/2021/03/01/6PJaZV.jpg)
 ![Train Loss](https://s3.ax1x.com/2021/03/01/6PJNq0.jpg)
 
@@ -236,7 +237,6 @@ python3 eval.py --model_path=./models/step_final/
 
 输出结果：
 ```
-(PaddlePaddle) psdz@psdz:~/yeyupiaoling/DeepSpeech$ CUDA_VISIBLE_DEVICES=0,1 python3 eval.py --model_path=./models/step_final/
 -----------  Configuration Arguments -----------
 alpha: 1.2
 batch_size: 64
@@ -248,7 +248,7 @@ decoding_method: ctc_beam_search
 error_rate_type: cer
 lang_model_path: ./lm/zh_giga.no_cna_cmn.prune01244.klm
 mean_std_path: ./dataset/mean_std.npz
-model_path: ./models/step_final/
+model_path: models/epoch_19/
 num_conv_layers: 2
 num_proc_bsearch: 8
 num_rnn_layers: 3
@@ -260,20 +260,20 @@ use_gpu: True
 use_gru: True
 vocab_path: ./dataset/zh_vocab.txt
 ------------------------------------------------
-W0316 11:44:11.708442 32677 device_context.cc:252] Please NOTE: device: 0, CUDA Capability: 75, Driver API Version: 11.0, Runtime API Version: 10.0
-W0316 11:44:11.710579 32677 device_context.cc:260] device: 0, cuDNN Version: 7.6.
-finish initing model from pretrained params from models/epoch_1/
-[INFO 2021-03-16 11:44:13,273 model.py:500] begin to initialize the external scorer for decoding
-[INFO 2021-03-16 11:44:13,340 model.py:508] language model: is_character_based = 1, max_order = 5, dict_size = 0
-[INFO 2021-03-16 11:44:13,340 model.py:509] end initializing scorer
-[INFO 2021-03-16 11:44:13,340 eval.py:83] 开始评估 ...
-错误率：[cer] (64/284) = 0.130435
-错误率：[cer] (128/284) = 0.122273
-错误率：[cer] (192/284) = 0.113173
-错误率：[cer] (256/284) = 0.110085
-错误率：[cer] (284/284) = 0.111763
-消耗时间：60025ms, 总错误率：[cer] (284/284) = 0.111763
-[INFO 2021-03-16 11:45:13,365 eval.py:117] 完成评估！
+W0318 16:38:49.200599 19032 device_context.cc:252] Please NOTE: device: 0, CUDA Capability: 75, Driver API Version: 11.0, Runtime API Version: 10.0
+W0318 16:38:49.242089 19032 device_context.cc:260] device: 0, cuDNN Version: 7.6.
+成功加载了预训练模型：models/epoch_19/
+[INFO 2021-03-18 16:38:51,442 model.py:523] begin to initialize the external scorer for decoding
+[INFO 2021-03-18 16:38:53,688 model.py:531] language model: is_character_based = 1, max_order = 5, dict_size = 0
+[INFO 2021-03-18 16:38:53,689 model.py:532] end initializing scorer
+[INFO 2021-03-18 16:38:53,689 eval.py:83] 开始评估 ...
+错误率：[cer] (64/284) = 0.077040
+错误率：[cer] (128/284) = 0.062989
+错误率：[cer] (192/284) = 0.055674
+错误率：[cer] (256/284) = 0.054918
+错误率：[cer] (284/284) = 0.055882
+消耗时间：44526ms, 总错误率：[cer] (284/284) = 0.055882
+[INFO 2021-03-18 16:39:38,215 eval.py:117] 完成评估！
 ```
 
  - 我们可以使用这个脚本使用模型进行预测，通过传递音频文件的路径进行识别。
