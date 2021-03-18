@@ -323,10 +323,11 @@ CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/
 ```
 
 ## 模型下载
-| 模型 | 下载地址 |
-| :---: | :---: |
-| 官方提供的模型 | [点击下载](https://deepspeech.bj.bcebos.com/demo_models/baidu_cn1.2k_model_fluid.tar.gz) |
-| 自训练超大数据集(超过1300小时)的模型 | [点击下载](https://resource.doiduoyi.com/#c3cm472) |
+| 数据集 | 字错率 | 下载地址 |
+| :---: | :---: | :---: |
+| AISHELL | 0.055882 | [点击下载](https://download.csdn.net/download/qq_33200967/15902032) |
+| 自收集(超过1300小时) | 忘记了 | [点击下载](https://download.csdn.net/download/qq_33200967/14028498) |
 
+**说明：** 在训练过程中添加了噪声等各种数据增强，字错率高一些也是正常的。
 
 >有问题欢迎提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues)交流
