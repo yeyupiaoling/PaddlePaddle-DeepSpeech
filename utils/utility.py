@@ -59,7 +59,8 @@ def get_data_len(manifest_path, max_duration, min_duration):
 
 # 改变音频采样率为16000Hz
 def change_rate(audio_path):
+    audio_path = audio_path.replace('\\', '/')
     data, sr = soundfile.read(audio_path)
     if sr != 16000:
-        data, sr = librosa.load(audio_path, sr=16000).replace('\\', '/')
+        data, sr = librosa.load(audio_path, sr=16000)
         soundfile.write(audio_path, data, samplerate=16000)
