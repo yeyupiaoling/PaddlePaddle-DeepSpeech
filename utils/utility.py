@@ -61,5 +61,5 @@ def get_data_len(manifest_path, max_duration, min_duration):
 def change_rate(audio_path):
     data, sr = soundfile.read(audio_path)
     if sr != 16000:
-        data = librosa.resample(data, sr, target_sr=16000)
+        data, sr = librosa.load(audio_path, sr=16000)
         soundfile.write(audio_path, data, samplerate=16000)
