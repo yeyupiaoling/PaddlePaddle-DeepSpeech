@@ -329,7 +329,7 @@ CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/
 | AISHELL | 0.055882 | [点击下载](https://download.csdn.net/download/qq_33200967/15902032) |
 | free_st_chinese_mandarin_corpus | 0.138749 | [点击下载](https://download.csdn.net/download/qq_33200967/15934896) |
 | thchs_30 | 0.112128 | [点击下载](https://download.csdn.net/download/qq_33200967/16031534) |
-| 自收集(超过1300小时) | 忘记了 | [点击下载](https://download.csdn.net/download/qq_33200967/16200230) |
+| 自收集(超过1300小时) | 0.072669 | [点击下载](https://download.csdn.net/download/qq_33200967/16200230) |
 
 **说明：** 在训练过程中添加了噪声等各种数据增强，字错率高一些也是正常的。
 

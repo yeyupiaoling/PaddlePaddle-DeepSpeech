@@ -112,7 +112,7 @@ def evaluate():
             num_ins += 1
         print("错误率：[%s] (%d/%d) = %f" % (args.error_rate_type, num_ins, test_len, errors_sum / len_refs))
     end = time.time()
-    print("消耗时间：%dms, 总错误率：[%s] (%d/%d) = %f" % (round((end - start) * 1000), args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
+    print("消耗时间：%ds, 总错误率：[%s] (%d/%d) = %f" % ((end - start), args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
 
     ds2_model.logger.info("完成评估！")
 
