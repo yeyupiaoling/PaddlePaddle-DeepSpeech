@@ -19,11 +19,29 @@
 
 ## 目录
 
+- [搭建本地环境](#搭建本地环境)
 - [搭建Docker环境](#搭建Docker环境)
 - [数据准备](#数据准备)
 - [训练模型](#训练模型)
 - [评估和预测](#评估和预测)
 - [项目部署](#项目部署)
+
+
+### 搭建本地环境
+
+本人用的就是本地环境，建议都用本地环境，方便交流，出现安装问题，随时提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 。
+
+ - 执行下面的命令完成本地环境的搭建。因为每个电脑的环境不一样，不能保证能够正常使用，如果出现问题，查看报错信息，安装相应的依赖库。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
+```shell script
+cd DeepSpeech/
+sudo sh setup.sh
+```
+
+- git clone 本项目源码
+```shell script
+git clone https://github.com/yeyupiaoling/DeepSpeech.git
+```
+
 
 ## 搭建Docker环境
 
@@ -102,19 +120,6 @@ sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidu
 ```shell script
 cd DeepSpeech/
 sh setup.sh
-```
-
-### 搭建本地环境
-
- - 执行下面的命令完成本地环境的搭建。因为每个电脑的环境不一样，不能保证能够正常使用，如果出现问题，查看报错信息，安装相应的依赖库。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
-```shell script
-cd DeepSpeech/
-sudo sh setup.sh
-```
-
-- git clone 本项目源码
-```shell script
-git clone https://github.com/yeyupiaoling/DeepSpeech.git
 ```
 
 ## 数据准备
