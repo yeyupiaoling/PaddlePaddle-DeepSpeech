@@ -29,12 +29,33 @@
 
 ### 搭建本地环境
 
-本人用的就是本地环境并使用Anaconda虚拟环境，建议读者也本地环境，方便交流，出现安装问题，随时提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 。
+本人用的就是本地环境和使用Anaconda，并创建了Python3.7的虚拟环境，建议读者也本地环境，方便交流，出现安装问题，随时提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 。
 
  - 执行下面的命令完成本地环境的搭建。因为每个电脑的环境不一样，不能保证能够正常使用，如果出现问题，查看报错信息，安装相应的依赖库。首先切换到`DeepSpeech/`根目录下，执行`setup.sh`脚本安装依赖环境，等待安装即可。默认安装的是PaddlePaddle 1.8.5.post107的GPU版本，需要自行安装相关的CUDA和CUDNN。
 ```shell script
 cd DeepSpeech/
 sudo sh setup.sh
+```
+
+**如果出现LLVM版本错误**，则执行下面的命令，然后重新执行上面的安装命令，否则不需要执行。
+```shell
+cd ~
+wget https://releases.llvm.org/9.0.0/llvm-9.0.0.src.tar.xz
+wget http://releases.llvm.org/9.0.0/cfe-9.0.0.src.tar.xz
+wget http://releases.llvm.org/9.0.0/clang-tools-extra-9.0.0.src.tar.xz
+tar xvf llvm-9.0.0.src.tar.xz
+tar xvf cfe-9.0.0.src.tar.xz
+tar xvf clang-tools-extra-9.0.0.src.tar.xz
+mv llvm-9.0.0.src llvm-src
+mv cfe-9.0.0.src llvm-src/tools/clang
+mv clang-tools-extra-9.0.0.src llvm-src/tools/clang/tools/extra
+sudo mkdir -p /usr/local/llvm
+sudo mkdir -p llvm-src/build
+cd llvm-src/build
+sudo cmake -G "Unix Makefiles" -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX="/usr/local/llvm" ..
+sudo make -j8
+sudo make install
+export LLVM_CONFIG=/usr/local/llvm/bin/llvm-config
 ```
 
 - git clone 本项目源码
@@ -116,8 +137,35 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.5-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
- - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。还有将`scipy==1.5.4 resampy==0.2.2`的版本改为`scipy==1.2.1 resampy==0.1.5`。
+ - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。还有将`numba==0.51.2 scipy==1.5.4 resampy==0.2.2 llvmlite==0.34.0`的版本改为`numba==0.47.0 scipy==1.2.1 resampy==0.1.5 llvmlite==0.32.1`。
 ```shell script
+# 修改Docker的Python3版本为3.7
+rm -rf /usr/local/bin/python3
+ln -s /home/Python-3.7.0/python /usr/local/bin/python3
+
+# 切换默认的g++版本为5
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 30 --slave /usr/bin/g++ g++ /usr/bin/g++-5
+update-alternatives --config gcc
+
+# 开始安装LLVM
+cd /home
+wget https://releases.llvm.org/9.0.0/llvm-9.0.0.src.tar.xz
+wget http://releases.llvm.org/9.0.0/cfe-9.0.0.src.tar.xz
+wget http://releases.llvm.org/9.0.0/clang-tools-extra-9.0.0.src.tar.xz
+tar xvf llvm-9.0.0.src.tar.xz
+tar xvf cfe-9.0.0.src.tar.xz
+tar xvf clang-tools-extra-9.0.0.src.tar.xz
+mv llvm-9.0.0.src llvm-src
+mv cfe-9.0.0.src llvm-src/tools/clang
+mv clang-tools-extra-9.0.0.src llvm-src/tools/clang/tools/extra
+mkdir -p /usr/local/llvm
+mkdir -p llvm-src/build
+cd llvm-src/build
+cmake -G "Unix Makefiles" -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX="/usr/local/llvm" ..
+make -j8 && make install
+export LLVM_CONFIG=/usr/local/llvm/bin/llvm-config
+
+# 安装全部依赖库
 cd DeepSpeech/
 sh setup.sh
 ```
