@@ -134,7 +134,6 @@ var HZRecorder = function (stream, config) {
     this.clear = function(){
         audioData.buffer=[];
         audioData.size=0;
-        con
     }
 
     //上传
@@ -143,6 +142,7 @@ var HZRecorder = function (stream, config) {
         // 上传的文件名和数据
         fd.append("audio", this.getBlob());
         var xhr = new XMLHttpRequest();
+        xhr.timeout = 10000
         if (callback) {
             xhr.upload.addEventListener("progress", function (e) {
                 callback('uploading', e);

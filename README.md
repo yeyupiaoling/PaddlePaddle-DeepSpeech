@@ -366,11 +366,6 @@ wav_path: ./dataset/test.wav
 消耗时间：1656, 识别结果: 近几年不但我用输给女儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书
 ```
 
- - 我们可以使用这个脚本使用模型进行预测，通过本地录音然后进行识别。
-```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_record.py --model_path=./models/step_final/
-```
-
  - 我们可以使用这个脚本使用模型进行预测，通过创建一个Web服务，通过提供HTTP接口来实现语音识别，同时还提供了一个页面来测试，可以选择本地音频文件，或者是在线录音。
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/ --host=localhost --port=5000

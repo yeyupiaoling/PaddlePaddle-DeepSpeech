@@ -32,7 +32,7 @@ add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方�
 add_arg('specgram_type',    str,    'linear',        "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
-app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
+app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/")
 # 允许跨越访问
 CORS(app)
 
