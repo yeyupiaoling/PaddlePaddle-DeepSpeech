@@ -137,7 +137,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech hub.baidubce.com/paddlepaddle/paddle:1.8.5-gpu-cuda10.0-cudnn7 /bin/bash
 ```
 
- - 切换到`/DeepSpeech/`目录下，执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。还有将`numba==0.51.2 scipy==1.5.4 resampy==0.2.2 llvmlite==0.34.0`的版本改为`numba==0.47.0 scipy==1.2.1 resampy==0.1.5 llvmlite==0.32.1`。
+ - 切换到`/DeepSpeech/`目录下，首先将docker的Python3默认为Python3.7，然后切换g++为g++5，然后安装LLVM。最后执行`setup.sh`脚本安装依赖环境，执行前需要去掉`setup.sh`和`decoder/setup.sh`安装依赖库时使用的`sudo`命令，因为在docker中本来就是root环境，等待安装即可。
 ```shell script
 # 修改Docker的Python3版本为3.7
 rm -rf /usr/local/bin/python3
