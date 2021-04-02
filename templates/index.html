@@ -22,7 +22,6 @@
     <div id="player">
         <audio controls autoplay></audio>
     </div>
-<p id="specification">由于受Chrome浏览器权限限制，录音功能需要在localhost或者HTTPS下才能使用。</p>
 </div>
 <script>
     var is_recording = false;
@@ -81,7 +80,8 @@
     }
 
     function uploadRecordAudio() {
-        recorder.upload("/recognition", function (state, e) {
+        url = "http://192.168.88.60:5000/recognition"
+        recorder.upload(url, function (state, e) {
             switch (state) {
                 case 'uploading':
                     var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
@@ -102,7 +102,7 @@
     }
 
     function uploadFile(){
-        url = "/recognition"
+        url = "http://192.168.88.60:5000/recognition"
         var input = document.createElement("input");
         input.type = "file";
         input.accept = "audio/*";

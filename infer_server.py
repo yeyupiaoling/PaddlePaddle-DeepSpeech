@@ -3,7 +3,7 @@ import functools
 import os
 import time
 import paddle.fluid as fluid
-from flask import request, Flask, render_template
+from flask import request, Flask
 from flask_cors import CORS
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
@@ -11,7 +11,7 @@ from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg("host",             str,    "localhost",          "监听主机的IP地址")
+add_arg("host",             str,    "0.0.0.0",            "监听主机的IP地址")
 add_arg("port",             int,    5000,                 "服务所使用的端口号")
 add_arg("save_path",        str,    'dataset/upload/',    "上传音频文件的保存目录")
 add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 500]")
@@ -33,7 +33,7 @@ add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方�
 add_arg('specgram_type',    str,    'linear',        "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
-app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/")
+app = Flask(__name__)
 # 允许跨越访问
 CORS(app)
 
@@ -109,11 +109,6 @@ def recognition():
         except:
             return str({"error": 1, "msg": "audio read fail!"})
     return str({"error": 3, "msg": "audio is None!"})
-
-
-@app.route('/')
-def home():
-    return render_template("index.html")
 
 
 if __name__ == '__main__':

@@ -366,10 +366,15 @@ wav_path: ./dataset/test.wav
 消耗时间：1656, 识别结果: 近几年不但我用输给女儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书
 ```
 
- - 我们可以使用这个脚本使用模型进行预测，通过创建一个Web服务，通过提供HTTP接口来实现语音识别，同时还提供了一个页面来测试，可以选择本地音频文件，或者是在线录音。
+ - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/ --host=localhost --port=5000
+CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/
 ```
+ - 在本地执行下面命令启动一个网页来测试，可以选择本地音频文件，或者是在线录音。在启动前需要修改`index.html`中`uploadRecordAudio()`和`uploadFile()`的请求url，把url改为加上读者服务器的IP即可，启动服务之后，在浏览器上访问`http://localhost:5001`。
+```shell script
+python3 client.py
+```
+
 ![录音测试页面](https://img-blog.csdnimg.cn/20210402091159951.png)
 
 ## 模型下载
