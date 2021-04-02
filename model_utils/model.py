@@ -71,7 +71,8 @@ class DeepSpeech2Model(object):
         self._ext_scorer = None
         self.logger = logging.getLogger("")
         self.logger.setLevel(level=logging.INFO)
-        self.writer = LogWriter(logdir='log')
+        if not is_infer:
+            self.writer = LogWriter(logdir='log')
         self.error_rate_type = error_rate_type
         self.vocab_list = vocab_list
         self.save_model_path = ''
