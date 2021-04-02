@@ -22,9 +22,8 @@
     <div id="player">
         <audio controls autoplay></audio>
     </div>
-
+<p id="specification">由于受Chrome浏览器权限限制，录音功能需要在localhost或者HTTPS下才能使用。</p>
 </div>
-
 <script>
     var is_recording = false;
     var is_playing = false;
@@ -82,7 +81,7 @@
     }
 
     function uploadRecordAudio() {
-        recorder.upload("http://3uj5072792.wicp.vip:57994/deepspeech_recognition", function (state, e) {
+        recorder.upload("/recognition", function (state, e) {
             switch (state) {
                 case 'uploading':
                     var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
@@ -103,7 +102,7 @@
     }
 
     function uploadFile(){
-        url = "http://3uj5072792.wicp.vip:57994/deepspeech_recognition"
+        url = "/recognition"
         var input = document.createElement("input");
         input.type = "file";
         input.accept = "audio/*";
@@ -137,7 +136,7 @@
         // 上传的文件名和数据
         fd.append("audio", file);
         var xhr = new XMLHttpRequest();
-        xhr.timeout = 10000
+        xhr.timeout = 60000
         if (callback) {
             xhr.upload.addEventListener("progress", function (e) {
                 callback('uploading', e);

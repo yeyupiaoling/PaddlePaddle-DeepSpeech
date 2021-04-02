@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg("host",             str,    "localhost",          "监听主机的IP地址")
 add_arg("port",             int,    5000,                 "服务所使用的端口号")
+add_arg("save_path",        str,    'dataset/upload/',    "上传音频文件的保存目录")
 add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 500]")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
@@ -95,7 +96,7 @@ def recognition():
     f = request.files['audio']
     if f:
         # 临时保存路径
-        file_path = args.save_path + f.filename
+        file_path = os.path.join(args.save_path, f.filename)
         f.save(file_path)
         try:
             start = time.time()

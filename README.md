@@ -370,6 +370,7 @@ wav_path: ./dataset/test.wav
 ```shell script
 CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/ --host=localhost --port=5000
 ```
+![录音测试页面](https://img-blog.csdnimg.cn/20210402091159951.png)
 
 ## 模型下载
 | 数据集 | 字错率 | 下载地址 |

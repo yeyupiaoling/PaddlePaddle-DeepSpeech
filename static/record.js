@@ -142,7 +142,7 @@ var HZRecorder = function (stream, config) {
         // 上传的文件名和数据
         fd.append("audio", this.getBlob());
         var xhr = new XMLHttpRequest();
-        xhr.timeout = 10000
+        xhr.timeout = 60000
         if (callback) {
             xhr.upload.addEventListener("progress", function (e) {
                 callback('uploading', e);
