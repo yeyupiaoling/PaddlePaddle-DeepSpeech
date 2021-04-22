@@ -58,6 +58,8 @@ sudo make install
 export LLVM_CONFIG=/usr/local/llvm/bin/llvm-config
 ```
 
+**No module named 'ctc_decoders'**, 错误解决办法，在执行`setup.sh`的最后会自动执行`decoders/setup.sh`的脚本自动安装识别结果解码工具`ctc_decoders`，这个脚本会克隆Github上的代码和下载编译依赖文件，但是由于网络不稳定，经常下载失败，导致编译未成功，这种情况下，进入到`decoders`重新执行`setup.sh`就好，再执行的过程中要留意有没有各个文件下载成功。
+
 - git clone 本项目源码
 ```shell script
 git clone https://github.com/yeyupiaoling/DeepSpeech.git
