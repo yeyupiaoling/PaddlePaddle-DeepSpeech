@@ -19,12 +19,13 @@
 
 ## 目录
 
-- [搭建本地环境](#搭建本地环境)
-- [搭建Docker环境](#搭建Docker环境)
-- [数据准备](#数据准备)
-- [训练模型](#训练模型)
-- [评估和预测](#评估和预测)
-- [项目部署](#项目部署)
+- [搭建本地环境](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%90%AD%E5%BB%BA%E6%9C%AC%E5%9C%B0%E7%8E%AF%E5%A2%83)
+- [搭建Docker环境](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%90%AD%E5%BB%BAdocker%E7%8E%AF%E5%A2%83)
+- [数据准备](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%95%B0%E6%8D%AE%E5%87%86%E5%A4%87)
+- [训练模型](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B)
+- [评估和预测](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B)
+- [项目部署](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E8%AF%84%E4%BC%B0%E5%92%8C%E9%A2%84%E6%B5%8B)
+- [模型下载](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%A8%A1%E5%9E%8B%E4%B8%8B%E8%BD%BD)
 
 
 ### 搭建本地环境
