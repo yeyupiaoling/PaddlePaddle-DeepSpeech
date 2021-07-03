@@ -20,6 +20,7 @@
 - [评估和预测](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B)
 - [项目部署](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E8%AF%84%E4%BC%B0%E5%92%8C%E9%A2%84%E6%B5%8B)
 - [模型下载](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%A8%A1%E5%9E%8B%E4%B8%8B%E8%BD%BD)
+- [相关项目](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E7%9B%B8%E5%85%B3%E9%A1%B9%E7%9B%AE)
 
 
 ### 搭建本地环境
