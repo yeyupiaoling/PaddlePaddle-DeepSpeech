@@ -11,12 +11,6 @@
  - PaddlePaddle 1.8.5
 
 
-## 在线试用：
-**[点击访问](http://3uj5072792.wicp.vip:57994/deepspeech)** (请不要攻击我可怜的服务器，谢谢！)
-
->型并没有完全训练完，效果没有达到最好，有没有同学提供多卡服务器笔者训练啊，感激感激!
-
-
 ## 目录
 
 - [搭建本地环境](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech#%E6%90%AD%E5%BB%BA%E6%9C%AC%E5%9C%B0%E7%8E%AF%E5%A2%83)
@@ -389,5 +383,10 @@ python3 client.py
 | 自收集(超过1300小时) | 0.072669 | [点击下载](https://download.csdn.net/download/qq_33200967/16200230) |
 
 **说明：** 在训练过程中添加了噪声等各种数据增强，字错率高一些也是正常的。
+
+## 相关项目
+ - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
+ - 基于PaddlePaddle 2.0实现的语音识别：[PPASR](https://github.com/yeyupiaoling/PPASR)
+ - 基于Pytorch实现的语音识别：[MASR](https://github.com/yeyupiaoling/MASR)
 
 >有问题欢迎提 [issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 交流
