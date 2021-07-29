@@ -11,6 +11,9 @@
  - Python 3.7
  - PaddlePaddle 2.1.1
  - Windows or Ubuntu
+   
+
+**本教程源码：[https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech)**
 
 
 ## 目录
@@ -23,6 +26,7 @@
 - [本地预测](#本地预测)
 - [Web部署](#Web部署)
 - [模型下载](#模型下载)
+- [相关项目](#相关项目)
 
 
 ### 搭建本地环境
@@ -170,7 +174,7 @@ W0318 16:38:49.242089 19032 device_context.cc:260] device: 0, cuDNN Version: 7.6
 [INFO 2021-03-18 16:39:38,215 eval.py:117] 完成评估！
 ```
 
-# 导出模型
+## 导出模型
 
 训练保存的是模型参数，我们要将它到处为预测模型，这样可以直接使用模型，不再需要模型结构代码，同时使用Inference接口可以加速预测，在一些设备也可以使用TensorRT加速。
 ```shell
@@ -253,3 +257,9 @@ python client.py
 **说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](#导出模型)
 
 >有问题欢迎提 [issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 交流
+
+
+## 相关项目
+ - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
+ - 基于PaddlePaddle 2.0实现的语音识别：[PPASR](https://github.com/yeyupiaoling/PPASR)
+ - 基于Pytorch实现的语音识别：[MASR](https://github.com/yeyupiaoling/MASR)
