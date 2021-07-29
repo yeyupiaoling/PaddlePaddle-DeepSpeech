@@ -15,7 +15,6 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('num_samples',      int,    5000,       "用于计算均值和标准值得音频数量")
-add_arg('specgram_type',    str,    'linear',   "音频特征处理方法，选项: linear, mfcc.", choices=['linear', 'mfcc'])
 add_arg('manifest_path',    str,    './dataset/manifest.train',   "用于计算均值和标准值的训练数据列表")
 add_arg('output_path',      str,    './dataset/mean_std.npz',     "保存均值和标准值得numpy文件路径，后缀 (.npz).")
 args = parser.parse_args()
@@ -25,7 +24,7 @@ def main():
     print_arguments(args)
 
     augmentation_pipeline = AugmentationPipeline('{}')
-    audio_featurizer = AudioFeaturizer(specgram_type=args.specgram_type)
+    audio_featurizer = AudioFeaturizer()
 
     def augment_and_featurize(audio_segment):
         augmentation_pipeline.transform_audio(audio_segment)

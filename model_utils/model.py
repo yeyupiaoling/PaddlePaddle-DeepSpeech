@@ -370,9 +370,6 @@ class DeepSpeech2Model(object):
                            consisting of a tuple of audio features and
                            transcription text (empty string).
         :type infer_data: list
-        :param feeding_dict: Feeding is a map of field name and tuple index
-                             of the data that reader returns.
-        :type feeding_dict: dict|list
         :return: List of 2-D probability matrix, and each consists of prob
                  vectors for one speech utterancce.
         :rtype: List of matrix
@@ -451,26 +448,20 @@ class DeepSpeech2Model(object):
     # 单个音频预测
     def infer(self, feature):
         """Infer the prob matrices for a batch of speech utterances.
-        :param infer_data: List of utterances to infer, with each utterance
-                           consisting of a tuple of audio features and
-                           transcription text (empty string).
-        :type infer_data: list
-        :param feeding_dict: Feeding is a map of field name and tuple index
-                             of the data that reader returns.
-        :type feeding_dict: dict|list
+        :param feature: DataGenerator.process_utterance get data[0]
         :return: List of 2-D probability matrix, and each consists of prob
                  vectors for one speech utterancce.
         :rtype: List of matrix
         """
-        audio_len = feature[0].shape[1]
-        mask_shape0 = (feature[0].shape[0] - 1) // 2 + 1
-        mask_shape1 = (feature[0].shape[1] - 1) // 3 + 1
+        audio_len = feature.shape[1]
+        mask_shape0 = (feature.shape[0] - 1) // 2 + 1
+        mask_shape1 = (feature.shape[1] - 1) // 3 + 1
         mask_max_len = (audio_len - 1) // 3 + 1
         mask_ones = np.ones((mask_shape0, mask_shape1))
         mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
         mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
                                     (1, mask_shape0, mask_max_len)), 32, axis=0)
-        infer_data = [np.array(feature[0]).astype('float32'),
+        infer_data = [np.array(feature).astype('float32'),
                       None,
                       np.array(audio_len).astype('int64'),
                       np.array(mask).astype('float32')]
@@ -488,3 +479,28 @@ class DeepSpeech2Model(object):
         start_pos[1] = start_pos[0] + seq_len
         probs_split = infer_result[start_pos[0]:start_pos[1]]
         return probs_split
+
+    # 导出预测模型
+    def export_model(self, data_feature, model_path):
+        _ = self.infer(data_feature)
+        audio_data = fluid.data(name='audio_data',
+                                shape=[None, 161, None],
+                                dtype='float32',
+                                lod_level=0)
+        seq_len_data = fluid.data(name='seq_len_data',
+                                  shape=[None, 1],
+                                  dtype='int64',
+                                  lod_level=0)
+        masks = fluid.data(name='masks',
+                           shape=[None, 32, 81, None],
+                           dtype='float32',
+                           lod_level=0)
+        if not os.path.exists(os.path.dirname(model_path)):
+            os.makedirs(os.path.dirname(model_path))
+        fluid.io.save_inference_model(dirname=model_path,
+                                      feeded_var_names=[audio_data.name, seq_len_data.name, masks.name],
+                                      target_vars=[self.infer_log_probs],
+                                      executor=self.infer_exe,
+                                      main_program=self.infer_program,
+                                      model_filename='model.pdmodel',
+                                      params_filename='model.pdiparams')

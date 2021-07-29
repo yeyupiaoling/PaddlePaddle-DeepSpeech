@@ -3,7 +3,6 @@ pipeline and offering data reader interface of PaddlePaddle requirements.
 """
 
 import random
-import tarfile
 import numpy as np
 import paddle.fluid as fluid
 from threading import local
@@ -41,8 +40,6 @@ class DataGenerator(object):
                      corresponding to frequencies between [0, max_freq] are
                      returned.
     :types max_freq: None|float
-    :param specgram_type: Specgram feature type. Options: 'linear'.
-    :type specgram_type: str
     :param use_dB_normalization: Whether to normalize the audio to -20 dB
                                 before extracting the features.
     :type use_dB_normalization: bool
@@ -68,7 +65,6 @@ class DataGenerator(object):
                  stride_ms=10.0,
                  window_ms=20.0,
                  max_freq=None,
-                 specgram_type='linear',
                  use_dB_normalization=True,
                  random_seed=0,
                  keep_transcription_text=False,
@@ -80,7 +76,6 @@ class DataGenerator(object):
         self._augmentation_pipeline = AugmentationPipeline(augmentation_config=augmentation_config,
                                                            random_seed=random_seed)
         self._speech_featurizer = SpeechFeaturizer(vocab_filepath=vocab_filepath,
-                                                   specgram_type=specgram_type,
                                                    stride_ms=stride_ms,
                                                    window_ms=window_ms,
                                                    max_freq=max_freq,

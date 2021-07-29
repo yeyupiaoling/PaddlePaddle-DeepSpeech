@@ -4,6 +4,7 @@ dataset/*
 !dataset/test.wav
 models/
 lm/
+log/
 audios_cache/
 data_utils/*.pyc
 data_utils/featurizer/*.pyc

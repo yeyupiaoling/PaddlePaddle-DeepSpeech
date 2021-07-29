@@ -22,14 +22,13 @@ add_arg('test_off',         bool,   False,  "是否关闭测试")
 add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('share_rnn_weights',bool,   False,  "是否在RNN上共享权重")
-add_arg('init_from_pretrained_model',   str, 'models/step_final',    "使用预训练模型的路径，当为None是不使用预训练模型")
+add_arg('init_from_pretrained_model',   str, None,    "使用预训练模型的路径，当为None是不使用预训练模型")
 add_arg('train_manifest',               str,   './dataset/manifest.train',    "训练的数据列表")
 add_arg('dev_manifest',                 str,  './dataset/manifest.test',      "测试的数据列表")
 add_arg('mean_std_path',                str,  './dataset/mean_std.npz',       "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',                   str,  './dataset/zh_vocab.txt',       "数据集的词汇表文件路径")
 add_arg('output_model_dir',             str,  "./models",                     "保存训练模型的文件夹")
 add_arg('augment_conf_path',            str,  './conf/augmentation.config',   "数据增强的配置文件，为json格式")
-add_arg('specgram_type',                str,  'linear',    "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])
 add_arg('shuffle_method',               str,  'batch_shuffle_clipped',    "打乱数据的方法", choices=['instance_shuffle', 'batch_shuffle', 'batch_shuffle_clipped'])
 args = parser.parse_args()
 
@@ -45,14 +44,11 @@ def train():
                                     augmentation_config=io.open(args.augment_conf_path, mode='r', encoding='utf8').read(),
                                     max_duration=args.max_duration,
                                     min_duration=args.min_duration,
-                                    specgram_type=args.specgram_type,
                                     place=place)
 
     # 获取测试数据生成器
     test_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                    mean_std_filepath=args.mean_std_path,
-                                   augmentation_config="{}",
-                                   specgram_type=args.specgram_type,
                                    keep_transcription_text=True,
                                    place=place,
                                    is_training=False)

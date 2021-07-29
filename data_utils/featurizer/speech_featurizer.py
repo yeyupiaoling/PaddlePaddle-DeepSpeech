@@ -15,9 +15,7 @@ class SpeechFeaturizer(object):
 
     :param vocab_filepath: Filepath to load vocabulary for token indices
                            conversion.
-    :type specgram_type: str
-    :param specgram_type: Specgram feature type. Options: 'linear', 'mfcc'.
-    :type specgram_type: str
+    :type vocab_filepath: str
     :param stride_ms: Striding size (in milliseconds) for generating frames.
     :type stride_ms: float
     :param window_ms: Window size (in milliseconds) for generating frames.
@@ -40,15 +38,13 @@ class SpeechFeaturizer(object):
 
     def __init__(self,
                  vocab_filepath,
-                 specgram_type='linear',
                  stride_ms=10.0,
                  window_ms=20.0,
                  max_freq=None,
                  target_sample_rate=16000,
                  use_dB_normalization=True,
                  target_dB=-20):
-        self._audio_featurizer = AudioFeaturizer(specgram_type=specgram_type,
-                                                 stride_ms=stride_ms,
+        self._audio_featurizer = AudioFeaturizer(stride_ms=stride_ms,
                                                  window_ms=window_ms,
                                                  max_freq=max_freq,
                                                  target_sample_rate=target_sample_rate,
