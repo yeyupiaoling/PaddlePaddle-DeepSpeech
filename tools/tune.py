@@ -43,9 +43,7 @@ add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "语言模型文件路径")
 add_arg('model_path',       str,    './models/step_final/',                     "训练保存的模型文件夹路径")
-add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
-add_arg('specgram_type',    str,    'linear', "对音频的预处理方式，有: linear, mfcc",     choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
 
@@ -62,8 +60,6 @@ def tune():
     # 获取数据生成器
     data_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                    mean_std_filepath=args.mean_std_path,
-                                   augmentation_config='{}',
-                                   specgram_type=args.specgram_type,
                                    keep_transcription_text=True,
                                    place=place,
                                    is_training=False)
