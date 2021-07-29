@@ -175,9 +175,9 @@ sh setup.sh
 1. 在`data`目录下是公开数据集的下载和制作训练数据列表和词汇表的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如果想快速训练，也可以只下载其中一个。
 ```shell script
 cd data/
-python3 aishell.py
-python3 free_st_chinese_mandarin_corpus.py
-python3 thchs_30.py
+python aishell.py
+python free_st_chinese_mandarin_corpus.py
+python thchs_30.py
 ```
 
  - 如果开发者有自己的数据集，可以使用自己的数据集进行训练，当然也可以跟上面下载的数据集一起训练。自定义的语音数据需要符合以下格式，另外对于音频的采样率，本项目默认使用的是16000Hz，在`create_manifest.py`中也提供了统一音频数据的采样率转换为16000Hz，只要`is_change_frame_rate`参数设置为True就可以。
@@ -193,11 +193,11 @@ dataset/audio/wav/0175/H0175A0180.wav 把温度加大到十八
  - 然后执行下面的数据集处理脚本，这个是把我们的数据集生成三个JSON格式的数据列表，分别是`manifest.dev、manifest.test、manifest.train`。然后计算均值和标准差用于归一化，脚本随机采样2000个的语音频谱特征的均值和标准差，并将结果保存在`mean_std.npz`中。建立词表。最后建立词表，把所有出现的字符都存放子在`zh_vocab.txt`文件中，一行一个字符。以上生成的文件都存放在`DeepSpeech/dataset/`目录下。
 ```shell script
 # 生成数据列表
-PYTHONPATH=.:$PYTHONPATH python3 tools/create_manifest.py
+python tools/create_manifest.py
 # 计算均值和标准差
-PYTHONPATH=.:$PYTHONPATH python3 tools/compute_mean_std.py
+python tools/compute_mean_std.py
 # 构建词汇表
-PYTHONPATH=.:$PYTHONPATH python3 tools/build_vocab.py
+python tools/build_vocab.py
 ```
 
 在生成数据列表的是要注意，该程序除了生成训练数据列表，还提供对音频帧率的转换和生成噪声数据列表，开发者有些自定义的数据集音频的采样率不是16000Hz的，所以提供了`change_audio_rate()`函数，帮助开发者把指定的数据集的音频采样率转换为16000Hz。提供的生成噪声数据列表`create_noise`函数，前提是要有噪声数据集，使用噪声数据在训练中实现数据增强。
@@ -215,7 +215,7 @@ if __name__ == '__main__':
  - 执行训练脚本，开始训练语音识别模型， 每训练一轮保存一次模型，模型保存在`DeepSpeech/models/`目录下，默认会使用噪声音频一起训练的，如果没有这些音频，可以删除`conf/augmentation.config`中的`noise`项，噪声是用于数据增强的，关于数据增强，请查看**数据增强**部分。如果没有关闭测试，在每一轮训练结果之后，都会执行一次测试，为了提高测试的速度，测试使用的是最优解码路径解码，这个解码方式结果没有集束搜索的方法准确率高，所以测试的输出的准确率可以理解为保底的准确率。
 ```shell script
 export FLAGS_sync_nccl_allreduce=0
-CUDA_VISIBLE_DEVICES=0,1 python3 train.py
+CUDA_VISIBLE_DEVICES=0,1 python train.py
 ```
 
  - 在训练过程中，程序会使用VisualDL记录训练结果，可以通过以下的命令启动VisualDL。
@@ -281,12 +281,12 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
  - 在训练结束之后，我们要使用这个脚本对模型进行超参数调整，提高语音识别性能。该程序主要是为了寻找`ctc_beam_search`集束搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。如果使用的是`ctc_greedy`最优路径，可以直接跳过这一步。
 ```shell script
-PYTHONPATH=.:$PYTHONPATH python3 tools/tune.py --model_path=./models/step_final/
+python tools/tune.py --model_path=./models/step_final/
 ```
 
  - 我们可以使用这个脚本对模型进行评估，通过字符错误率来评价模型的性能。通过这个程序的输出，开发者就可以考虑使用哪种解码方法，以及`ctc_beam_search`集束搜索方法中`beam_size`参数的大小。
 ```shell script
-python3 eval.py --model_path=./models/step_final/
+python eval.py --model_path=./models/step_final/
 ```
 
 输出结果：
@@ -332,7 +332,7 @@ W0318 16:38:49.242089 19032 device_context.cc:260] device: 0, cuDNN Version: 7.6
 
  - 我们可以使用这个脚本使用模型进行预测，通过传递音频文件的路径进行识别。
 ```shell script
-python3 infer_path.py --model_path=./models/step_final/ --wav_path=./dataset/test.wav
+python infer_path.py --model_path=./models/step_final/ --wav_path=./dataset/test.wav
 ```
 
 输出结果：
@@ -368,11 +368,11 @@ wav_path: ./dataset/test.wav
 
  - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别。
 ```shell script
-CUDA_VISIBLE_DEVICES=0 python3 infer_server.py --model_path=./models/step_final/
+CUDA_VISIBLE_DEVICES=0 python infer_server.py --model_path=./models/step_final/
 ```
  - 在本地执行下面命令启动一个网页来测试，可以选择本地音频文件，或者是在线录音。在启动前需要修改`index.html`中`uploadRecordAudio()`和`uploadFile()`的请求url，把url改为加上读者服务器的IP即可，启动服务之后，在浏览器上访问`http://localhost:5001`。
 ```shell script
-python3 client.py
+python client.py
 ```
 
 ![录音测试页面](https://img-blog.csdnimg.cn/20210402091159951.png)

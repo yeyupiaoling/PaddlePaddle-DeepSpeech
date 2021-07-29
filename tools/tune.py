@@ -1,10 +1,16 @@
 """查找最优的集束搜索方法的alpha参数和beta参数"""
+import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 
 import numpy as np
 import argparse
 import functools
 import paddle.fluid as fluid
 from tqdm import tqdm
+from decoders.beam_search_decoder import BeamSearchDecoder
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
 from utils.error_rate import char_errors, word_errors
@@ -76,6 +82,9 @@ def tune():
                                  share_rnn_weights=args.share_rnn_weights,
                                  is_infer=True)
 
+    # 初始化集束搜索方法
+    beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     # 创建用于搜索的alphas参数和betas参数
@@ -86,8 +95,6 @@ def tune():
     err_sum = [0.0 for i in range(len(params_grid))]
     err_ave = [0.0 for i in range(len(params_grid))]
     num_ins, len_refs, cur_batch = 0, 0, 0
-    # 初始化集束搜索方法
-    ds2_model.init_ext_scorer(args.alpha_from, args.beta_from, args.lang_model_path, data_generator.vocab_list)
     # 多批增量调优参数
     ds2_model.logger.info("start tuning ...")
     for infer_data in batch_reader():
@@ -100,14 +107,15 @@ def tune():
         num_ins += len(target_transcripts)
         # 搜索alphas参数和betas参数
         for index, (alpha, beta) in enumerate(tqdm(params_grid)):
-            result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
-                                                                    beam_alpha=alpha,
-                                                                    beam_beta=beta,
-                                                                    beam_size=args.beam_size,
-                                                                    cutoff_prob=args.cutoff_prob,
-                                                                    cutoff_top_n=args.cutoff_top_n,
-                                                                    vocab_list=data_generator.vocab_list,
-                                                                    num_processes=args.num_proc_bsearch)
+            result_transcripts = beam_search_decoder.decode_batch_beam_search(probs_split=probs_split,
+                                                                              beam_alpha=alpha,
+                                                                              beam_beta=beta,
+                                                                              beam_size=args.beam_size,
+                                                                              cutoff_prob=args.cutoff_prob,
+                                                                              cutoff_top_n=args.cutoff_top_n,
+                                                                              vocab_list=data_generator.vocab_list,
+                                                                              blank_id=len(data_generator.vocab_list),
+                                                                              num_processes=args.num_proc_bsearch)
             for target, result in zip(target_transcripts, result_transcripts):
                 errors, len_ref = errors_func(target, result)
                 err_sum[index] += errors

@@ -7,6 +7,7 @@ from flask import request, Flask
 from flask_cors import CORS
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
+from decoders.ctc_greedy_decoder import greedy_decoder
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -29,7 +30,7 @@ add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
 add_arg('model_path',       str,    './models/step_final/',        "训练保存的模型文件夹路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',        "语言模型文件路径")
-add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('decoding_method',  str,    'ctc_greedy',    "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('specgram_type',    str,    'linear',        "对音频的预处理方式，有: linear, mfcc", choices=['linear', 'mfcc'])
 args = parser.parse_args()
 
@@ -61,7 +62,12 @@ ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
 
 # 集束搜索方法的处理
 if args.decoding_method == "ctc_beam_search":
-    ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+    try:
+        from decoders.beam_search_decoder import BeamSearchDecoder
+        beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+    except ModuleNotFoundError:
+        raise Exception('缺少ctc_decoders库，如果是Windows系统，请使用ctc_greedy。如果是Linux系统，且一定要使用ctc_beam_search解码策略'
+                        '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
 
 
 # 开始预测
@@ -72,22 +78,23 @@ def predict(filename):
     probs_split = ds2_model.infer(feature=feature)
 
     # 执行解码
-    if args.decoding_method == "ctc_greedy":
-        # 最优路径解码
-        result_transcript = ds2_model.decode_batch_greedy(probs_split=probs_split,
-                                                          vocab_list=data_generator.vocab_list)
+    if args.decoding_method == 'ctc_greedy':
+        # 贪心解码策略
+        result = greedy_decoder(probs_seq=probs_split,
+                                vocabulary=data_generator.vocab_list,
+                                blank_index=len(data_generator.vocab_list))
     else:
-        # 集束搜索解码
-        result_transcript = ds2_model.decode_batch_beam_search(probs_split=probs_split,
-                                                               beam_alpha=args.alpha,
-                                                               beam_beta=args.beta,
-                                                               beam_size=args.beam_size,
-                                                               cutoff_prob=args.cutoff_prob,
-                                                               cutoff_top_n=args.cutoff_top_n,
-                                                               vocab_list=data_generator.vocab_list,
-                                                               num_processes=16)
-
-    return result_transcript[0]
+        # 集束搜索解码策略
+        result = beam_search_decoder.decode_beam_search(probs_split=probs_split,
+                                                        beam_alpha=args.alpha,
+                                                        beam_beta=args.beta,
+                                                        beam_size=args.beam_size,
+                                                        cutoff_prob=args.cutoff_prob,
+                                                        cutoff_top_n=args.cutoff_top_n,
+                                                        vocab_list=data_generator.vocab_list,
+                                                        blank_id=len(data_generator.vocab_list))
+    score, text = result[0], result[1]
+    return score, text
 
 
 # 语音识别接口
@@ -101,10 +108,10 @@ def recognition():
         try:
             start = time.time()
             # 执行识别
-            text = predict(filename=file_path)
+            score, text = predict(filename=file_path)
             end = time.time()
-            print("识别时间：%dms，识别结果：%s" % (round((end - start) * 1000), text))
-            result = str({"code": 0, "msg": "success", "result": text}).replace("'", '"')
+            print("识别时间：%dms，识别结果：%s， 得分: %f" % (round((end - start) * 1000), text, score))
+            result = str({"code": 0, "msg": "success", "result": text, "score": score}).replace("'", '"')
             return result
         except:
             return str({"error": 1, "msg": "audio read fail!"})

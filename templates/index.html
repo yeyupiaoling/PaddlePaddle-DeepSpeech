@@ -24,6 +24,8 @@
     </div>
 </div>
 <script>
+    // 需要修改为服务器的地址
+    url = "http://192.168.10.163:5000/recognition"
     var is_recording = false;
     var is_playing = false;
     var recorder;
@@ -80,7 +82,6 @@
     }
 
     function uploadRecordAudio() {
-        url = "http://192.168.88.60:5000/recognition"
         recorder.upload(url, function (state, e) {
             switch (state) {
                 case 'uploading':
@@ -102,7 +103,6 @@
     }
 
     function uploadFile(){
-        url = "http://192.168.88.60:5000/recognition"
         var input = document.createElement("input");
         input.type = "file";
         input.accept = "audio/*";

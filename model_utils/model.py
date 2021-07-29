@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import time
+import paddle
 from datetime import datetime
 from distutils.dir_util import mkpath
 import numpy as np
@@ -11,13 +12,11 @@ import paddle.fluid as fluid
 import paddle.fluid.compiler as compiler
 from visualdl import LogWriter
 from utils.error_rate import char_errors, word_errors
-from ctc_decoders.swig_wrapper import Scorer
-from ctc_decoders.swig_wrapper import ctc_beam_search_decoder_batch
-from ctc_decoders.swig_wrapper import ctc_greedy_decoder
+from decoders.ctc_greedy_decoder import greedy_decoder_batch
 from model_utils.network import deep_speech_v2_network
 
-logging.basicConfig(
-    format='[%(levelname)s %(asctime)s %(filename)s:%(lineno)d] %(message)s')
+logging.basicConfig(format='[%(levelname)s %(asctime)s %(filename)s:%(lineno)d] %(message)s')
+paddle.enable_static()
 
 
 class DeepSpeech2Model(object):
@@ -206,8 +205,9 @@ class DeepSpeech2Model(object):
             # 执行预测
             probs_split = self.infer_batch_probs(infer_data=infer_data)
             # 使用最优路径解码
-            result_transcripts = self.decode_batch_greedy(probs_split=probs_split,
-                                                          vocab_list=self.vocab_list)
+            result_transcripts = greedy_decoder_batch(probs_split=probs_split,
+                                                      vocabulary=self.vocab_list,
+                                                      blank_index=len(self.vocab_list))
             target_transcripts = infer_data[1]
             # 计算字错率
             for target, result in zip(target_transcripts, result_transcripts):
@@ -354,7 +354,7 @@ class DeepSpeech2Model(object):
                 test_result = self.test(test_reader=dev_batch_reader)
                 print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
                       % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type, test_result))
-                print('======================Stop Train=====================\n')
+                print('======================Stop Test=====================\n')
                 # 记录测试结果
                 self.writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
                 test_step += 1
@@ -486,94 +486,5 @@ class DeepSpeech2Model(object):
         seq_len = (infer_data[2] - 1) // 3 + 1
         start_pos = [0, 0]
         start_pos[1] = start_pos[0] + seq_len
-        probs_split = [infer_result[start_pos[0]:start_pos[1]]]
-
+        probs_split = infer_result[start_pos[0]:start_pos[1]]
         return probs_split
-
-    def decode_batch_greedy(self, probs_split, vocab_list):
-        """Decode by best path for a batch of probs matrix input.
-        :param probs_split: List of 2-D probability matrix, and each consists
-                            of prob vectors for one speech utterancce.
-        :param probs_split: List of matrix
-        :param vocab_list: List of tokens in the vocabulary, for decoding.
-        :type vocab_list: list
-        :return: List of transcription texts.
-        :rtype: List of str
-        """
-        results = []
-        for i, probs in enumerate(probs_split):
-            output_transcription = ctc_greedy_decoder(
-                probs_seq=probs, vocabulary=vocab_list)
-            results.append(output_transcription)
-        return results
-
-    def init_ext_scorer(self, beam_alpha, beam_beta, language_model_path, vocab_list):
-        """Initialize the external scorer.
-        :param beam_alpha: Parameter associated with language model.
-        :type beam_alpha: float
-        :param beam_beta: Parameter associated with word count.
-        :type beam_beta: float
-        :param language_model_path: Filepath for language model. If it is
-                                    empty, the external scorer will be set to
-                                    None, and the decoding method will be pure
-                                    beam search without scorer.
-        :type language_model_path: str|None
-        :param vocab_list: List of tokens in the vocabulary, for decoding.
-        :type vocab_list: list
-        """
-        if language_model_path != '':
-            self.logger.info("begin to initialize the external scorer for decoding")
-            self._ext_scorer = Scorer(beam_alpha, beam_beta, language_model_path, vocab_list)
-            lm_char_based = self._ext_scorer.is_character_based()
-            lm_max_order = self._ext_scorer.get_max_order()
-            lm_dict_size = self._ext_scorer.get_dict_size()
-            self.logger.info("language model: "
-                             "is_character_based = %d," % lm_char_based +
-                             " max_order = %d," % lm_max_order +
-                             " dict_size = %d" % lm_dict_size)
-            self.logger.info("end initializing scorer")
-        else:
-            self._ext_scorer = None
-            self.logger.info("no language model provided, decoding by pure beam search without scorer.")
-
-    def decode_batch_beam_search(self, probs_split, beam_alpha, beam_beta,
-                                 beam_size, cutoff_prob, cutoff_top_n,
-                                 vocab_list, num_processes):
-        """Decode by beam search for a batch of probs matrix input.
-        :param probs_split: List of 2-D probability matrix, and each consists
-                            of prob vectors for one speech utterancce.
-        :param probs_split: List of matrix
-        :param beam_alpha: Parameter associated with language model.
-        :type beam_alpha: float
-        :param beam_beta: Parameter associated with word count.
-        :type beam_beta: float
-        :param beam_size: Width for Beam search.
-        :type beam_size: int
-        :param cutoff_prob: Cutoff probability in pruning,
-                            default 1.0, no pruning.
-        :type cutoff_prob: float
-        :param cutoff_top_n: Cutoff number in pruning, only top cutoff_top_n
-                        characters with highest probs in vocabulary will be
-                        used in beam search, default 40.
-        :type cutoff_top_n: int
-        :param vocab_list: List of tokens in the vocabulary, for decoding.
-        :type vocab_list: list
-        :param num_processes: Number of processes (CPU) for decoder.
-        :type num_processes: int
-        :return: List of transcription texts.
-        :rtype: List of str
-        """
-        if self._ext_scorer is not None:
-            self._ext_scorer.reset_params(beam_alpha, beam_beta)
-        # beam search decode
-        num_processes = min(num_processes, len(probs_split))
-        beam_search_results = ctc_beam_search_decoder_batch(probs_split=probs_split,
-                                                            vocabulary=vocab_list,
-                                                            beam_size=beam_size,
-                                                            num_processes=num_processes,
-                                                            ext_scoring_func=self._ext_scorer,
-                                                            cutoff_prob=cutoff_prob,
-                                                            cutoff_top_n=cutoff_top_n)
-
-        results = [result[0][1] for result in beam_search_results]
-        return results

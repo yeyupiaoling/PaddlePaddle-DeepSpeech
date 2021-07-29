@@ -1,5 +1,10 @@
 """根据标注文件创建数据列表"""
 import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
+
 import functools
 import wave
 from tqdm import tqdm
@@ -46,7 +51,8 @@ def create_manifest(annotation_path, manifest_path_prefix):
                             'text': text
                         },
                         ensure_ascii=False))
-            except:
+            except Exception as e:
+                print(e)
                 continue
 
     # 将音频的路径，长度和标签写入到数据列表中

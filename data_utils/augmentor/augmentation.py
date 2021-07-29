@@ -1,7 +1,10 @@
 """Contains the data augmentation pipeline."""
 
 import json
+import os
 import random
+import sys
+
 from data_utils.augmentor.volume_perturb import VolumePerturbAugmentor
 from data_utils.augmentor.shift_perturb import ShiftPerturbAugmentor
 from data_utils.augmentor.speed_perturb import SpeedPerturbAugmentor
@@ -90,11 +93,16 @@ class AugmentationPipeline(object):
         """Parse the config json to build a augmentation pipelien."""
         try:
             configs = json.loads(config_json)
+            for i in range(len(configs)):
+                config = configs[i]
+                if config['type'] == 'noise' and not os.path.exists(config['params']['noise_manifest_path']):
+                    print('%s不存在，已经忽略噪声增强操作！' % config['params']['noise_manifest_path'], file=sys.stderr)
+                    del configs[i]
+                    break
             augmentors = [self._get_augmentor(config["type"], config["params"]) for config in configs]
             rates = [config["prob"] for config in configs]
         except Exception as e:
-            raise ValueError("Failed to parse the augmentation config json: "
-                             "%s" % str(e))
+            raise ValueError("Failed to parse the augmentation config json: %s" % str(e))
         return augmentors, rates
 
     def _get_augmentor(self, augmentor_type, params):

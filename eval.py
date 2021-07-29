@@ -7,8 +7,8 @@ import time
 import paddle.fluid as fluid
 from data_utils.data import DataGenerator
 from model_utils.model import DeepSpeech2Model
-from model_utils.model_check import check_cuda, check_version
 from utils.error_rate import char_errors, word_errors
+from decoders.ctc_greedy_decoder import greedy_decoder_batch
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -39,10 +39,6 @@ args = parser.parse_args()
 
 # 评估模型
 def evaluate():
-    # 检测PaddlePaddle环境
-    check_cuda(args.use_gpu)
-    check_version()
-
     # 是否使用GPU
     place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
 
@@ -73,9 +69,14 @@ def evaluate():
     with open(args.test_manifest, 'r', encoding='utf-8') as f_m:
         test_len = len(f_m.readlines())
 
-    # 定向搜索方法的处理
+    # 集束搜索方法的处理
     if args.decoding_method == "ctc_beam_search":
-        ds2_model.init_ext_scorer(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+        try:
+            from decoders.beam_search_decoder import BeamSearchDecoder
+            beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+        except ModuleNotFoundError:
+            raise Exception('缺少ctc_decoders库，如果是Windows系统，请使用ctc_greedy。如果是Linux系统，且一定要使用ctc_beam_search解码策略'
+                            '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
 
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
@@ -88,20 +89,23 @@ def evaluate():
         probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
 
         # 执行解码
-        if args.decoding_method == "ctc_greedy":
-            # 最优路径解码
-            result_transcripts = ds2_model.decode_batch_greedy(probs_split=probs_split,
-                                                               vocab_list=data_generator.vocab_list)
+        if args.decoding_method == 'ctc_greedy':
+            # 贪心解码策略
+            result_transcripts = greedy_decoder_batch(probs_split=probs_split,
+                                                      vocabulary=data_generator.vocab_list,
+                                                      blank_index=len(data_generator.vocab_list))
         else:
-            # 定向搜索解码
-            result_transcripts = ds2_model.decode_batch_beam_search(probs_split=probs_split,
-                                                                    beam_alpha=args.alpha,
-                                                                    beam_beta=args.beta,
-                                                                    beam_size=args.beam_size,
-                                                                    cutoff_prob=args.cutoff_prob,
-                                                                    cutoff_top_n=args.cutoff_top_n,
-                                                                    vocab_list=data_generator.vocab_list,
-                                                                    num_processes=args.num_proc_bsearch)
+            # 集束搜索解码策略
+            result_transcripts = beam_search_decoder.decode_batch_beam_search(probs_split=probs_split,
+                                                                              beam_alpha=args.alpha,
+                                                                              beam_beta=args.beta,
+                                                                              beam_size=args.beam_size,
+                                                                              cutoff_prob=args.cutoff_prob,
+                                                                              cutoff_top_n=args.cutoff_top_n,
+                                                                              vocab_list=data_generator.vocab_list,
+                                                                              blank_id=len(data_generator.vocab_list),
+                                                                              num_processes=args.num_proc_bsearch)
+        # 实际的结果
         target_transcripts = infer_data[1]
 
         # 计算字错率

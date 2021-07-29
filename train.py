@@ -3,7 +3,6 @@ import functools
 import io
 from datetime import datetime
 from model_utils.model import DeepSpeech2Model
-from model_utils.model_check import check_cuda, check_version
 from data_utils.data import DataGenerator
 from utils.utility import add_arguments, print_arguments, get_data_len
 
@@ -11,7 +10,7 @@ import paddle.fluid as fluid
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('batch_size',       int,    16,     "训练每一批数据的大小")
+add_arg('batch_size',       int,    4,     "训练每一批数据的大小")
 add_arg('num_epoch',        int,    200,    "训练的轮数")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
@@ -23,7 +22,7 @@ add_arg('test_off',         bool,   False,  "是否关闭测试")
 add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('share_rnn_weights',bool,   False,  "是否在RNN上共享权重")
-add_arg('init_from_pretrained_model',   str, None,    "使用预训练模型的路径，当为None是不使用预训练模型")
+add_arg('init_from_pretrained_model',   str, 'models/step_final',    "使用预训练模型的路径，当为None是不使用预训练模型")
 add_arg('train_manifest',               str,   './dataset/manifest.train',    "训练的数据列表")
 add_arg('dev_manifest',                 str,  './dataset/manifest.test',      "测试的数据列表")
 add_arg('mean_std_path',                str,  './dataset/mean_std.npz',       "数据集的均值和标准值的npy文件路径")
@@ -37,10 +36,6 @@ args = parser.parse_args()
 
 # 训练模型
 def train():
-    # 检测PaddlePaddle环境
-    check_cuda(args.use_gpu)
-    check_version()
-
     # 是否使用GPU
     place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
 

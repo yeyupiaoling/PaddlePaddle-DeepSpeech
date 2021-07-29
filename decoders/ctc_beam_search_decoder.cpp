@@ -21,6 +21,7 @@ std::vector<std::pair<double, std::string>> ctc_beam_search_decoder(
     size_t beam_size,
     double cutoff_prob,
     size_t cutoff_top_n,
+    size_t blank_id,
     Scorer *ext_scorer) {
   // dimension check
   size_t num_time_steps = probs_seq.size();
@@ -30,9 +31,6 @@ std::vector<std::pair<double, std::string>> ctc_beam_search_decoder(
                    "The shape of probs_seq does not match with "
                    "the shape of the vocabulary");
   }
-
-  // assign blank id
-  size_t blank_id = vocabulary.size();
 
   // assign space id
   auto it = std::find(vocabulary.begin(), vocabulary.end(), " ");
@@ -194,6 +192,7 @@ ctc_beam_search_decoder_batch(
     size_t num_processes,
     double cutoff_prob,
     size_t cutoff_top_n,
+    size_t blank_id,
     Scorer *ext_scorer) {
   VALID_CHECK_GT(num_processes, 0, "num_processes must be nonnegative!");
   // thread pool
@@ -210,6 +209,7 @@ ctc_beam_search_decoder_batch(
                                   beam_size,
                                   cutoff_prob,
                                   cutoff_top_n,
+                                  blank_id,
                                   ext_scorer));
   }
 

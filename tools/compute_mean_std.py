@@ -1,4 +1,9 @@
 """计算音频特征平均值和归一化，并保存到文件。"""
+import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 
 import argparse
 import functools
