@@ -161,6 +161,11 @@ vocab_path: ./dataset/zh_vocab.txt
 W0318 16:38:49.200599 19032 device_context.cc:252] Please NOTE: device: 0, CUDA Capability: 75, Driver API Version: 11.0, Runtime API Version: 10.0
 W0318 16:38:49.242089 19032 device_context.cc:260] device: 0, cuDNN Version: 7.6.
 成功加载了预训练模型：models/epoch_19/
+初始化解码器...
+======================================================================
+language model: is_character_based = 1, max_order = 5, dict_size = 0
+======================================================================
+初始化解码器完成!
 [INFO 2021-03-18 16:38:51,442 model.py:523] begin to initialize the external scorer for decoding
 [INFO 2021-03-18 16:38:53,688 model.py:531] language model: is_character_based = 1, max_order = 5, dict_size = 0
 [INFO 2021-03-18 16:38:53,689 model.py:532] end initializing scorer

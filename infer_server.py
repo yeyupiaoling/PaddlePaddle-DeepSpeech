@@ -40,8 +40,8 @@ data_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                keep_transcription_text=True,
                                is_training=False)
 
-predictor = Predictor(model_dir=args.model_dir, data_generator=data_generator, decoding_method=args, alpha=args.alpha,
-                      beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
+predictor = Predictor(model_dir=args.model_dir, data_generator=data_generator, decoding_method=args.decoding_method,
+                      alpha=args.alpha, beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
                       cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
                       use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn)
 
