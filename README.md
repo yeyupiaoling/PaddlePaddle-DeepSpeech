@@ -11,9 +11,6 @@
  - Python 3.7
  - PaddlePaddle 2.1.1
  - Windows or Ubuntu
-   
-
-**本教程源码：[https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech)**
 
 
 ## 目录
@@ -261,6 +258,15 @@ I0729 19:48:39.860746 14609 analysis_config.cc:424] use_dlnne_:0
 I0729 19:48:39.860757 14609 analysis_config.cc:424] use_dlnne_:0
 消耗时间：260, 识别结果: 近几年不但我用书给女儿儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书, 得分: 94
 ```
+
+
+### 长语音预测
+
+通过参数is_long_audio可以指定使用长语音识别方式，这种方式通过VAD分割音频，再对短音频进行识别，拼接结果，最终得到长语音识别结果。
+```shell script
+python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
+```
+
 
 ## Web部署
  - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别，默认使用的是`ctc_greedy`贪心解码策略。
