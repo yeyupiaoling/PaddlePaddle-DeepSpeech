@@ -5,7 +5,7 @@
 ![support os](https://img.shields.io/badge/os-linux-yellow.svg)
 ![GitHub Repo stars](https://img.shields.io/github/stars/yeyupiaoling/PaddlePaddle-DeepSpeech?style=social)
 
-本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，准备支持Nvidia Jetson开发板预测。
+本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，支持Nvidia Jetson开发板预测。
 
 本项目使用的环境：
  - Python 3.7
@@ -29,7 +29,7 @@
 - [相关项目](#相关项目)
 
 
-### 搭建本地环境
+## 搭建本地环境
 
 本人用的就是本地环境和使用Anaconda，并创建了Python3.7的虚拟环境，建议读者也本地环境，方便交流，出现安装问题，随时提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) ，如果想使用docker，请查看[搭建Docker环境](docs/install.md)。
 
@@ -45,6 +45,29 @@ python -m pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/sim
 
 **注意：** 如果出现LLVM版本错误，解决办法[LLVM版本错误](docs/faq.md)。
 
+## Nvidia Jetson预测环境搭建
+
+1. 安装PaddlePaddle的Inference预测库。
+```shell
+wget https://paddle-inference-lib.bj.bcebos.com/2.1.1-nv-jetson-jetpack4.4-all/paddlepaddle_gpu-2.1.1-cp36-cp36m-linux_aarch64.whl
+pip3 install paddlepaddle_gpu-2.1.1-cp36-cp36m-linux_aarch64.whl
+```
+
+2. 安装scikit-learn依赖库。
+```shell
+git clone git://github.com/scikit-learn/scikit-learn.git
+cd scikit-learn
+pip3 install cython
+git checkout 0.24.2
+pip3 install --verbose --no-build-isolation --editable .
+```
+
+3. 安装其他依赖库。
+```shell
+pip3 install -r requirements.txt
+```
+
+4. 在Nvidia Jetson开发板上预测跟[本地预测](#本地预测) 一样，请查看这部分操作。
 
 ## 数据准备
 

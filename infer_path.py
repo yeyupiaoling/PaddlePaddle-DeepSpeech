@@ -4,11 +4,13 @@ import time
 
 from data_utils.data import DataGenerator
 from utils.predict import Predictor
+from utils.audio_vad import crop_audio_vad
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('wav_path',         str,    './dataset/test.wav', "预测音频的路径")
+add_arg('is_long_audio',    bool,   False,  "是否为长语音")
 add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 500]")
 add_arg('alpha',            float,  1.2,    "定向搜索的LM系数")
 add_arg('beta',             float,  0.35,   "定向搜索的WC系数")
@@ -38,11 +40,27 @@ predictor = Predictor(model_dir=args.model_dir, data_generator=data_generator, d
                       use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn)
 
 
-def main():
+def predict_long_audio():
+    start = time.time()
+    audios_path = crop_audio_vad(args.wav_path)
+    texts = ''
+    scores = []
+    for i, audio_path in enumerate(audios_path):
+        score, text = predictor.predict(audio_path=audio_path)
+        texts = texts + '，' + text
+        scores.append(score)
+        print("第%d个分割音频, 得分: %d, 识别结果: %s" % (i, score, text))
+    print("最终结果，消耗时间：%d, 得分: %d, 识别结果: %s" % (round((time.time() - start) * 1000), sum(scores) // len(scores), texts))
+
+
+def predict_audio():
     start = time.time()
     score, text = predictor.predict(audio_path=args.wav_path)
     print("消耗时间：%d, 识别结果: %s, 得分: %d" % (round((time.time() - start) * 1000), text, score))
 
 
 if __name__ == "__main__":
-    main()
+    if args.is_long_audio:
+        predict_long_audio()
+    else:
+        predict_audio()
