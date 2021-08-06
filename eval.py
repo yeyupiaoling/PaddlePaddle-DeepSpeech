@@ -17,7 +17,7 @@ add_arg('batch_size',       int,    64,     "评估是每一批数据的大小")
 add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 500]")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
-add_arg('rnn_layer_size',   int,    2048,   "循环神经网络的大小")
+add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('alpha',            float,  1.2,    "定向搜索的LM系数")
 add_arg('num_proc_bsearch', int,    8,     "定向搜索方法使用CPU数量")
 add_arg('beta',             float,  0.35,   "定向搜索的WC系数")
@@ -31,7 +31,7 @@ add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
 add_arg('model_path',       str,    './models/step_final/',        "训练保存的模型文件夹路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',        "语言模型文件路径")
-add_arg('decoding_method',  str,    'ctc_beam_search',        "结果解码方法，有定向搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('decoding_method',  str,    'ctc_greedy',        "结果解码方法，有定向搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 
@@ -59,8 +59,7 @@ def evaluate():
                                  use_gru=args.use_gru,
                                  share_rnn_weights=args.share_rnn_weights,
                                  place=place,
-                                 init_from_pretrained_model=args.model_path,
-                                 is_infer=True)
+                                 init_from_pretrained_model=args.model_path)
 
     # 读取数据列表
     with open(args.test_manifest, 'r', encoding='utf-8') as f_m:

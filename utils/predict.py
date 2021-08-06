@@ -30,8 +30,8 @@ class Predictor:
                                 '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
 
         # 创建 config
-        self.config = paddle_infer.Config(os.path.join(model_dir, 'model.pdmodel'),
-                                          os.path.join(model_dir, 'model.pdiparams'))
+        self.config = paddle_infer.Config(os.path.join(model_dir, 'inference.pdmodel'),
+                                          os.path.join(model_dir, 'inference.pdiparams'))
         self.config.enable_use_gpu(1000, 0)
         self.config.enable_memory_optim()
 

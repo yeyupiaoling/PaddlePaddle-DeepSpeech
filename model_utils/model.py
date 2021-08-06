@@ -9,7 +9,6 @@ from datetime import datetime
 from distutils.dir_util import mkpath
 import numpy as np
 import paddle.fluid as fluid
-import paddle.fluid.compiler as compiler
 from visualdl import LogWriter
 from utils.error_rate import char_errors, word_errors
 from decoders.ctc_greedy_decoder import greedy_decoder_batch
@@ -52,10 +51,9 @@ class DeepSpeech2Model(object):
                  rnn_layer_size,
                  use_gru=False,
                  share_rnn_weights=True,
-                 place=fluid.CPUPlace(),
+                 place=paddle.CPUPlace(),
                  init_from_pretrained_model=None,
                  output_model_dir=None,
-                 is_infer=False,
                  error_rate_type='cer',
                  vocab_list=None):
         self._vocab_size = vocab_size
@@ -70,9 +68,6 @@ class DeepSpeech2Model(object):
         self._ext_scorer = None
         self.logger = logging.getLogger("")
         self.logger.setLevel(level=logging.INFO)
-        if not is_infer:
-            shutil.rmtree('log', ignore_errors=True)
-            self.writer = LogWriter(logdir='log')
         self.error_rate_type = error_rate_type
         self.vocab_list = vocab_list
         self.save_model_path = ''
@@ -82,13 +77,11 @@ class DeepSpeech2Model(object):
         self.infer_feeder = None
         self.infer_log_probs = None
         self.infer_exe = None
-        if is_infer:
-            self.init_infer_program()
 
     def create_network(self, is_infer=False):
         """Create data layers and model network.
-        :param is_training: Whether to create a network for training.
-        :type is_training: bool
+        :param is_infer: Whether to create a network for Inference.
+        :type is_infer: bool
         :return reader: Reader for input.
         :rtype reader: read generater
         :return log_probs: An output unnormalized log probability layer.
@@ -106,10 +99,10 @@ class DeepSpeech2Model(object):
             }
 
             inputs = [
-                fluid.data(name=input_fields['names'][i],
-                           shape=input_fields['shapes'][i],
-                           dtype=input_fields['dtypes'][i],
-                           lod_level=input_fields['lod_levels'][i])
+                paddle.static.data(name=input_fields['names'][i],
+                                   shape=input_fields['shapes'][i],
+                                   dtype=input_fields['dtypes'][i],
+                                   lod_level=input_fields['lod_levels'][i])
                 for i in range(len(input_fields['names']))
             ]
 
@@ -120,18 +113,18 @@ class DeepSpeech2Model(object):
 
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
-            audio_data = fluid.data(name='audio_data',
-                                    shape=[None, 161, None],
-                                    dtype='float32',
-                                    lod_level=0)
-            seq_len_data = fluid.data(name='seq_len_data',
-                                      shape=[None, 1],
-                                      dtype='int64',
-                                      lod_level=0)
-            masks = fluid.data(name='masks',
-                               shape=[None, 32, 81, None],
-                               dtype='float32',
-                               lod_level=0)
+            audio_data = paddle.static.data(name='audio_data',
+                                            shape=[None, 161, None],
+                                            dtype='float32',
+                                            lod_level=0)
+            seq_len_data = paddle.static.data(name='seq_len_data',
+                                              shape=[None, 1],
+                                              dtype='int64',
+                                              lod_level=0)
+            masks = paddle.static.data(name='masks',
+                                       shape=[None, 32, 81, None],
+                                       dtype='float32',
+                                       lod_level=0)
             text_data = None
             reader = fluid.DataFeeder([audio_data, seq_len_data, masks], self._place)
 
@@ -149,18 +142,15 @@ class DeepSpeech2Model(object):
 
     def init_from_pretrained_model(self, exe, program):
         '''Init params from pretrain model. '''
+        if not os.path.exists(os.path.join(self._init_from_pretrained_model, 'deepspeech.pdparams')) and \
+                not os.path.exists(os.path.join(self._init_from_pretrained_model, 'deepspeech.pdmodel')):
+            raise Warning("The pretrained params [%s] do not exist." % self._init_from_pretrained_model)
 
-        assert isinstance(self._init_from_pretrained_model, str)
+        paddle.static.load(program=program,
+                           model_path=self._init_from_pretrained_model + '/deepspeech',
+                           executor=exe)
 
-        if not os.path.exists(self._init_from_pretrained_model):
-            print(self._init_from_pretrained_model)
-            raise Warning("The pretrained params do not exist.")
-        fluid.io.load_params(executor=exe,
-                             dirname=self._init_from_pretrained_model,
-                             main_program=program,
-                             filename="params.pdparams")
-
-        print("成功加载了预训练模型：%s" % self._init_from_pretrained_model)
+        print("成功加载了预训练模型：%s" % self._init_from_pretrained_model + '/deepspeech')
 
         pre_epoch = 0
         dir_name = self._init_from_pretrained_model.split('_')
@@ -169,25 +159,15 @@ class DeepSpeech2Model(object):
 
         return pre_epoch + 1
 
-    def save_param(self, exe, program, dirname):
+    def save_param(self, program, dirname):
         '''Save model params to dirname'''
-
-        assert isinstance(self._output_model_dir, str)
-
         param_dir = os.path.join(self._output_model_dir)
-
         if not os.path.exists(param_dir):
             os.mkdir(param_dir)
 
         self.save_model_path = os.path.join(param_dir, dirname)
-
-        fluid.io.save_params(executor=exe,
-                             dirname=os.path.join(param_dir, dirname),
-                             main_program=program,
-                             filename="params.pdparams")
+        paddle.static.save(program=program, model_path='{}/deepspeech'.format(self.save_model_path))
         print("save parameters at %s" % self.save_model_path)
-
-        return True
 
     def test(self, test_reader):
         '''Test the model.
@@ -199,8 +179,11 @@ class DeepSpeech2Model(object):
         '''
         errors_sum, len_refs = 0.0, 0
         errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
-        # 初始化预测程序
-        self.init_infer_program()
+        if self.infer_exe is None:
+            # 初始化预测程序
+            self.init_infer_program()
+        # 加载预训练模型
+        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
         for infer_data in test_reader():
             # 执行预测
             probs_split = self.infer_batch_probs(infer_data=infer_data)
@@ -231,9 +214,6 @@ class DeepSpeech2Model(object):
         :type train_batch_reader: callable
         :param dev_batch_reader: Validation data reader.
         :type dev_batch_reader: callable
-        :param feeding_dict: Feeding is a map of field name and tuple index
-                             of the data that reader returns.
-        :type feeding_dict: dict|list
         :param learning_rate: Learning rate for ADAM optimizer.
         :type learning_rate: float
         :param gradient_clipping: Gradient clipping threshold.
@@ -244,34 +224,31 @@ class DeepSpeech2Model(object):
         :type batch_size: int
         :param num_samples: The num of train samples.
         :type num_samples: int
-        :param num_iterations_print: Number of training iterations for printing
-                                     a training loss.
-        :type num_iteratons_print: int
-        :param only_train_batch:Every epoch only train only_train_batch batch. Avoid insufficient video memory
-        :type only_train_batch:int
         :param test_off: Turn off testing.
         :type test_off: bool
         """
+        shutil.rmtree('log', ignore_errors=True)
+        writer = LogWriter(logdir='log')
         # prepare model output directory
         if not os.path.exists(self._output_model_dir):
             mkpath(self._output_model_dir)
 
-        if isinstance(self._place, fluid.CUDAPlace):
-            dev_count = fluid.core.get_cuda_device_count()
+        if isinstance(self._place, paddle.CUDAPlace):
+            dev_count = len(paddle.static.cuda_places())
             learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
         # prepare the network
-        train_program = fluid.Program()
-        startup_prog = fluid.Program()
-        with fluid.program_guard(train_program, startup_prog):
+        train_program = paddle.static.Program()
+        startup_prog = paddle.static.Program()
+        with paddle.static.program_guard(train_program, startup_prog):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
                 # 学习率
                 learning_rate = fluid.layers.exponential_decay(
                         learning_rate=learning_rate,
-                        decay_steps=num_samples / batch_size / dev_count,
+                        decay_steps=num_samples // batch_size // dev_count,
                         decay_rate=0.83,
                         staircase=True)
                 # 准备优化器
@@ -281,7 +258,7 @@ class DeepSpeech2Model(object):
                     grad_clip=fluid.clip.GradientClipByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
-        exe = fluid.Executor(self._place)
+        exe = paddle.static.Executor(self._place)
         exe.run(startup_prog)
 
         # init from some pretrain models, to better solve the current task
@@ -289,21 +266,23 @@ class DeepSpeech2Model(object):
         if self._init_from_pretrained_model:
             pre_epoch = self.init_from_pretrained_model(exe, train_program)
 
-        build_strategy = compiler.BuildStrategy()
-        exec_strategy = fluid.ExecutionStrategy()
+        build_strategy = paddle.static.BuildStrategy()
+        exec_strategy = paddle.static.ExecutionStrategy()
 
         # pass the build_strategy to with_data_parallel API
-        train_compiled_prog = compiler.CompiledProgram(train_program).with_data_parallel(loss_name=ctc_loss.name,
-                                                                                         build_strategy=build_strategy,
-                                                                                         exec_strategy=exec_strategy)
+        train_compiled_prog = paddle.static.CompiledProgram(train_program) \
+            .with_data_parallel(loss_name=ctc_loss.name,
+                                build_strategy=build_strategy,
+                                exec_strategy=exec_strategy)
 
         train_reader.set_batch_generator(train_batch_reader)
 
         train_step = 0
         test_step = 0
-        num_batch = -1
+        num_batch = num_samples // batch_size // dev_count
         # run train
-        for epoch_id in range(num_epoch):
+        for epoch_id in range(pre_epoch, num_epoch):
+            epoch_id += 1
             train_reader.start()
             epoch_loss = []
             time_begin = time.time()
@@ -319,12 +298,12 @@ class DeepSpeech2Model(object):
                         each_learning_rate = np.array(fetch[1])[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %f, train loss: %f\n" %
+                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f" %
                               (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, each_learning_rate,
                                np.mean(each_loss[0]) / batch_size))
                         # 记录训练损失值
-                        self.writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
-                        self.writer.add_scalar('Learning rate', each_learning_rate, train_step)
+                        writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
+                        writer.add_scalar('Learning rate', each_learning_rate, train_step)
                         train_step += 1
                     else:
                         _ = exe.run(program=train_compiled_prog,
@@ -332,14 +311,13 @@ class DeepSpeech2Model(object):
                                     return_numpy=False)
                     # 每2000个batch保存一次模型
                     if batch_id % 2000 == 0 and batch_id != 0:
-                        self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
+                        self.save_param(train_program, "epoch_" + str(epoch_id))
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
-            num_batch = batch_id
             # 每一个epoch保存一次模型
-            self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
+            self.save_param(train_program, "epoch_" + str(epoch_id))
             used_time = time.time() - time_begin
             if test_off:
                 print('======================last Train=====================')
@@ -353,14 +331,14 @@ class DeepSpeech2Model(object):
                 # 执行测试
                 test_result = self.test(test_reader=dev_batch_reader)
                 print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
-                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type, test_result))
+                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type,
+                         test_result))
                 print('======================Stop Test=====================\n')
                 # 记录测试结果
-                self.writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
+                writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
                 test_step += 1
 
-        self.save_param(exe, train_program, "step_final")
-
+        self.save_param(train_program, "epoch_" + str(num_epoch))
         print("\n------------Training finished!!!-------------")
 
     # 预测一个batch的音频
@@ -377,8 +355,8 @@ class DeepSpeech2Model(object):
         # define inferer
         infer_results = []
         data = []
-        if isinstance(self._place, fluid.CUDAPlace):
-            num_places = fluid.core.get_cuda_device_count()
+        if isinstance(self._place, paddle.CUDAPlace):
+            num_places = len(paddle.static.cuda_places())
         else:
             num_places = int(os.environ.get('CPU_NUM', 1))
         # 开始预测
@@ -421,29 +399,24 @@ class DeepSpeech2Model(object):
     # 初始化预测程序，加预训练模型
     def init_infer_program(self):
         # define inferer
-        self.infer_program = fluid.Program()
-        startup_prog = fluid.Program()
+        self.infer_program = paddle.static.Program()
+        startup_prog = paddle.static.Program()
 
         # prepare the network
-        with fluid.program_guard(self.infer_program, startup_prog):
+        with paddle.static.program_guard(self.infer_program, startup_prog):
             with fluid.unique_name.guard():
                 self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
 
         self.infer_program = self.infer_program.clone(for_test=True)
-        self.infer_exe = fluid.Executor(self._place)
+        self.infer_exe = paddle.static.Executor(self._place)
         self.infer_exe.run(startup_prog)
 
-        # init param from pretrained_model
-        if not self._init_from_pretrained_model:
-            exit("预训练模型文件不存在！")
-        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
-
         # 支持多卡推理
-        build_strategy = compiler.BuildStrategy()
-        exec_strategy = fluid.ExecutionStrategy()
-        self.infer_compiled_prog = compiler.CompiledProgram(self.infer_program).with_data_parallel(
-            build_strategy=build_strategy,
-            exec_strategy=exec_strategy)
+        build_strategy = paddle.static.BuildStrategy()
+        exec_strategy = paddle.static.ExecutionStrategy()
+        self.infer_compiled_prog = paddle.static.CompiledProgram(self.infer_program) \
+            .with_data_parallel(build_strategy=build_strategy,
+                                exec_strategy=exec_strategy)
 
     # 单个音频预测
     def infer(self, feature):
@@ -482,25 +455,26 @@ class DeepSpeech2Model(object):
 
     # 导出预测模型
     def export_model(self, data_feature, model_path):
+        self.init_infer_program()
         _ = self.infer(data_feature)
-        audio_data = fluid.data(name='audio_data',
-                                shape=[None, 161, None],
-                                dtype='float32',
-                                lod_level=0)
-        seq_len_data = fluid.data(name='seq_len_data',
-                                  shape=[None, 1],
-                                  dtype='int64',
-                                  lod_level=0)
-        masks = fluid.data(name='masks',
-                           shape=[None, 32, 81, None],
-                           dtype='float32',
-                           lod_level=0)
+        # 加载预训练模型
+        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+        audio_data = paddle.static.data(name='audio_data',
+                                        shape=[None, 161, None],
+                                        dtype='float32',
+                                        lod_level=0)
+        seq_len_data = paddle.static.data(name='seq_len_data',
+                                          shape=[None, 1],
+                                          dtype='int64',
+                                          lod_level=0)
+        masks = paddle.static.data(name='masks',
+                                   shape=[None, 32, 81, None],
+                                   dtype='float32',
+                                   lod_level=0)
         if not os.path.exists(os.path.dirname(model_path)):
             os.makedirs(os.path.dirname(model_path))
-        fluid.io.save_inference_model(dirname=model_path,
-                                      feeded_var_names=[audio_data.name, seq_len_data.name, masks.name],
-                                      target_vars=[self.infer_log_probs],
-                                      executor=self.infer_exe,
-                                      main_program=self.infer_program,
-                                      model_filename='model.pdmodel',
-                                      params_filename='model.pdiparams')
+        paddle.static.save_inference_model(path_prefix=model_path + '/inference',
+                                           feed_vars=[audio_data, seq_len_data, masks],
+                                           fetch_vars=[self.infer_log_probs],
+                                           executor=self.infer_exe,
+                                           program=self.infer_program)

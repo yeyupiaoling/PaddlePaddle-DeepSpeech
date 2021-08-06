@@ -4,6 +4,7 @@ pipeline and offering data reader interface of PaddlePaddle requirements.
 
 import random
 import numpy as np
+import paddle
 import paddle.fluid as fluid
 from threading import local
 from data_utils.utility import read_manifest
@@ -68,7 +69,7 @@ class DataGenerator(object):
                  use_dB_normalization=True,
                  random_seed=0,
                  keep_transcription_text=False,
-                 place=fluid.CPUPlace(),
+                 place=paddle.CPUPlace(),
                  is_training=True):
         self._max_duration = max_duration
         self._min_duration = min_duration

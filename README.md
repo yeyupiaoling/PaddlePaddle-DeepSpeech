@@ -17,12 +17,12 @@
 
 - [搭建本地环境](#搭建本地环境)
 - [搭建Docker环境](docs/install.md)
-- [Nvidia Jetson预测环境搭建](#Nvidia Jetson预测环境搭建)
+- [Nvidia Jetson预测环境搭建](#nvidia-jetson预测环境搭建)
 - [数据准备](#数据准备)
 - [训练模型](#训练模型)
 - [评估](#评估)
 - [本地预测](#本地预测)
-- [Web部署](#Web部署)
+- [Web部署](#web部署)
 - [模型下载](#模型下载)
 - [相关项目](#相关项目)
 
@@ -284,10 +284,10 @@ python client.py
 ## 模型下载
 | 数据集 | 字错率 | 下载地址 |
 | :---: | :---: | :---: |
-| AISHELL | 0.055882 | [点击下载](https://download.csdn.net/download/qq_33200967/15902032) |
-| free_st_chinese_mandarin_corpus | 0.138749 | [点击下载](https://download.csdn.net/download/qq_33200967/15934896) |
-| thchs_30 | 0.112128 | [点击下载](https://download.csdn.net/download/qq_33200967/16031534) |
-| 自收集(超过1300小时) | 0.072669 | [点击下载](https://download.csdn.net/download/qq_33200967/16200230) |
+| AISHELL |训练中 | [训练中]() |
+| free_st_chinese_mandarin_corpus | 训练中 | [训练中]() |
+| thchs_30 | 训练中 | [训练中]() |
+| 自收集(1600+小时) | 训练中 | [训练中]() |
 
 **说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](#导出模型)
 

@@ -6,18 +6,18 @@ from model_utils.model import DeepSpeech2Model
 from data_utils.data import DataGenerator
 from utils.utility import add_arguments, print_arguments, get_data_len
 
-import paddle.fluid as fluid
+import paddle
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('batch_size',       int,    4,     "训练每一批数据的大小")
-add_arg('num_epoch',        int,    200,    "训练的轮数")
+add_arg('batch_size',       int,    32,     "训练每一批数据的大小")
+add_arg('num_epoch',        int,    50,     "训练的轮数")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
-add_arg('rnn_layer_size',   int,    2048,   "循环神经网络的大小")
+add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('learning_rate',    float,  5e-5,   "初始学习率")
 add_arg('min_duration',     float,  1.0,    "最短的用于训练的音频长度")
-add_arg('max_duration',     float,  15.0,   "最长的用于训练的音频长度")
+add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('test_off',         bool,   False,  "是否关闭测试")
 add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
@@ -36,7 +36,7 @@ args = parser.parse_args()
 # 训练模型
 def train():
     # 是否使用GPU
-    place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
+    place = paddle.CUDAPlace(0) if args.use_gpu else paddle.CPUPlace()
 
     # 获取训练数据生成器
     train_generator = DataGenerator(vocab_filepath=args.vocab_path,

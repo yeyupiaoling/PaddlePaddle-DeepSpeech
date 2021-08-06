@@ -1,5 +1,7 @@
-import paddle.fluid as fluid
 import numpy as np
+import paddle
+import paddle.fluid as fluid
+import paddle.static.nn as nn
 
 
 def conv_bn_layer(input, filter_size, num_channels_out, stride,
@@ -29,20 +31,20 @@ def conv_bn_layer(input, filter_size, num_channels_out, stride,
     :rtype: Variable
 
     """
-    conv_layer = fluid.layers.conv2d(input=input,
-                                     num_filters=num_channels_out,
-                                     filter_size=filter_size,
-                                     stride=stride,
-                                     padding=padding,
-                                     param_attr=fluid.ParamAttr(name=name + '_conv2d_weight'),
-                                     bias_attr=False)
+    conv_layer = nn.conv2d(input=input,
+                           num_filters=num_channels_out,
+                           filter_size=filter_size,
+                           stride=stride,
+                           padding=padding,
+                           param_attr=paddle.ParamAttr(name=name + '_conv2d_weight'),
+                           bias_attr=False)
 
-    batch_norm = fluid.layers.batch_norm(input=conv_layer,
-                                         act=act,
-                                         param_attr=fluid.ParamAttr(name=name + '_batch_norm_weight'),
-                                         bias_attr=fluid.ParamAttr(name=name + '_batch_norm_bias'),
-                                         moving_mean_name=name + '_batch_norm_moving_mean',
-                                         moving_variance_name=name + '_batch_norm_moving_variance')
+    batch_norm = nn.batch_norm(input=conv_layer,
+                               act=act,
+                               param_attr=paddle.ParamAttr(name=name + '_batch_norm_weight'),
+                               bias_attr=paddle.ParamAttr(name=name + '_batch_norm_bias'),
+                               moving_mean_name=name + '_batch_norm_moving_mean',
+                               moving_variance_name=name + '_batch_norm_moving_variance')
 
     # reset padding part to 0
     padding_reset = fluid.layers.elementwise_mul(batch_norm, masks)
@@ -84,11 +86,11 @@ class RNNCell(fluid.layers.RNNCell):
         self.name = name
 
     def call(self, inputs, states):
-        new_hidden = fluid.layers.fc(input=states,
-                                     size=self.hidden_size,
-                                     act=self.hidden_activation,
-                                     param_attr=self.param_attr,
-                                     bias_attr=self.bias_attr)
+        new_hidden = nn.fc(x=states,
+                           size=self.hidden_size,
+                           act=self.hidden_activation,
+                           weight_attr=self.param_attr,
+                           bias_attr=self.bias_attr)
         new_hidden = fluid.layers.elementwise_add(new_hidden, inputs)
         new_hidden = self.activation(new_hidden)
 
@@ -117,67 +119,62 @@ def bidirectional_simple_rnn_bn_layer(name, input, size, share_weights):
     """
     forward_cell = RNNCell(hidden_size=size,
                            activation=fluid.layers.brelu,
-                           param_attr=fluid.ParamAttr(name=name + '_forward_rnn_weight'),
-                           bias_attr=fluid.ParamAttr(name=name + '_forward_rnn_bias'))
+                           param_attr=paddle.ParamAttr(name=name + '_forward_rnn_weight'),
+                           bias_attr=paddle.ParamAttr(name=name + '_forward_rnn_bias'))
 
     reverse_cell = RNNCell(hidden_size=size,
                            activation=fluid.layers.brelu,
-                           param_attr=fluid.ParamAttr(name=name + '_reverse_rnn_weight'),
-                           bias_attr=fluid.ParamAttr(name=name + '_reverse_rnn_bias'))
+                           param_attr=paddle.ParamAttr(name=name + '_reverse_rnn_weight'),
+                           bias_attr=paddle.ParamAttr(name=name + '_reverse_rnn_bias'))
 
     pad_value = fluid.layers.assign(input=np.array([0.0], dtype=np.float32))
 
     if share_weights:
         # input-hidden weights shared between bi-directional rnn.
-        input_proj = fluid.layers.fc(input=input,
-                                     size=size,
-                                     param_attr=fluid.ParamAttr(name=name + '_fc_weight'))
+        input_proj = nn.fc(x=input,
+                           size=size,
+                           weight_attr=paddle.ParamAttr(name=name + '_fc_weight'))
 
         # batch norm is only performed on input-state projection
-        input_proj_bn_forward = fluid.layers.batch_norm(
-            input=input_proj,
-            act=None,
-            param_attr=fluid.ParamAttr(name=name + '_batch_norm_weight'),
-            bias_attr=fluid.ParamAttr(name=name + '_batch_norm_bias'),
-            moving_mean_name=name + '_batch_norm_moving_mean',
-            moving_variance_name=name + '_batch_norm_moving_variance')
+        input_proj_bn_forward = nn.batch_norm(input=input_proj,
+                                              act=None,
+                                              param_attr=paddle.ParamAttr(name=name + '_batch_norm_weight'),
+                                              bias_attr=paddle.ParamAttr(name=name + '_batch_norm_bias'),
+                                              moving_mean_name=name + '_batch_norm_moving_mean',
+                                              moving_variance_name=name + '_batch_norm_moving_variance')
         input_proj_bn_reverse = input_proj_bn_forward
     else:
-        input_proj_forward = fluid.layers.fc(input=input,
-                                             size=size,
-                                             param_attr=fluid.ParamAttr(name=name + '_forward_fc_weight'))
-        input_proj_reverse = fluid.layers.fc(input=input,
-                                             size=size,
-                                             param_attr=fluid.ParamAttr(name=name + '_reverse_fc_weight'))
+        input_proj_forward = nn.fc(x=input,
+                                   size=size,
+                                   weight_attr=paddle.ParamAttr(name=name + '_forward_fc_weight'))
+        input_proj_reverse = nn.fc(x=input,
+                                   size=size,
+                                   weight_attr=paddle.ParamAttr(name=name + '_reverse_fc_weight'))
         # batch norm is only performed on input-state projection
-        input_proj_bn_forward = fluid.layers.batch_norm(input=input_proj_forward,
-                                                        act=None,
-                                                        param_attr=fluid.ParamAttr(
-                                                            name=name + '_forward_batch_norm_weight'),
-                                                        bias_attr=fluid.ParamAttr(
-                                                            name=name + '_forward_batch_norm_bias'),
-                                                        moving_mean_name=name + '_forward_batch_norm_moving_mean',
-                                                        moving_variance_name=name + '_forward_batch_norm_moving_variance')
-        input_proj_bn_reverse = fluid.layers.batch_norm(input=input_proj_reverse,
-                                                        act=None,
-                                                        param_attr=fluid.ParamAttr(
-                                                            name=name + '_reverse_batch_norm_weight'),
-                                                        bias_attr=fluid.ParamAttr(
-                                                            name=name + '_reverse_batch_norm_bias'),
-                                                        moving_mean_name=name + '_reverse_batch_norm_moving_mean',
-                                                        moving_variance_name=name + '_reverse_batch_norm_moving_variance')
+        input_proj_bn_forward = nn.batch_norm(input=input_proj_forward,
+                                              act=None,
+                                              param_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_weight'),
+                                              bias_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_bias'),
+                                              moving_mean_name=name + '_forward_batch_norm_moving_mean',
+                                              moving_variance_name=name + '_forward_batch_norm_moving_variance')
+        input_proj_bn_reverse = nn.batch_norm(input=input_proj_reverse,
+                                              act=None,
+                                              param_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_weight'),
+                                              bias_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_bias'),
+                                              moving_mean_name=name + '_reverse_batch_norm_moving_mean',
+                                              moving_variance_name=name + '_reverse_batch_norm_moving_variance')
     # forward and backward in time
-    input, length = fluid.layers.sequence_pad(input_proj_bn_forward, pad_value)
+    input, length = nn.sequence_pad(input_proj_bn_forward, pad_value)
     forward_rnn, _ = fluid.layers.rnn(cell=forward_cell, inputs=input, time_major=False, is_reverse=False)
-    forward_rnn = fluid.layers.sequence_unpad(x=forward_rnn, length=length)
+    forward_rnn = nn.sequence_unpad(x=forward_rnn, length=length)
 
-    input, length = fluid.layers.sequence_pad(input_proj_bn_reverse, pad_value)
+    input, length = nn.sequence_pad(input_proj_bn_reverse, pad_value)
     reverse_rnn, _ = fluid.layers.rnn(cell=reverse_cell,
                                       inputs=input,
                                       sequence_length=length,
                                       time_major=False,
                                       is_reverse=True)
-    reverse_rnn = fluid.layers.sequence_unpad(x=reverse_rnn, length=length)
+    reverse_rnn = nn.sequence_unpad(x=reverse_rnn, length=length)
 
     out = fluid.layers.concat(input=[forward_rnn, reverse_rnn], axis=1)
     return out
@@ -198,41 +195,39 @@ def bidirectional_gru_bn_layer(name, input, size, act):
     :return: Bidirectional GRU layer.
     :rtype: Variable
     """
-    input_proj_forward = fluid.layers.fc(input=input,
-                                         size=size * 3,
-                                         param_attr=fluid.ParamAttr(name=name + '_forward_fc_weight'))
-    input_proj_reverse = fluid.layers.fc(input=input,
-                                         size=size * 3,
-                                         param_attr=fluid.ParamAttr(name=name + '_reverse_fc_weight'))
+    input_proj_forward = nn.fc(x=input,
+                               size=size * 3,
+                               weight_attr=paddle.ParamAttr(name=name + '_forward_fc_weight'))
+    input_proj_reverse = nn.fc(x=input,
+                               size=size * 3,
+                               weight_attr=paddle.ParamAttr(name=name + '_reverse_fc_weight'))
     # batch norm is only performed on input-related prohections
-    input_proj_bn_forward = fluid.layers.batch_norm(input=input_proj_forward,
-                                                    act=None,
-                                                    param_attr=fluid.ParamAttr(
-                                                        name=name + '_forward_batch_norm_weight'),
-                                                    bias_attr=fluid.ParamAttr(name=name + '_forward_batch_norm_bias'),
-                                                    moving_mean_name=name + '_forward_batch_norm_moving_mean',
-                                                    moving_variance_name=name + '_forward_batch_norm_moving_variance')
-    input_proj_bn_reverse = fluid.layers.batch_norm(input=input_proj_reverse,
-                                                    act=None,
-                                                    param_attr=fluid.ParamAttr(
-                                                        name=name + '_reverse_batch_norm_weight'),
-                                                    bias_attr=fluid.ParamAttr(name=name + '_reverse_batch_norm_bias'),
-                                                    moving_mean_name=name + '_reverse_batch_norm_moving_mean',
-                                                    moving_variance_name=name + '_reverse_batch_norm_moving_variance')
+    input_proj_bn_forward = nn.batch_norm(input=input_proj_forward,
+                                          act=None,
+                                          param_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_weight'),
+                                          bias_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_bias'),
+                                          moving_mean_name=name + '_forward_batch_norm_moving_mean',
+                                          moving_variance_name=name + '_forward_batch_norm_moving_variance')
+    input_proj_bn_reverse = nn.batch_norm(input=input_proj_reverse,
+                                          act=None,
+                                          param_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_weight'),
+                                          bias_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_bias'),
+                                          moving_mean_name=name + '_reverse_batch_norm_moving_mean',
+                                          moving_variance_name=name + '_reverse_batch_norm_moving_variance')
     # forward and backward in time
     forward_gru = fluid.layers.dynamic_gru(input=input_proj_bn_forward,
                                            size=size,
                                            gate_activation='sigmoid',
                                            candidate_activation=act,
-                                           param_attr=fluid.ParamAttr(name=name + '_forward_gru_weight'),
-                                           bias_attr=fluid.ParamAttr(name=name + '_forward_gru_bias'),
+                                           param_attr=paddle.ParamAttr(name=name + '_forward_gru_weight'),
+                                           bias_attr=paddle.ParamAttr(name=name + '_forward_gru_bias'),
                                            is_reverse=False)
     reverse_gru = fluid.layers.dynamic_gru(input=input_proj_bn_reverse,
                                            size=size,
                                            gate_activation='sigmoid',
                                            candidate_activation=act,
-                                           param_attr=fluid.ParamAttr(name=name + '_reverse_gru_weight'),
-                                           bias_attr=fluid.ParamAttr(name=name + '_reverse_gru_bias'),
+                                           param_attr=paddle.ParamAttr(name=name + '_reverse_gru_weight'),
+                                           bias_attr=paddle.ParamAttr(name=name + '_reverse_gru_bias'),
                                            is_reverse=True)
     return fluid.layers.concat(input=[forward_gru, reverse_gru], axis=1)
 
@@ -372,7 +367,7 @@ def deep_speech_v2_network(audio_data,
                                                inplace=False)
     # remove padding part
     seq_len_data = fluid.layers.reshape(seq_len_data, [-1])
-    sequence = fluid.layers.sequence_unpad(x=reshape_conv_output, length=seq_len_data)
+    sequence = nn.sequence_unpad(x=reshape_conv_output, length=seq_len_data)
     # rnn group
     rnn_group_output = rnn_group(input=sequence,
                                  size=rnn_size,
@@ -380,12 +375,10 @@ def deep_speech_v2_network(audio_data,
                                  num_conv_layers=num_conv_layers,
                                  use_gru=use_gru,
                                  share_rnn_weights=share_rnn_weights)
-    fc = fluid.layers.fc(input=rnn_group_output,
-                         size=dict_size + 1,
-                         param_attr=fluid.ParamAttr(
-                             name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_weight'),
-                         bias_attr=fluid.ParamAttr(
-                             name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_bias'))
+    fc = nn.fc(x=rnn_group_output,
+               size=dict_size + 1,
+               weight_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_weight'),
+               bias_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_bias'))
     # pribability distribution with softmax
     log_probs = fluid.layers.softmax(fc)
     log_probs.persistable = True

@@ -1,4 +1,5 @@
 """特征标准化"""
+import math
 
 import numpy as np
 import random
@@ -70,12 +71,32 @@ class FeatureNormalizer(object):
     def _compute_mean_std(self, manifest_path, featurize_func, num_samples):
         """从随机抽样的实例中计算均值和标准值"""
         manifest = read_manifest(manifest_path)
-        sampled_manifest = self._rng.sample(manifest, num_samples)
-        features = []
+        if num_samples < 0:
+            sampled_manifest = manifest
+        else:
+            sampled_manifest = self._rng.sample(manifest, num_samples)
+        # 求总和
+        std, means = None, None
+        number = 0
         for instance in tqdm(sampled_manifest):
-            features.append(
-                featurize_func(
-                    AudioSegment.from_file(instance["audio_filepath"])))
-        features = np.hstack(features)
-        self._mean = np.mean(features, axis=1).reshape([-1, 1])
-        self._std = np.std(features, axis=1).reshape([-1, 1])
+            feature = featurize_func(AudioSegment.from_file(instance["audio_filepath"]))
+            number += feature.shape[1]
+            sums = np.sum(feature, axis=1)
+            if means is None:
+                means = sums
+            else:
+                means += sums
+            square_sums = np.sum(np.square(feature), axis=1)
+            if std is None:
+                std = square_sums
+            else:
+                std += square_sums
+        # 求总和的均值和标准值
+        for i in range(len(means)):
+            means[i] /= number
+            std[i] = std[i] / number - means[i] * means[i]
+            if std[i] < 1.0e-20:
+                std[i] = 1.0e-20
+            std[i] = math.sqrt(std[i])
+        self._mean = means.reshape([-1, 1])
+        self._std = std.reshape([-1, 1])
