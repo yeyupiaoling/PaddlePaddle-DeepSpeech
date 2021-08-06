@@ -261,7 +261,7 @@ class DeepSpeech2Model(object):
             learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
-
+        step_sum = num_samples // batch_size // dev_count
         # prepare the network
         train_program = fluid.Program()
         startup_prog = fluid.Program()
@@ -271,7 +271,7 @@ class DeepSpeech2Model(object):
                 # 学习率
                 learning_rate = fluid.layers.exponential_decay(
                         learning_rate=learning_rate,
-                        decay_steps=num_samples / batch_size / dev_count,
+                        decay_steps=step_sum,
                         decay_rate=0.83,
                         staircase=True)
                 # 准备优化器
@@ -301,7 +301,6 @@ class DeepSpeech2Model(object):
 
         train_step = 0
         test_step = 0
-        num_batch = -1
         # run train
         for epoch_id in range(num_epoch):
             train_reader.start()
@@ -320,7 +319,7 @@ class DeepSpeech2Model(object):
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
                         print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %f, train loss: %f\n" %
-                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, each_learning_rate,
+                              (datetime.now(), epoch_id, num_epoch, batch_id, step_sum, each_learning_rate,
                                np.mean(each_loss[0]) / batch_size))
                         # 记录训练损失值
                         self.writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
@@ -337,7 +336,6 @@ class DeepSpeech2Model(object):
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
-            num_batch = batch_id
             # 每一个epoch保存一次模型
             self.save_param(exe, train_program, "epoch_" + str(epoch_id + pre_epoch))
             used_time = time.time() - time_begin

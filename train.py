@@ -10,7 +10,7 @@ import paddle.fluid as fluid
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('batch_size',       int,    4,     "训练每一批数据的大小")
+add_arg('batch_size',       int,    16,     "训练每一批数据的大小")
 add_arg('num_epoch',        int,    200,    "训练的轮数")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
