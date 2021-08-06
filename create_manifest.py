@@ -1,22 +1,27 @@
-"""根据标注文件创建数据列表"""
-import os
-import sys
-
-sys.path.append(os.getcwd())
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
-
-import functools
-import wave
-from tqdm import tqdm
-import json
 import argparse
-from utils.utility import add_arguments, print_arguments, change_rate
+import functools
+import json
+import os
+import wave
+from collections import Counter
+
+from tqdm import tqdm
+
+from data_utils.normalizer import FeatureNormalizer
+from data_utils.augmentor.augmentation import AugmentationPipeline
+from data_utils.featurizer.audio_featurizer import AudioFeaturizer
+from utils.utility import add_arguments, print_arguments, read_manifest, change_rate
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('annotation_path',      str,  'dataset/annotation/',   '标注文件的路径')
-add_arg('manifest_prefix',      str,  'dataset/',              '训练数据清单，包括音频路径和标注信息')
-add_arg('is_change_frame_rate', bool, True,                    '是否统一改变音频为16000Hz，这会消耗大量的时间')
+add_arg('--annotation_path',    str,  'dataset/annotation/',      '标注文件的路径')
+add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据清单，包括音频路径和标注信息')
+add_arg('is_change_frame_rate', bool, True,                       '是否统一改变音频为16000Hz，这会消耗大量的时间')
+add_arg('count_threshold',      int,  0,                          '字符计数的截断阈值，0为不做限制')
+add_arg('vocab_path',           str,  'dataset/zh_vocab.txt',     '生成的数据字典文件')
+add_arg('manifest_paths',       str,  'dataset/manifest.train,dataset/manifest.test',   '数据列表路径,多个用英文逗号隔开')
+add_arg('num_samples',          int,  -1,                         '用于计算均值和标准值得音频数量，当为-1使用全部数据')
+add_arg('output_path',          str,  './dataset/mean_std.npz',   '保存均值和标准值得numpy文件路径，后缀 (.npz).')
 args = parser.parse_args()
 
 
@@ -124,14 +129,58 @@ def create_noise(path='dataset/audio/noise'):
             f_noise.write(json_line + '\n')
 
 
+# 获取全部字符
+def count_manifest(counter, manifest_path):
+    manifest_jsons = read_manifest(manifest_path)
+    for line_json in manifest_jsons:
+        for char in line_json['text']:
+            counter.update(char)
+
+
+# 计算数据集的均值和标准值
+def compute_mean_std(manifest_path, num_samples, output_path):
+    augmentation_pipeline = AugmentationPipeline('{}')
+    audio_featurizer = AudioFeaturizer()
+
+    def augment_and_featurize(audio_segment):
+        augmentation_pipeline.transform_audio(audio_segment)
+        return audio_featurizer.featurize(audio_segment)
+
+    # 随机取指定的数量计算平均值归一化
+    normalizer = FeatureNormalizer(mean_std_filepath=None,
+                                   manifest_path=manifest_path,
+                                   featurize_func=augment_and_featurize,
+                                   num_samples=num_samples)
+    # 将计算的结果保存的文件中
+    normalizer.write_to_file(output_path)
+    print('计算的均值和标准值已保存在 %s！' % output_path)
+
+
 def main():
     print_arguments(args)
+    print('开始生成数据列表...')
     create_manifest(annotation_path=args.annotation_path,
                     manifest_path_prefix=args.manifest_prefix)
 
+    print('开始生成数据字典...')
+    counter = Counter()
+    # 获取全部数据列表
+    manifest_paths = [path for path in args.manifest_paths.split(',')]
+    # 获取全部数据列表中的标签字符
+    for manifest_path in manifest_paths:
+        count_manifest(counter, manifest_path)
+    # 为每一个字符都生成一个ID
+    count_sorted = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+    with open(args.vocab_path, 'w', encoding='utf-8') as fout:
+        for char, count in count_sorted:
+            # 跳过指定的字符阈值，超过这大小的字符都忽略
+            if count < args.count_threshold: break
+            fout.write(char + '\n')
+    print('数据词汇表已生成完成，保存与：%s' % args.vocab_path)
+
+    print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)
+    compute_mean_std(manifest_paths[0], args.num_samples, args.output_path)
+
 
 if __name__ == '__main__':
-    # 生成噪声的数据列表
-    create_noise()
-    # 生成训练数据列表
     main()

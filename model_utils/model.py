@@ -169,36 +169,6 @@ class DeepSpeech2Model(object):
         paddle.static.save(program=program, model_path='{}/deepspeech'.format(self.save_model_path))
         print("save parameters at %s" % self.save_model_path)
 
-    def test(self, test_reader):
-        '''Test the model.
-
-        :param test_reader: Reader of test.
-        :type test_reader: Reader
-        :return: Wer/Cer rate.
-        :rtype: float
-        '''
-        errors_sum, len_refs = 0.0, 0
-        errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
-        if self.infer_exe is None:
-            # 初始化预测程序
-            self.init_infer_program()
-        # 加载预训练模型
-        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
-        for infer_data in test_reader():
-            # 执行预测
-            probs_split = self.infer_batch_probs(infer_data=infer_data)
-            # 使用最优路径解码
-            result_transcripts = greedy_decoder_batch(probs_split=probs_split,
-                                                      vocabulary=self.vocab_list,
-                                                      blank_index=len(self.vocab_list))
-            target_transcripts = infer_data[1]
-            # 计算字错率
-            for target, result in zip(target_transcripts, result_transcripts):
-                errors, len_ref = errors_func(target, result)
-                errors_sum += errors
-                len_refs += len_ref
-        return errors_sum / len_refs
-
     def train(self,
               train_batch_reader,
               dev_batch_reader,
@@ -246,16 +216,12 @@ class DeepSpeech2Model(object):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
                 # 学习率
-                learning_rate = fluid.layers.exponential_decay(
-                        learning_rate=learning_rate,
-                        decay_steps=num_samples // batch_size // dev_count,
-                        decay_rate=0.83,
-                        staircase=True)
+                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83)
                 # 准备优化器
-                optimizer = fluid.optimizer.AdamOptimizer(
-                    learning_rate=learning_rate,
-                    regularization=fluid.regularizer.L2Decay(0.0001),
-                    grad_clip=fluid.clip.GradientClipByGlobalNorm(clip_norm=gradient_clipping))
+                optimizer = paddle.optimizer.Adam(
+                    learning_rate=scheduler,
+                    weight_decay=paddle.regularizer.L2Decay(1e-06),
+                    grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
         exe = paddle.static.Executor(self._place)
@@ -289,21 +255,19 @@ class DeepSpeech2Model(object):
             batch_id = 0
             while True:
                 try:
-                    fetch_list = [ctc_loss.name, learning_rate.name]
                     if batch_id % 100 == 0:
                         fetch = exe.run(program=train_compiled_prog,
-                                        fetch_list=fetch_list,
+                                        fetch_list=[ctc_loss.name],
                                         return_numpy=False)
                         each_loss = fetch[0]
-                        each_learning_rate = np.array(fetch[1])[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
                         print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f" %
-                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, each_learning_rate,
+                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
                                np.mean(each_loss[0]) / batch_size))
                         # 记录训练损失值
                         writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
-                        writer.add_scalar('Learning rate', each_learning_rate, train_step)
+                        writer.add_scalar('Learning rate', scheduler.get_lr(), train_step)
                         train_step += 1
                     else:
                         _ = exe.run(program=train_compiled_prog,
@@ -316,6 +280,7 @@ class DeepSpeech2Model(object):
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
+            scheduler.step()
             # 每一个epoch保存一次模型
             self.save_param(train_program, "epoch_" + str(epoch_id))
             used_time = time.time() - time_begin
@@ -340,6 +305,36 @@ class DeepSpeech2Model(object):
 
         self.save_param(train_program, "epoch_" + str(num_epoch))
         print("\n------------Training finished!!!-------------")
+
+    def test(self, test_reader):
+        '''Test the model.
+
+        :param test_reader: Reader of test.
+        :type test_reader: Reader
+        :return: Wer/Cer rate.
+        :rtype: float
+        '''
+        errors_sum, len_refs = 0.0, 0
+        errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
+        if self.infer_exe is None:
+            # 初始化预测程序
+            self.create_infer_program()
+        # 加载预训练模型
+        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+        for infer_data in test_reader():
+            # 执行预测
+            probs_split = self.infer_batch_probs(infer_data=infer_data)
+            # 使用最优路径解码
+            result_transcripts = greedy_decoder_batch(probs_split=probs_split,
+                                                      vocabulary=self.vocab_list,
+                                                      blank_index=len(self.vocab_list))
+            target_transcripts = infer_data[1]
+            # 计算字错率
+            for target, result in zip(target_transcripts, result_transcripts):
+                errors, len_ref = errors_func(target, result)
+                errors_sum += errors
+                len_refs += len_ref
+        return errors_sum / len_refs
 
     # 预测一个batch的音频
     def infer_batch_probs(self, infer_data):
@@ -397,7 +392,7 @@ class DeepSpeech2Model(object):
         return probs_split
 
     # 初始化预测程序，加预训练模型
-    def init_infer_program(self):
+    def create_infer_program(self):
         # define inferer
         self.infer_program = paddle.static.Program()
         startup_prog = paddle.static.Program()
@@ -455,7 +450,7 @@ class DeepSpeech2Model(object):
 
     # 导出预测模型
     def export_model(self, data_feature, model_path):
-        self.init_infer_program()
+        self.create_infer_program()
         _ = self.infer(data_feature)
         # 加载预训练模型
         self.init_from_pretrained_model(self.infer_exe, self.infer_program)
