@@ -5,7 +5,7 @@ import os
 import shutil
 import time
 import paddle
-from datetime import datetime
+from datetime import datetime, timedelta
 from distutils.dir_util import mkpath
 import numpy as np
 import paddle.fluid as fluid
@@ -37,9 +37,9 @@ class DeepSpeech2Model(object):
     :type share_rnn_weights: bool
     :param place: Program running place.
     :type place: CPUPlace or CUDAPlace
-    :param init_from_pretrained_model: Pretrained model path. If None, will train
+    :param pretrained_model: Pretrained model path. If None, will train
                                   from stratch.
-    :type init_from_pretrained_model: string|None
+    :type pretrained_model: string|None
     :param output_model_dir: Output model directory. If None, output to current directory.
     :type output_model_dir: string|None
     """
@@ -52,7 +52,7 @@ class DeepSpeech2Model(object):
                  use_gru=False,
                  share_rnn_weights=True,
                  place=paddle.CPUPlace(),
-                 init_from_pretrained_model=None,
+                 pretrained_model=None,
                  output_model_dir=None,
                  error_rate_type='cer',
                  vocab_list=None):
@@ -63,7 +63,7 @@ class DeepSpeech2Model(object):
         self._use_gru = use_gru
         self._share_rnn_weights = share_rnn_weights
         self._place = place
-        self._init_from_pretrained_model = init_from_pretrained_model
+        self._pretrained_model = pretrained_model
         self._output_model_dir = output_model_dir
         self._ext_scorer = None
         self.logger = logging.getLogger("")
@@ -140,34 +140,26 @@ class DeepSpeech2Model(object):
                                                  share_rnn_weights=self._share_rnn_weights)
         return reader, log_probs, loss
 
-    def init_from_pretrained_model(self, exe, program):
+    def init_from_pretrained_model(self, program):
         '''Init params from pretrain model. '''
-        if not os.path.exists(os.path.join(self._init_from_pretrained_model, 'deepspeech.pdparams')) and \
-                not os.path.exists(os.path.join(self._init_from_pretrained_model, 'deepspeech.pdmodel')):
-            raise Warning("The pretrained params [%s] do not exist." % self._init_from_pretrained_model)
+        if not os.path.exists(self._pretrained_model):
+            raise Warning("The pretrained params [%s] do not exist." % self._pretrained_model)
 
-        paddle.static.load(program=program,
-                           model_path=self._init_from_pretrained_model + '/deepspeech',
-                           executor=exe)
+        load_state_dict = paddle.load(self._pretrained_model)
+        program.set_state_dict(load_state_dict)
+        print("成功加载了预训练模型：%s" % self._pretrained_model)
 
-        print("成功加载了预训练模型：%s" % self._init_from_pretrained_model + '/deepspeech')
-
-        pre_epoch = 0
-        dir_name = self._init_from_pretrained_model.split('_')
-        if len(dir_name) >= 2 and dir_name[-2].endswith('epoch') and dir_name[-1].isdigit():
-            pre_epoch = int(dir_name[-1])
-
-        return pre_epoch + 1
-
-    def save_param(self, program, dirname):
+    def save_param(self, program, epoch):
         '''Save model params to dirname'''
-        param_dir = os.path.join(self._output_model_dir)
-        if not os.path.exists(param_dir):
-            os.mkdir(param_dir)
-
-        self.save_model_path = os.path.join(param_dir, dirname)
-        paddle.static.save(program=program, model_path='{}/deepspeech'.format(self.save_model_path))
-        print("save parameters at %s" % self.save_model_path)
+        if not os.path.exists(self._output_model_dir):
+            os.mkdir(self._output_model_dir)
+        model_path = '{}/{}.pdparams'.format(self._output_model_dir, epoch)
+        paddle.save(program.state_dict(), model_path)
+        old_model_path = '{}/{}.pdparams'.format(self._output_model_dir, epoch - 3)
+        if os.path.exists(old_model_path):
+            os.remove(old_model_path)
+        print("模型已保存在：%s" % self._output_model_dir)
+        return model_path
 
     def train(self,
               train_batch_reader,
@@ -209,6 +201,14 @@ class DeepSpeech2Model(object):
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
+        pre_epoch = 0
+        if self._pretrained_model:
+            try:
+                pre_epoch = os.path.basename(self._pretrained_model).split('.')[0]
+                pre_epoch = int(pre_epoch)
+            except:
+                pass
+
         # prepare the network
         train_program = paddle.static.Program()
         startup_prog = paddle.static.Program()
@@ -216,7 +216,7 @@ class DeepSpeech2Model(object):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
                 # 学习率
-                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83)
+                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83, last_epoch=pre_epoch)
                 # 准备优化器
                 optimizer = paddle.optimizer.Adam(
                     learning_rate=scheduler,
@@ -227,10 +227,9 @@ class DeepSpeech2Model(object):
         exe = paddle.static.Executor(self._place)
         exe.run(startup_prog)
 
-        # init from some pretrain models, to better solve the current task
-        pre_epoch = 0
-        if self._init_from_pretrained_model:
-            pre_epoch = self.init_from_pretrained_model(exe, train_program)
+        # 加载预训练模型
+        if self._pretrained_model:
+            self.init_from_pretrained_model(train_program)
 
         build_strategy = paddle.static.BuildStrategy()
         exec_strategy = paddle.static.ExecutionStrategy()
@@ -246,6 +245,7 @@ class DeepSpeech2Model(object):
         train_step = 0
         test_step = 0
         num_batch = num_samples // batch_size // dev_count
+        sum_batch = num_batch * (num_epoch - pre_epoch)
         # run train
         for epoch_id in range(pre_epoch, num_epoch):
             epoch_id += 1
@@ -256,15 +256,19 @@ class DeepSpeech2Model(object):
             while True:
                 try:
                     if batch_id % 100 == 0:
+                        start = time.time()
                         fetch = exe.run(program=train_compiled_prog,
                                         fetch_list=[ctc_loss.name],
                                         return_numpy=False)
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
-                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f" %
+                        eta_sec = ((time.time() - start) * 1000) * (
+                                    sum_batch - (epoch_id - pre_epoch) * num_batch - batch_id)
+                        eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
+                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f, eta: %s" %
                               (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
-                               np.mean(each_loss[0]) / batch_size))
+                               np.mean(each_loss[0]) / batch_size, eta_str))
                         # 记录训练损失值
                         writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
                         writer.add_scalar('Learning rate', scheduler.get_lr(), train_step)
@@ -275,14 +279,14 @@ class DeepSpeech2Model(object):
                                     return_numpy=False)
                     # 每2000个batch保存一次模型
                     if batch_id % 2000 == 0 and batch_id != 0:
-                        self.save_param(train_program, "epoch_" + str(epoch_id))
+                        self.save_param(train_program, epoch_id)
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
             scheduler.step()
             # 每一个epoch保存一次模型
-            self.save_param(train_program, "epoch_" + str(epoch_id))
+            self._pretrained_model = self.save_param(train_program, epoch_id)
             used_time = time.time() - time_begin
             if test_off:
                 print('======================last Train=====================')
@@ -291,8 +295,6 @@ class DeepSpeech2Model(object):
                 print('======================last Train=====================')
             else:
                 print('\n======================Begin test=====================')
-                # 设置临时模型的路径
-                self._init_from_pretrained_model = self.save_model_path
                 # 执行测试
                 test_result = self.test(test_reader=dev_batch_reader)
                 print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
@@ -303,7 +305,7 @@ class DeepSpeech2Model(object):
                 writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
                 test_step += 1
 
-        self.save_param(train_program, "epoch_" + str(num_epoch))
+        self.save_param(train_program, num_epoch)
         print("\n------------Training finished!!!-------------")
 
     def test(self, test_reader):
@@ -320,7 +322,7 @@ class DeepSpeech2Model(object):
             # 初始化预测程序
             self.create_infer_program()
         # 加载预训练模型
-        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+        self.init_from_pretrained_model(self.infer_program)
         for infer_data in test_reader():
             # 执行预测
             probs_split = self.infer_batch_probs(infer_data=infer_data)
@@ -453,7 +455,7 @@ class DeepSpeech2Model(object):
         self.create_infer_program()
         _ = self.infer(data_feature)
         # 加载预训练模型
-        self.init_from_pretrained_model(self.infer_exe, self.infer_program)
+        self.init_from_pretrained_model(self.infer_program)
         audio_data = paddle.static.data(name='audio_data',
                                         shape=[None, 161, None],
                                         dtype='float32',

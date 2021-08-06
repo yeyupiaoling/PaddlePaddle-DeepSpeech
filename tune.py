@@ -24,7 +24,7 @@ add_arg('beam_size',        int,    10,    "定向搜索的大小，范围:[5, 5
 add_arg('num_proc_bsearch', int,    8,     "定向搜索方法使用CPU数量")
 add_arg('num_conv_layers',  int,    2,     "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,     "循环神经网络的数量")
-add_arg('rnn_layer_size',   int,    2048,  "循环神经网络的大小")
+add_arg('rnn_layer_size',   int,    1024,  "循环神经网络的大小")
 add_arg('num_alphas',       int,    45,    "用于调优的alpha候选项")
 add_arg('num_betas',        int,    8,     "用于调优的beta候选项")
 add_arg('alpha_from',       float,  1.0,   "alpha调优开始大小")
@@ -42,7 +42,7 @@ add_arg('tune_manifest',    str,    './dataset/manifest.test',     "需要评估
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "语言模型文件路径")
-add_arg('model_path',       str,    './models/step_final/',                     "训练保存的模型文件夹路径")
+add_arg('model_path',       str,    './models/param/50.pdparams',               "训练保存的模型文件夹路径")
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 
@@ -74,7 +74,7 @@ def tune():
                                  rnn_layer_size=args.rnn_layer_size,
                                  use_gru=args.use_gru,
                                  place=place,
-                                 init_from_pretrained_model=args.model_path,
+                                 pretrained_model=args.model_path,
                                  share_rnn_weights=args.share_rnn_weights,
                                  is_infer=True)
 

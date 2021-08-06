@@ -16,10 +16,10 @@ add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('share_rnn_weights',bool,   False,   "是否在RNN上共享权重")
-add_arg('mean_std_path',    str,    './dataset/mean_std.npz',    "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',    "数据集的词汇表文件路径")
-add_arg('pretrained_model', str,    './models/epoch_2/',         "训练保存的模型文件夹路径")
-add_arg('save_model_path',  str,    './models/infer/',           "保存导出的预测模型文件夹路径")
+add_arg('mean_std_path',    str,    './dataset/mean_std.npz',     "数据集的均值和标准值的npy文件路径")
+add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',     "数据集的词汇表文件路径")
+add_arg('pretrained_model', str,    './models/param/50.pdparams', "训练保存的模型文件夹路径")
+add_arg('save_model_path',  str,    './models/infer/',            "保存导出的预测模型文件夹路径")
 args = parser.parse_args()
 
 # 是否使用GPU
@@ -39,7 +39,7 @@ ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
                              num_rnn_layers=args.num_rnn_layers,
                              rnn_layer_size=args.rnn_layer_size,
                              use_gru=args.use_gru,
-                             init_from_pretrained_model=args.pretrained_model,
+                             pretrained_model=args.pretrained_model,
                              place=place,
                              share_rnn_weights=args.share_rnn_weights)
 
