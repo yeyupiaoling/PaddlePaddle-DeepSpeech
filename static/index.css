@@ -26,10 +26,25 @@ body {
     position: absolute;
 }
 
+#result_p{
+    width: 300px;
+    height: 250px;
+}
+
 
 #upload {
+    width: 80px;
+    height: 30px;
     top: 100px;
-    left: 150px;
+    left: 130px;
+    position: absolute;
+}
+
+#upload_long {
+    width: 80px;
+    height: 30px;
+    top: 100px;
+    left: 300px;
     position: absolute;
 }
 
@@ -53,12 +68,12 @@ body {
     text-decoration: none;
     text-indent: 0;
     line-height: 20px;
-    width: 200px;
-    height: 30px;
 }
 
 #upload_recod_btn {
     top: 290px;
+    width: 200px;
+    height: 30px;
     left: 155px;
     margin-top: 10px;
     position: absolute;

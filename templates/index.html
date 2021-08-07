@@ -9,14 +9,15 @@
 <body>
 <div id="content">
     <div>
-        <a id="upload" onclick="uploadFile()" class="file">选择wav音频文件上传</a>
+        <a id="upload" onclick="uploadAudioFile()" class="file">短音频文件识别</a>
+        <a id="upload_long" onclick="uploadLongAudioFile()" class="file">长音频文件识别</a>
         <img id="record_btn" onclick="record()" src="record.png" alt="录音"/>
         <img id="play_btn" onclick="play()" src="player.png" alt="播放"/>
         <a onclick="uploadRecordAudio()" class="file" id="upload_recod_btn">上传录音文件</a>
     </div>
 
     <div id="result">
-        <p id="result_p"></p>
+        <textarea id="result_p"></textarea>
     </div>
 
     <div id="player">
@@ -24,8 +25,6 @@
     </div>
 </div>
 <script>
-    // 需要修改为服务器的地址
-    url = location.origin + "/recognition"
     var is_recording = false;
     var is_playing = false;
     var recorder;
@@ -82,7 +81,7 @@
     }
 
     function uploadRecordAudio() {
-        recorder.upload(url, function (state, e) {
+        recorder.upload(location.origin + "/recognition", function (state, e) {
             switch (state) {
                 case 'uploading':
                     var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
@@ -102,14 +101,42 @@
         });
     }
 
-    function uploadFile(){
+    function uploadAudioFile(){
         var input = document.createElement("input");
         input.type = "file";
         input.accept = "audio/*";
         input.click();
         input.onchange = function(){
             var file = input.files[0];
-            upload_file(url, file, function (state, e) {
+            upload_file(location.origin + "/recognition", file, function (state, e) {
+                switch (state) {
+                    case 'uploading':
+                        var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
+                        console.log(percentComplete);
+                        break;
+                    case 'ok':
+                        console.log(e.target.responseText)
+                        document.getElementById('result_p').innerHTML = e.target.responseText
+                        break;
+                    case 'error':
+                        alert("上传失败");
+                        break;
+                    case 'cancel':
+                        alert("上传被取消");
+                        break;
+                }
+            });
+        }
+    }
+
+    function uploadLongAudioFile(){
+        var input = document.createElement("input");
+        input.type = "file";
+        input.accept = "audio/*";
+        input.click();
+        input.onchange = function(){
+            var file = input.files[0];
+            upload_file(location.origin + "/recognition_long_audio", file, function (state, e) {
                 switch (state) {
                     case 'uploading':
                         var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';

@@ -1,6 +1,7 @@
 import argparse
 import functools
 import os
+import sys
 import time
 
 from flask import request, Flask, render_template
@@ -8,6 +9,7 @@ from flask_cors import CORS
 
 from data_utils.audio_process import AudioInferProcess
 from utils.predict import Predictor
+from utils.audio_vad import crop_audio_vad
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -57,9 +59,38 @@ def recognition():
             score, text = predictor.predict(audio_path=file_path)
             end = time.time()
             print("识别时间：%dms，识别结果：%s， 得分: %f" % (round((end - start) * 1000), text, score))
-            result = str({"code": 0, "msg": "success", "result": text, "score": score}).replace("'", '"')
+            result = str({"code": 0, "msg": "success", "result": text, "score": round(score, 3)}).replace("'", '"')
             return result
         except:
+            return str({"error": 1, "msg": "audio read fail!"})
+    return str({"error": 3, "msg": "audio is None!"})
+
+
+# 长语音识别接口
+@app.route("/recognition_long_audio", methods=['POST'])
+def recognition_long_audio():
+    f = request.files['audio']
+    if f:
+        # 临时保存路径
+        file_path = os.path.join(args.save_path, f.filename)
+        f.save(file_path)
+        try:
+            start = time.time()
+            # 分割长音频
+            audios_path = crop_audio_vad(file_path)
+            texts = ''
+            scores = []
+            # 执行识别
+            for i, audio_path in enumerate(audios_path):
+                score, text = predictor.predict(audio_path=audio_path)
+                texts = texts + '，' + text
+                scores.append(score)
+            end = time.time()
+            print("识别时间：%dms，识别结果：%s， 得分: %f" % (round((end - start) * 1000), texts, sum(scores) / len(scores)))
+            result = str({"code": 0, "msg": "success", "result": texts, "score": round(float(sum(scores) / len(scores)), 3)}).replace("'", '"')
+            return result
+        except Exception as e:
+            print(e, file=sys.stderr)
             return str({"error": 1, "msg": "audio read fail!"})
     return str({"error": 3, "msg": "audio is None!"})
 
