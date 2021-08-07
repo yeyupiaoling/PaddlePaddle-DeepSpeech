@@ -97,7 +97,7 @@ def tune():
         if (args.num_batches >= 0) and (cur_batch >= args.num_batches):
             break
         # 执行预测
-        probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
+        probs_split = ds2_model.infer_batch_data(infer_data=infer_data)
         target_transcripts = infer_data[1]
 
         num_ins += len(target_transcripts)

@@ -371,7 +371,6 @@ def deep_speech_v2_network(audio_data,
                bias_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_bias'))
     # pribability distribution with softmax
     log_probs = paddle.nn.functional.softmax(fc)
-    log_probs.persistable = True
     if not text_data:
         return log_probs, None
     else:

@@ -71,7 +71,7 @@ pip3 install -r requirements.txt
 
 1. 在`data`目录下是公开数据集的下载和制作训练数据列表和词汇表的，本项目提供了下载公开的中文普通话语音数据集，分别是Aishell，Free ST-Chinese-Mandarin-Corpus，THCHS-30 这三个数据集，总大小超过28G。下载这三个数据只需要执行一下代码即可，当然如果想快速训练，也可以只下载其中一个。
 ```shell script
-cd data/
+cd download_data/
 python aishell.py
 python free_st_chinese_mandarin_corpus.py
 python thchs_30.py

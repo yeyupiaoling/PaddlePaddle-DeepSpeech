@@ -3,7 +3,7 @@ import functools
 import os
 import time
 
-from flask import request, Flask
+from flask import request, Flask, render_template
 from flask_cors import CORS
 
 from data_utils.data import DataGenerator
@@ -30,7 +30,7 @@ add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   
 add_arg('decoding_method',  str,    'ctc_greedy',    "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 args = parser.parse_args()
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/")
 # 允许跨越访问
 CORS(app)
 
@@ -65,6 +65,11 @@ def recognition():
         except:
             return str({"error": 1, "msg": "audio read fail!"})
     return str({"error": 3, "msg": "audio is None!"})
+
+
+@app.route('/')
+def home():
+    return render_template("index.html")
 
 
 if __name__ == '__main__':

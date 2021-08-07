@@ -82,7 +82,7 @@ def evaluate():
     # 开始评估
     for infer_data in batch_reader():
         # 获取一批的识别结果
-        probs_split = ds2_model.infer_batch_probs(infer_data=infer_data)
+        probs_split = ds2_model.infer_batch_data(infer_data=infer_data)
 
         # 执行解码
         if args.decoding_method == 'ctc_greedy':

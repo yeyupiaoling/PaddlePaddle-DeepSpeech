@@ -158,7 +158,7 @@ class DeepSpeech2Model(object):
         old_model_path = '{}/{}.pdparams'.format(self._output_model_dir, epoch - 3)
         if os.path.exists(old_model_path):
             os.remove(old_model_path)
-        print("模型已保存在：%s" % self._output_model_dir)
+        print("模型已保存在：%s" % model_path)
         return model_path
 
     def train(self,
@@ -216,7 +216,7 @@ class DeepSpeech2Model(object):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
                 # 学习率
-                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83, last_epoch=pre_epoch)
+                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83, last_epoch=pre_epoch - 1)
                 # 准备优化器
                 optimizer = paddle.optimizer.Adam(
                     learning_rate=scheduler,
@@ -325,7 +325,7 @@ class DeepSpeech2Model(object):
         self.init_from_pretrained_model(self.infer_program)
         for infer_data in test_reader():
             # 执行预测
-            probs_split = self.infer_batch_probs(infer_data=infer_data)
+            probs_split = self.infer_batch_data(infer_data=infer_data)
             # 使用最优路径解码
             result_transcripts = greedy_decoder_batch(probs_split=probs_split,
                                                       vocabulary=self.vocab_list,
@@ -339,7 +339,7 @@ class DeepSpeech2Model(object):
         return errors_sum / len_refs
 
     # 预测一个batch的音频
-    def infer_batch_probs(self, infer_data):
+    def infer_batch_data(self, infer_data):
         """Infer the prob matrices for a batch of speech utterances.
         :param infer_data: List of utterances to infer, with each utterance
                            consisting of a tuple of audio features and
@@ -415,45 +415,9 @@ class DeepSpeech2Model(object):
             .with_data_parallel(build_strategy=build_strategy,
                                 exec_strategy=exec_strategy)
 
-    # 单个音频预测
-    def infer(self, feature):
-        """Infer the prob matrices for a batch of speech utterances.
-        :param feature: DataGenerator.process_utterance get data[0]
-        :return: List of 2-D probability matrix, and each consists of prob
-                 vectors for one speech utterancce.
-        :rtype: List of matrix
-        """
-        audio_len = feature.shape[1]
-        mask_shape0 = (feature.shape[0] - 1) // 2 + 1
-        mask_shape1 = (feature.shape[1] - 1) // 3 + 1
-        mask_max_len = (audio_len - 1) // 3 + 1
-        mask_ones = np.ones((mask_shape0, mask_shape1))
-        mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
-        mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
-                                    (1, mask_shape0, mask_max_len)), 32, axis=0)
-        infer_data = [np.array(feature).astype('float32'),
-                      None,
-                      np.array(audio_len).astype('int64'),
-                      np.array(mask).astype('float32')]
-        # run inference
-        each_log_probs = self.infer_exe.run(program=self.infer_program,
-                                            feed=self.infer_feeder.feed(
-                                                [[infer_data[0], infer_data[2], infer_data[3]]]),
-                                            fetch_list=[self.infer_log_probs],
-                                            return_numpy=False)
-        infer_result = np.array(each_log_probs[0])
-
-        # slice result
-        seq_len = (infer_data[2] - 1) // 3 + 1
-        start_pos = [0, 0]
-        start_pos[1] = start_pos[0] + seq_len
-        probs_split = infer_result[start_pos[0]:start_pos[1]]
-        return probs_split
-
     # 导出预测模型
-    def export_model(self, data_feature, model_path):
+    def export_model(self, model_path):
         self.create_infer_program()
-        _ = self.infer(data_feature)
         # 加载预训练模型
         self.init_from_pretrained_model(self.infer_program)
         audio_data = paddle.static.data(name='audio_data',
