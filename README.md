@@ -261,7 +261,7 @@ I0729 19:48:39.860757 14609 analysis_config.cc:424] use_dlnne_:0
 ```
 
 
-### 长语音预测
+## 长语音预测
 
 通过参数is_long_audio可以指定使用长语音识别方式，这种方式通过VAD分割音频，再对短音频进行识别，拼接结果，最终得到长语音识别结果。
 ```shell script
@@ -270,13 +270,9 @@ python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
 
 
 ## Web部署
- - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别，默认使用的是`ctc_greedy`贪心解码策略。
+ - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别，默认使用的是`ctc_greedy`贪心解码策略。启动服务之后，在浏览器上访问`http://localhost:5000`
 ```shell script
 python infer_server.py
-```
- - 在本地执行下面命令启动一个网页来测试，可以选择本地音频文件，或者是在线录音。在启动前需要修改`index.html`中的请求url，把url改为加上读者服务器的IP即可，启动服务之后，在浏览器上访问`http://localhost:5001`。
-```shell script
-python client.py
 ```
 
 ![录音测试页面](https://img-blog.csdnimg.cn/20210402091159951.png)
@@ -293,8 +289,14 @@ python client.py
 
 >有问题欢迎提 [issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 交流
 
+## TODO
+
+1. 数据集读取修改为读取修改为`paddle.io.DataLoader`接口。
+2. 训练三个公开数据集的模型。
+3. 增加音频数据集合成程序和变声程序。
+
 
 ## 相关项目
  - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
- - 基于PaddlePaddle 2.0实现的语音识别：[PPASR](https://github.com/yeyupiaoling/PPASR)
+ - 基于PaddlePaddle动态图实现的语音识别：[PPASR](https://github.com/yeyupiaoling/PPASR)
  - 基于Pytorch实现的语音识别：[MASR](https://github.com/yeyupiaoling/MASR)

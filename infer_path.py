@@ -2,7 +2,7 @@ import argparse
 import functools
 import time
 
-from data_utils.data import DataGenerator
+from data_utils.audio_process import AudioInferProcess
 from utils.predict import Predictor
 from utils.audio_vad import crop_audio_vad
 from utils.utility import add_arguments, print_arguments
@@ -29,12 +29,9 @@ print_arguments(args)
 
 
 # 获取数据生成器，处理数据和获取字典需要
-data_generator = DataGenerator(vocab_filepath=args.vocab_path,
-                               mean_std_filepath=args.mean_std_path,
-                               keep_transcription_text=True,
-                               is_training=False)
+audio_process = AudioInferProcess(vocab_filepath=args.vocab_path, mean_std_filepath=args.mean_std_path)
 
-predictor = Predictor(model_dir=args.model_dir, data_generator=data_generator, decoding_method=args.decoding_method,
+predictor = Predictor(model_dir=args.model_dir, audio_process=audio_process, decoding_method=args.decoding_method,
                       alpha=args.alpha, beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
                       cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
                       use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn)

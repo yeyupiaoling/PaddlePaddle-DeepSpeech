@@ -8,10 +8,10 @@ from decoders.ctc_greedy_decoder import greedy_decoder
 
 
 class Predictor:
-    def __init__(self, model_dir, data_generator, decoding_method='ctc_greedy', alpha=1.2, beta=0.35,
+    def __init__(self, model_dir, audio_process, decoding_method='ctc_greedy', alpha=1.2, beta=0.35,
                  lang_model_path=None, beam_size=10, cutoff_prob=1.0, cutoff_top_n=40, use_gpu=True, gpu_mem=500,
                  use_tensorrt=False, enable_mkldnn=False, num_threads=10):
-        self.data_generator = data_generator
+        self.audio_process = audio_process
         self.decoding_method = decoding_method
         self.alpha = alpha
         self.beta = beta
@@ -24,7 +24,7 @@ class Predictor:
             try:
                 from decoders.beam_search_decoder import BeamSearchDecoder
                 self.beam_search_decoder = BeamSearchDecoder(alpha, beta, lang_model_path,
-                                                             data_generator.vocab_list)
+                                                             audio_process.vocab_list)
             except ModuleNotFoundError:
                 raise Exception('缺少ctc_decoders库，如果是Windows系统，请使用ctc_greedy。如果是Linux系统，且一定要使用ctc_beam_search解码策略'
                                 '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
@@ -72,17 +72,17 @@ class Predictor:
     # 预测图片
     def predict(self, audio_path):
         # 加载音频文件，并进行预处理
-        audio_feature = self.data_generator.process_utterance(audio_path, "")
-        audio_len = audio_feature[0].shape[1]
-        mask_shape0 = (audio_feature[0].shape[0] - 1) // 2 + 1
-        mask_shape1 = (audio_feature[0].shape[1] - 1) // 3 + 1
+        audio_feature = self.audio_process.process_utterance(audio_path)
+        audio_len = audio_feature.shape[1]
+        mask_shape0 = (audio_feature.shape[0] - 1) // 2 + 1
+        mask_shape1 = (audio_feature.shape[1] - 1) // 3 + 1
         mask_max_len = (audio_len - 1) // 3 + 1
         mask_ones = np.ones((mask_shape0, mask_shape1))
         mask_zeros = np.zeros((mask_shape0, mask_max_len - mask_shape1))
         mask = np.repeat(np.reshape(np.concatenate((mask_ones, mask_zeros), axis=1),
                                     (1, mask_shape0, mask_max_len)), 32, axis=0)
 
-        audio_data = np.array(audio_feature[0]).astype('float32')[np.newaxis, :]
+        audio_data = np.array(audio_feature).astype('float32')[np.newaxis, :]
         seq_len_data = np.array([audio_len]).astype('int64')
         masks = np.array(mask).astype('float32')[np.newaxis, :]
 
@@ -110,13 +110,13 @@ class Predictor:
                                                                  beam_size=self.beam_size,
                                                                  cutoff_prob=self.cutoff_prob,
                                                                  cutoff_top_n=self.cutoff_top_n,
-                                                                 vocab_list=self.data_generator.vocab_list,
-                                                                 blank_id=len(self.data_generator.vocab_list))
+                                                                 vocab_list=self.audio_process.vocab_list,
+                                                                 blank_id=len(self.audio_process.vocab_list))
         else:
             # 贪心解码策略
             result = greedy_decoder(probs_seq=output_data,
-                                    vocabulary=self.data_generator.vocab_list,
-                                    blank_index=len(self.data_generator.vocab_list))
+                                    vocabulary=self.audio_process.vocab_list,
+                                    blank_index=len(self.audio_process.vocab_list))
 
         score, text = result[0], result[1]
         return score, text
