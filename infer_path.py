@@ -9,8 +9,8 @@ from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('wav_path',         str,    './dataset/test_vad.wav', "预测音频的路径")
-add_arg('is_long_audio',    bool,   True,  "是否为长语音")
+add_arg('wav_path',         str,    './dataset/test.wav', "预测音频的路径")
+add_arg('is_long_audio',    bool,   False,  "是否为长语音")
 add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 500]")
 add_arg('alpha',            float,  1.2,    "定向搜索的LM系数")
 add_arg('beta',             float,  0.35,   "定向搜索的WC系数")

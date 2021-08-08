@@ -55,7 +55,8 @@ class DeepSpeech2Model(object):
                  pretrained_model=None,
                  output_model_dir=None,
                  error_rate_type='cer',
-                 vocab_list=None):
+                 vocab_list=None,
+                 blank=0):
         self._vocab_size = vocab_size
         self._num_conv_layers = num_conv_layers
         self._num_rnn_layers = num_rnn_layers
@@ -63,6 +64,7 @@ class DeepSpeech2Model(object):
         self._use_gru = use_gru
         self._share_rnn_weights = share_rnn_weights
         self._place = place
+        self._blank = blank
         self._pretrained_model = pretrained_model
         self._output_model_dir = output_model_dir
         self._ext_scorer = None
@@ -137,7 +139,8 @@ class DeepSpeech2Model(object):
                                                  num_rnn_layers=self._num_rnn_layers,
                                                  rnn_size=self._rnn_layer_size,
                                                  use_gru=self._use_gru,
-                                                 share_rnn_weights=self._share_rnn_weights)
+                                                 share_rnn_weights=self._share_rnn_weights,
+                                                 blank=self._blank)
         return reader, log_probs, loss
 
     def init_from_pretrained_model(self, program):
@@ -264,7 +267,7 @@ class DeepSpeech2Model(object):
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
                         eta_sec = ((time.time() - start) * 1000) * (
-                                    sum_batch - (epoch_id - pre_epoch) * num_batch - batch_id)
+                                    sum_batch - (epoch_id - pre_epoch - 1) * num_batch - batch_id)
                         eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
                         print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f, eta: %s" %
                               (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
@@ -318,18 +321,11 @@ class DeepSpeech2Model(object):
         '''
         errors_sum, len_refs = 0.0, 0
         errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
-        if self.infer_exe is None:
-            # 初始化预测程序
-            self.create_infer_program()
-        # 加载预训练模型
-        self.init_from_pretrained_model(self.infer_program)
         for infer_data in test_reader():
             # 执行预测
             probs_split = self.infer_batch_data(infer_data=infer_data)
             # 使用最优路径解码
-            result_transcripts = greedy_decoder_batch(probs_split=probs_split,
-                                                      vocabulary=self.vocab_list,
-                                                      blank_index=len(self.vocab_list))
+            result_transcripts = greedy_decoder_batch(probs_split=probs_split, vocabulary=self.vocab_list)
             target_transcripts = infer_data[1]
             # 计算字错率
             for target, result in zip(target_transcripts, result_transcripts):
@@ -350,6 +346,11 @@ class DeepSpeech2Model(object):
         :rtype: List of matrix
         """
         # define inferer
+        if self.infer_exe is None:
+            # 初始化预测程序
+            self.create_infer_program()
+            # 加载预训练模型
+            self.init_from_pretrained_model(self.infer_program)
         infer_results = []
         data = []
         if isinstance(self._place, paddle.CUDAPlace):

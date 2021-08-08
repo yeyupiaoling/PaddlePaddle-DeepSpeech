@@ -88,8 +88,8 @@ def tune():
     cand_betas = np.linspace(args.beta_from, args.beta_to, args.num_betas)
     params_grid = [(alpha, beta) for alpha in cand_alphas for beta in cand_betas]
 
-    err_sum = [0.0 for i in range(len(params_grid))]
-    err_ave = [0.0 for i in range(len(params_grid))]
+    err_sum = [0.0 for _ in range(len(params_grid))]
+    err_ave = [0.0 for _ in range(len(params_grid))]
     num_ins, len_refs, cur_batch = 0, 0, 0
     # 多批增量调优参数
     ds2_model.logger.info("start tuning ...")
@@ -110,7 +110,6 @@ def tune():
                                                                               cutoff_prob=args.cutoff_prob,
                                                                               cutoff_top_n=args.cutoff_top_n,
                                                                               vocab_list=data_generator.vocab_list,
-                                                                              blank_id=len(data_generator.vocab_list),
                                                                               num_processes=args.num_proc_bsearch)
             for target, result in zip(target_transcripts, result_transcripts):
                 errors, len_ref = errors_func(target, result)

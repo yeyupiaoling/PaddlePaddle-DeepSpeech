@@ -110,13 +110,10 @@ class Predictor:
                                                                  beam_size=self.beam_size,
                                                                  cutoff_prob=self.cutoff_prob,
                                                                  cutoff_top_n=self.cutoff_top_n,
-                                                                 vocab_list=self.audio_process.vocab_list,
-                                                                 blank_id=len(self.audio_process.vocab_list))
+                                                                 vocab_list=self.audio_process.vocab_list)
         else:
             # 贪心解码策略
-            result = greedy_decoder(probs_seq=output_data,
-                                    vocabulary=self.audio_process.vocab_list,
-                                    blank_index=len(self.audio_process.vocab_list))
+            result = greedy_decoder(probs_seq=output_data, vocabulary=self.audio_process.vocab_list)
 
         score, text = result[0], result[1]
         return score, text

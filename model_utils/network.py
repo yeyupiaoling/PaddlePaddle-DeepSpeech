@@ -315,7 +315,8 @@ def deep_speech_v2_network(audio_data,
                            num_rnn_layers=3,
                            rnn_size=256,
                            use_gru=False,
-                           share_rnn_weights=True):
+                           share_rnn_weights=True,
+                           blank=0):
     """The DeepSpeech2 network structure.
 
     :param audio_data: Audio spectrogram data layer.
@@ -366,7 +367,7 @@ def deep_speech_v2_network(audio_data,
                                  use_gru=use_gru,
                                  share_rnn_weights=share_rnn_weights)
     fc = nn.fc(x=rnn_group_output,
-               size=dict_size + 1,
+               size=dict_size,
                weight_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_weight'),
                bias_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_bias'))
     # pribability distribution with softmax
@@ -375,7 +376,7 @@ def deep_speech_v2_network(audio_data,
         return log_probs, None
     else:
         # ctc cost
-        ctc_loss = paddle.nn.functional.ctc_loss(log_probs=fc, labels=text_data, blank=dict_size, norm_by_times=True,
+        ctc_loss = paddle.nn.functional.ctc_loss(log_probs=fc, labels=text_data, blank=blank, norm_by_times=True,
                                                  reduction='sum', input_lengths=None, label_lengths=None)
         ctc_loss = paddle.sum(ctc_loss)
         return log_probs, ctc_loss
