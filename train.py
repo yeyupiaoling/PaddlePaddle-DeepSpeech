@@ -16,8 +16,6 @@ add_arg('num_epoch',        int,    50,     "训练的轮数")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
-add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
-add_arg('share_rnn_weights',bool,   False,  "是否在RNN上共享权重")
 add_arg('learning_rate',    float,  1e-3,   "初始学习率")
 add_arg('min_duration',     float,  1.0,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
@@ -65,8 +63,6 @@ def train():
                                  num_conv_layers=args.num_conv_layers,
                                  num_rnn_layers=args.num_rnn_layers,
                                  rnn_layer_size=args.rnn_layer_size,
-                                 use_gru=args.use_gru,
-                                 share_rnn_weights=args.share_rnn_weights,
                                  place=place,
                                  pretrained_model=args.pretrained_model,
                                  output_model_dir=args.output_model_dir,

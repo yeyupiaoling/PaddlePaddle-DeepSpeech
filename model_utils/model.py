@@ -49,8 +49,6 @@ class DeepSpeech2Model(object):
                  num_conv_layers,
                  num_rnn_layers,
                  rnn_layer_size,
-                 use_gru=False,
-                 share_rnn_weights=True,
                  place=paddle.CPUPlace(),
                  pretrained_model=None,
                  output_model_dir=None,
@@ -61,8 +59,6 @@ class DeepSpeech2Model(object):
         self._num_conv_layers = num_conv_layers
         self._num_rnn_layers = num_rnn_layers
         self._rnn_layer_size = rnn_layer_size
-        self._use_gru = use_gru
-        self._share_rnn_weights = share_rnn_weights
         self._place = place
         self._blank = blank
         self._pretrained_model = pretrained_model
@@ -138,8 +134,6 @@ class DeepSpeech2Model(object):
                                                  num_conv_layers=self._num_conv_layers,
                                                  num_rnn_layers=self._num_rnn_layers,
                                                  rnn_size=self._rnn_layer_size,
-                                                 use_gru=self._use_gru,
-                                                 share_rnn_weights=self._share_rnn_weights,
                                                  blank=self._blank)
         return reader, log_probs, loss
 
@@ -200,7 +194,6 @@ class DeepSpeech2Model(object):
 
         if isinstance(self._place, paddle.CUDAPlace):
             dev_count = len(paddle.static.cuda_places())
-            learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
@@ -219,7 +212,8 @@ class DeepSpeech2Model(object):
             with fluid.unique_name.guard():
                 train_reader, _, ctc_loss = self.create_network()
                 # 学习率
-                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83, last_epoch=pre_epoch - 1)
+                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83,
+                                                                 last_epoch=pre_epoch - 1)
                 # 准备优化器
                 optimizer = paddle.optimizer.Adam(
                     learning_rate=scheduler,
@@ -260,26 +254,25 @@ class DeepSpeech2Model(object):
                 try:
                     if batch_id % 100 == 0:
                         start = time.time()
-                        fetch = exe.run(program=train_compiled_prog,
-                                        fetch_list=[ctc_loss.name],
-                                        return_numpy=False)
+                        # 执行训练
+                        fetch = exe.run(program=train_compiled_prog, fetch_list=[ctc_loss.name], return_numpy=False)
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
 
                         eta_sec = ((time.time() - start) * 1000) * (
-                                    sum_batch - (epoch_id - pre_epoch - 1) * num_batch - batch_id)
+                                sum_batch - (epoch_id - pre_epoch - 1) * num_batch - batch_id)
                         eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
-                        print("Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f, eta: %s" %
-                              (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
-                               np.mean(each_loss[0]) / batch_size, eta_str))
+                        print(
+                            "Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f, eta: %s" %
+                            (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
+                             np.mean(each_loss[0]) / batch_size, eta_str))
                         # 记录训练损失值
                         writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
                         writer.add_scalar('Learning rate', scheduler.get_lr(), train_step)
                         train_step += 1
                     else:
-                        _ = exe.run(program=train_compiled_prog,
-                                    fetch_list=[],
-                                    return_numpy=False)
+                        # 执行训练
+                        _ = exe.run(program=train_compiled_prog, fetch_list=[], return_numpy=False)
                     # 每2000个batch保存一次模型
                     if batch_id % 2000 == 0 and batch_id != 0:
                         self.save_param(train_program, epoch_id)
@@ -294,15 +287,15 @@ class DeepSpeech2Model(object):
             if test_off:
                 print('======================last Train=====================')
                 print("Train time: %f sec, epoch: %d, train loss: %f\n" %
-                      (used_time, epoch_id, np.mean(np.array(epoch_loss))))
+                      (used_time, epoch_id, float(np.mean(np.array(epoch_loss)))))
                 print('======================last Train=====================')
             else:
                 print('\n======================Begin test=====================')
                 # 执行测试
                 test_result = self.test(test_reader=dev_batch_reader)
-                print("Train time: %f sec, epoch: %d, train loss: %f, test %s: %f"
-                      % (used_time, epoch_id + pre_epoch, np.mean(np.array(epoch_loss)), self.error_rate_type,
-                         test_result))
+                print("Train time: %s, epoch: %d, train loss: %f, test %s: %f"
+                      % (str(timedelta(seconds=int(used_time))), epoch_id + pre_epoch, float(np.mean(np.array(epoch_loss))),
+                         self.error_rate_type, test_result))
                 print('======================Stop Test=====================\n')
                 # 记录测试结果
                 writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)

@@ -19,8 +19,6 @@ add_arg('beam_size',        int,    10,     "定向搜索的大小，范围:[5, 
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
-add_arg('share_rnn_weights',bool,   False,  "是否在RNN上共享权重")
-add_arg('use_gru',          bool,   True,   "是否使用GRUs模型，不使用RNN")
 add_arg('alpha',            float,  1.2,    "定向搜索的LM系数")
 add_arg('num_proc_bsearch', int,    8,      "定向搜索方法使用CPU数量")
 add_arg('beta',             float,  0.35,   "定向搜索的WC系数")
@@ -56,8 +54,6 @@ def evaluate():
                                  num_conv_layers=args.num_conv_layers,
                                  num_rnn_layers=args.num_rnn_layers,
                                  rnn_layer_size=args.rnn_layer_size,
-                                 use_gru=args.use_gru,
-                                 share_rnn_weights=args.share_rnn_weights,
                                  place=place,
                                  pretrained_model=args.pretrained_model)
 
