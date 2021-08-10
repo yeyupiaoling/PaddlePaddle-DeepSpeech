@@ -8,8 +8,6 @@ from collections import Counter
 from tqdm import tqdm
 
 from data_utils.normalizer import FeatureNormalizer
-from data_utils.augmentor.augmentation import AugmentationPipeline
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
 from utils.utility import add_arguments, print_arguments, read_manifest, change_rate
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -19,6 +17,7 @@ add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据�
 add_arg('is_change_frame_rate', bool, True,                       '是否统一改变音频为16000Hz，这会消耗大量的时间')
 add_arg('count_threshold',      int,  0,                          '字符计数的截断阈值，0为不做限制')
 add_arg('vocab_path',           str,  'dataset/zh_vocab.txt',     '生成的数据字典文件')
+add_arg('num_workers',          int,   8,                         '读取数据的线程数量')
 add_arg('manifest_paths',       str,  'dataset/manifest.train,dataset/manifest.test',   '数据列表路径,多个用英文逗号隔开')
 add_arg('num_samples',          int,  -1,                         '用于计算均值和标准值得音频数量，当为-1使用全部数据')
 add_arg('output_path',          str,  './dataset/mean_std.npz',   '保存均值和标准值得numpy文件路径，后缀 (.npz).')
@@ -139,18 +138,11 @@ def count_manifest(counter, manifest_path):
 
 # 计算数据集的均值和标准值
 def compute_mean_std(manifest_path, num_samples, output_path):
-    augmentation_pipeline = AugmentationPipeline('{}')
-    audio_featurizer = AudioFeaturizer()
-
-    def augment_and_featurize(audio_segment):
-        augmentation_pipeline.transform_audio(audio_segment)
-        return audio_featurizer.featurize(audio_segment)
-
     # 随机取指定的数量计算平均值归一化
     normalizer = FeatureNormalizer(mean_std_filepath=None,
                                    manifest_path=manifest_path,
-                                   featurize_func=augment_and_featurize,
-                                   num_samples=num_samples)
+                                   num_samples=num_samples,
+                                   num_workers=args.num_workers)
     # 将计算的结果保存的文件中
     normalizer.write_to_file(output_path)
     print('计算的均值和标准值已保存在 %s！' % output_path)

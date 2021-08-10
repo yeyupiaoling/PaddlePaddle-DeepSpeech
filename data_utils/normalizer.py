@@ -1,19 +1,19 @@
-"""特征标准化"""
+"""特征归一化"""
 import math
 
 import numpy as np
 import random
 from tqdm import tqdm
+from paddle.io import Dataset, DataLoader
 from data_utils.utility import read_manifest
 from data_utils.audio import AudioSegment
+from data_utils.featurizer.audio_featurizer import AudioFeaturizer
 
 
 class FeatureNormalizer(object):
     """音频特征归一化类
 
-    if mean_std_filepath is provided (not None), the normalizer will directly
-    initilize from the file. Otherwise, both manifest_path and featurize_func
-    should be given for on-the-fly mean and stddev computing.
+    如果mean_std_filepath不是None，则normalizer将直接从文件初始化。否则，使用manifest_path应该给特征mean和stddev计算
 
     :param mean_std_filepath: 均值和标准值的文件路径
     :type mean_std_filepath: None|str
@@ -31,18 +31,18 @@ class FeatureNormalizer(object):
     def __init__(self,
                  mean_std_filepath,
                  manifest_path=None,
-                 featurize_func=None,
-                 num_samples=500,
+                 num_workers=4,
+                 num_samples=5000,
                  random_seed=0):
         if not mean_std_filepath:
-            if not (manifest_path and featurize_func):
+            if not manifest_path:
                 raise ValueError("如果mean_std_filepath是None，那么meanifest_path和featurize_func不应该是None")
             self._rng = random.Random(random_seed)
-            self._compute_mean_std(manifest_path, featurize_func, num_samples)
+            self._compute_mean_std(manifest_path, num_samples, num_workers)
         else:
             self._read_mean_std_from_file(mean_std_filepath)
 
-    def apply(self, features, eps=1e-14):
+    def apply(self, features, eps=1e-20):
         """使用均值和标准值计算音频特征的归一化值
 
         :param features: 需要归一化的音频
@@ -68,29 +68,28 @@ class FeatureNormalizer(object):
         self._mean = npzfile["mean"]
         self._std = npzfile["std"]
 
-    def _compute_mean_std(self, manifest_path, featurize_func, num_samples):
+    def _compute_mean_std(self, manifest_path, num_samples, num_workers):
         """从随机抽样的实例中计算均值和标准值"""
         manifest = read_manifest(manifest_path)
         if num_samples < 0:
             sampled_manifest = manifest
         else:
             sampled_manifest = self._rng.sample(manifest, num_samples)
+        dataset = NormalizerDataset(sampled_manifest)
+        test_loader = DataLoader(dataset=dataset, batch_size=64, collate_fn=collate_fn, num_workers=num_workers)
         # 求总和
         std, means = None, None
         number = 0
-        for instance in tqdm(sampled_manifest):
-            feature = featurize_func(AudioSegment.from_file(instance["audio_filepath"]))
-            number += feature.shape[1]
-            sums = np.sum(feature, axis=1)
+        for std1, means1, number1 in tqdm(test_loader()):
+            number += number1
             if means is None:
-                means = sums
+                means = means1
             else:
-                means += sums
-            square_sums = np.sum(np.square(feature), axis=1)
+                means += means1
             if std is None:
-                std = square_sums
+                std = std1
             else:
-                std += square_sums
+                std += std1
         # 求总和的均值和标准值
         for i in range(len(means)):
             means[i] /= number
@@ -100,3 +99,38 @@ class FeatureNormalizer(object):
             std[i] = math.sqrt(std[i])
         self._mean = means.reshape([-1, 1])
         self._std = std.reshape([-1, 1])
+
+
+class NormalizerDataset(Dataset):
+    def __init__(self, sampled_manifest):
+        super(NormalizerDataset, self).__init__()
+        self.audio_featurizer = AudioFeaturizer()
+        self.sampled_manifest = sampled_manifest
+
+    def __getitem__(self, idx):
+        instance = self.sampled_manifest[idx]
+        # 获取音频特征
+        audio = AudioSegment.from_file(instance["audio_filepath"])
+        feature = self.audio_featurizer.featurize(audio)
+        return feature, 0
+
+    def __len__(self):
+        return len(self.sampled_manifest)
+
+
+def collate_fn(features):
+    std, means = None, None
+    number = 0
+    for feature, _ in features:
+        number += feature.shape[1]
+        sums = np.sum(feature, axis=1)
+        if means is None:
+            means = sums
+        else:
+            means += sums
+        square_sums = np.sum(np.square(feature), axis=1)
+        if std is None:
+            std = square_sums
+        else:
+            std += square_sums
+    return std, means, number
