@@ -27,7 +27,7 @@ add_arg('cutoff_top_n',     int,    40,     "剪枝的最大值")
 add_arg('test_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
-add_arg('pretrained_model', str,    './models/param/50.pdparams',  "训练保存的模型文件夹路径")
+add_arg('resume_model',     str,    './models/param/50.pdparams',  "恢复模型文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',        "语言模型文件路径")
 add_arg('decoding_method',  str,    'ctc_greedy',        "结果解码方法，有定向搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
@@ -55,7 +55,7 @@ def evaluate():
                                  num_rnn_layers=args.num_rnn_layers,
                                  rnn_layer_size=args.rnn_layer_size,
                                  place=place,
-                                 pretrained_model=args.pretrained_model)
+                                 resume_model=args.resume_model)
 
     # 读取数据列表
     with open(args.test_manifest, 'r', encoding='utf-8') as f_m:
@@ -67,8 +67,7 @@ def evaluate():
             from decoders.beam_search_decoder import BeamSearchDecoder
             beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
         except ModuleNotFoundError:
-            raise Exception('缺少ctc_decoders库，如果是Windows系统，请使用ctc_greedy。如果是Linux系统，且一定要使用ctc_beam_search解码策略'
-                            '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
+            raise Exception('缺少ctc_decoders库，请在decoders目录中安装ctc_decoders库，如果是Windows系统，请使用ctc_greed。')
 
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors

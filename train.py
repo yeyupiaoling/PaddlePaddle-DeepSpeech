@@ -17,16 +17,17 @@ add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('learning_rate',    float,  1e-3,   "初始学习率")
-add_arg('min_duration',     float,  1.0,    "最短的用于训练的音频长度")
+add_arg('min_duration',     float,  0.0,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('test_off',         bool,   False,  "是否关闭测试")
-add_arg('pretrained_model',        str, None,    "使用预训练模型的路径，当为None是不使用预训练模型")
-add_arg('train_manifest',          str,   './dataset/manifest.train',    "训练的数据列表")
+add_arg('resume_model',            str,  None,    "恢复训练，当为None则不使用预训练模型")
+add_arg('pretrained_model',        str,  None,    "使用预训练模型的路径，当为None是不使用预训练模型")
+add_arg('train_manifest',          str,  './dataset/manifest.train',     "训练的数据列表")
 add_arg('dev_manifest',            str,  './dataset/manifest.test',      "测试的数据列表")
 add_arg('mean_std_path',           str,  './dataset/mean_std.npz',       "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',              str,  './dataset/zh_vocab.txt',       "数据集的词汇表文件路径")
 add_arg('output_model_dir',        str,  "./models/param",               "保存训练模型的文件夹")
-add_arg('augment_conf_path',       str,  './conf/augmentation.config',   "数据增强的配置文件，为json格式")
+add_arg('augment_conf_path',       str,  './conf/augmentation.json',     "数据增强的配置文件，为json格式")
 add_arg('shuffle_method',          str,  'batch_shuffle_clipped',    "打乱数据的方法", choices=['instance_shuffle', 'batch_shuffle', 'batch_shuffle_clipped'])
 args = parser.parse_args()
 
@@ -65,6 +66,7 @@ def train():
                                  rnn_layer_size=args.rnn_layer_size,
                                  place=place,
                                  pretrained_model=args.pretrained_model,
+                                 resume_model=args.resume_model,
                                  output_model_dir=args.output_model_dir,
                                  vocab_list=test_generator.vocab_list)
     # 获取训练数据数量

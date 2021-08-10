@@ -50,6 +50,7 @@ class DeepSpeech2Model(object):
                  num_rnn_layers,
                  rnn_layer_size,
                  place=paddle.CPUPlace(),
+                 resume_model=None,
                  pretrained_model=None,
                  output_model_dir=None,
                  error_rate_type='cer',
@@ -62,6 +63,7 @@ class DeepSpeech2Model(object):
         self._place = place
         self._blank = blank
         self._pretrained_model = pretrained_model
+        self._resume_model = resume_model
         self._output_model_dir = output_model_dir
         self._ext_scorer = None
         self.logger = logging.getLogger("")
@@ -91,7 +93,7 @@ class DeepSpeech2Model(object):
         if not is_infer:
             input_fields = {
                 'names': ['audio_data', 'text_data', 'seq_len_data', 'masks'],
-                'shapes': [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
+                'shapes': [[None, 39, None], [None, 1], [None, 1], [None, 32, 20, None]],
                 'dtypes': ['float32', 'int32', 'int64', 'float32'],
                 'lod_levels': [0, 1, 0, 0]
             }
@@ -112,7 +114,7 @@ class DeepSpeech2Model(object):
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
             audio_data = paddle.static.data(name='audio_data',
-                                            shape=[None, 161, None],
+                                            shape=[None, 39, None],
                                             dtype='float32',
                                             lod_level=0)
             seq_len_data = paddle.static.data(name='seq_len_data',
@@ -120,7 +122,7 @@ class DeepSpeech2Model(object):
                                               dtype='int64',
                                               lod_level=0)
             masks = paddle.static.data(name='masks',
-                                       shape=[None, 32, 81, None],
+                                       shape=[None, 32, 20, None],
                                        dtype='float32',
                                        lod_level=0)
             text_data = None
@@ -137,17 +139,17 @@ class DeepSpeech2Model(object):
                                                  blank=self._blank)
         return reader, log_probs, loss
 
-    def init_from_pretrained_model(self, program):
-        '''Init params from pretrain model. '''
-        if not os.path.exists(self._pretrained_model):
-            raise Warning("The pretrained params [%s] do not exist." % self._pretrained_model)
+    # 加载模型
+    def load_param(self, program, model_path):
+        if not os.path.exists(model_path):
+            raise Warning("The pretrained params [%s] do not exist." % model_path)
 
-        load_state_dict = paddle.load(self._pretrained_model)
+        load_state_dict = paddle.load(model_path)
         program.set_state_dict(load_state_dict)
-        print("成功加载了预训练模型：%s" % self._pretrained_model)
+        print('[{}] 成功加载模型：{}'.format(datetime.now(), model_path))
 
+    # 保存模型
     def save_param(self, program, epoch):
-        '''Save model params to dirname'''
         if not os.path.exists(self._output_model_dir):
             os.mkdir(self._output_model_dir)
         model_path = '{}/{}.pdparams'.format(self._output_model_dir, epoch)
@@ -198,35 +200,37 @@ class DeepSpeech2Model(object):
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
         pre_epoch = 0
-        if self._pretrained_model:
+        if self._resume_model:
             try:
-                pre_epoch = os.path.basename(self._pretrained_model).split('.')[0]
+                pre_epoch = os.path.basename(self._resume_model).split('.')[0]
                 pre_epoch = int(pre_epoch)
             except:
-                pass
+                print("恢复模型命名不正确，epoch从0开始训练！")
 
         # prepare the network
         train_program = paddle.static.Program()
         startup_prog = paddle.static.Program()
         with paddle.static.program_guard(train_program, startup_prog):
-            with fluid.unique_name.guard():
-                train_reader, _, ctc_loss = self.create_network()
-                # 学习率
-                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83,
-                                                                 last_epoch=pre_epoch - 1)
-                # 准备优化器
-                optimizer = paddle.optimizer.Adam(
-                    learning_rate=scheduler,
-                    weight_decay=paddle.regularizer.L2Decay(1e-06),
-                    grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
-                optimizer.minimize(loss=ctc_loss)
+            train_reader, _, ctc_loss = self.create_network()
+            # 学习率
+            scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83,
+                                                             last_epoch=pre_epoch - 1)
+            # 准备优化器
+            optimizer = paddle.optimizer.Adam(
+                learning_rate=scheduler,
+                weight_decay=paddle.regularizer.L2Decay(1e-06),
+                grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
+            optimizer.minimize(loss=ctc_loss)
 
         exe = paddle.static.Executor(self._place)
         exe.run(startup_prog)
 
         # 加载预训练模型
-        if self._pretrained_model:
-            self.init_from_pretrained_model(train_program)
+        if self._resume_model is not None or self._pretrained_model is not None:
+            if self._resume_model is not None:
+                self.load_param(train_program, self._resume_model)
+            else:
+                self.load_param(train_program, self._pretrained_model)
 
         build_strategy = paddle.static.BuildStrategy()
         exec_strategy = paddle.static.ExecutionStrategy()
@@ -282,7 +286,7 @@ class DeepSpeech2Model(object):
                     break
             scheduler.step()
             # 每一个epoch保存一次模型
-            self._pretrained_model = self.save_param(train_program, epoch_id)
+            self._resume_model = self.save_param(train_program, epoch_id)
             used_time = time.time() - time_begin
             if test_off:
                 print('======================last Train=====================')
@@ -294,7 +298,7 @@ class DeepSpeech2Model(object):
                 # 执行测试
                 test_result = self.test(test_reader=dev_batch_reader)
                 print("Train time: %s, epoch: %d, train loss: %f, test %s: %f"
-                      % (str(timedelta(seconds=int(used_time))), epoch_id + pre_epoch, float(np.mean(np.array(epoch_loss))),
+                      % (str(timedelta(seconds=int(used_time))), epoch_id, float(np.mean(np.array(epoch_loss))),
                          self.error_rate_type, test_result))
                 print('======================Stop Test=====================\n')
                 # 记录测试结果
@@ -312,6 +316,10 @@ class DeepSpeech2Model(object):
         :return: Wer/Cer rate.
         :rtype: float
         '''
+        # 初始化预测程序
+        self.create_infer_program()
+        # 加载预训练模型
+        self.load_param(self.infer_program, self._resume_model)
         errors_sum, len_refs = 0.0, 0
         errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
         for infer_data in test_reader():
@@ -343,7 +351,7 @@ class DeepSpeech2Model(object):
             # 初始化预测程序
             self.create_infer_program()
             # 加载预训练模型
-            self.init_from_pretrained_model(self.infer_program)
+            self.load_param(self.infer_program, self._resume_model)
         infer_results = []
         data = []
         if isinstance(self._place, paddle.CUDAPlace):
@@ -395,8 +403,7 @@ class DeepSpeech2Model(object):
 
         # prepare the network
         with paddle.static.program_guard(self.infer_program, startup_prog):
-            with fluid.unique_name.guard():
-                self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
+            self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
 
         self.infer_program = self.infer_program.clone(for_test=True)
         self.infer_exe = paddle.static.Executor(self._place)
@@ -413,9 +420,9 @@ class DeepSpeech2Model(object):
     def export_model(self, model_path):
         self.create_infer_program()
         # 加载预训练模型
-        self.init_from_pretrained_model(self.infer_program)
+        self.load_param(self.infer_program, self._resume_model)
         audio_data = paddle.static.data(name='audio_data',
-                                        shape=[None, 161, None],
+                                        shape=[None, 39, None],
                                         dtype='float32',
                                         lod_level=0)
         seq_len_data = paddle.static.data(name='seq_len_data',
@@ -423,7 +430,7 @@ class DeepSpeech2Model(object):
                                           dtype='int64',
                                           lod_level=0)
         masks = paddle.static.data(name='masks',
-                                   shape=[None, 32, 81, None],
+                                   shape=[None, 32, 20, None],
                                    dtype='float32',
                                    lod_level=0)
         if not os.path.exists(os.path.dirname(model_path)):

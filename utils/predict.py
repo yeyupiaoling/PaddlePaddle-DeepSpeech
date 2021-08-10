@@ -23,11 +23,9 @@ class Predictor:
         if decoding_method == "ctc_beam_search":
             try:
                 from decoders.beam_search_decoder import BeamSearchDecoder
-                self.beam_search_decoder = BeamSearchDecoder(alpha, beta, lang_model_path,
-                                                             audio_process.vocab_list)
+                self.beam_search_decoder = BeamSearchDecoder(alpha, beta, lang_model_path, audio_process.vocab_list)
             except ModuleNotFoundError:
-                raise Exception('缺少ctc_decoders库，如果是Windows系统，请使用ctc_greedy。如果是Linux系统，且一定要使用ctc_beam_search解码策略'
-                                '请执行`cd decoders && sh setup.sh`编译ctc_beam_search解码函数')
+                raise Exception('缺少ctc_decoders库，请在decoders目录中安装ctc_decoders库，如果是Windows系统，请使用ctc_greed。')
 
         # 创建 config
         self.config = paddle_infer.Config(os.path.join(model_dir, 'inference.pdmodel'),

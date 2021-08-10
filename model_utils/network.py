@@ -4,7 +4,7 @@ import paddle.fluid as fluid
 import paddle.static.nn as nn
 
 
-def conv_bn_layer(input, filter_size, num_channels_out, stride, padding, act, masks, name):
+def conv_bn_layer(input, filter_size, num_channels_out, stride, padding, act, masks):
     """卷积层与批处理归一化
 
     :param input: Input layer.
@@ -29,22 +29,17 @@ def conv_bn_layer(input, filter_size, num_channels_out, stride, padding, act, ma
                            filter_size=filter_size,
                            stride=stride,
                            padding=padding,
-                           param_attr=paddle.ParamAttr(name=name + '_conv2d_weight'),
+                           param_attr=paddle.ParamAttr(),
                            bias_attr=False)
 
-    batch_norm = nn.batch_norm(input=conv_layer,
-                               act=act,
-                               param_attr=paddle.ParamAttr(name=name + '_batch_norm_weight'),
-                               bias_attr=paddle.ParamAttr(name=name + '_batch_norm_bias'),
-                               moving_mean_name=name + '_batch_norm_moving_mean',
-                               moving_variance_name=name + '_batch_norm_moving_variance')
+    batch_norm = nn.batch_norm(input=conv_layer, act=act, param_attr=paddle.ParamAttr(), bias_attr=paddle.ParamAttr())
 
-    # reset padding part to 0
+    # 将填充部分重置为0
     padding_reset = paddle.multiply(batch_norm, masks)
     return padding_reset
 
 
-def bidirectional_gru_bn_layer(name, input, size, act):
+def bidirectional_gru_bn_layer(input, size, act):
     """双向gru层与顺序批处理归一化，批处理规范化只在输入状态权值上执行。
 
     :param input: Input layer.
@@ -56,39 +51,31 @@ def bidirectional_gru_bn_layer(name, input, size, act):
     :return: 双向GRU层
     :rtype: Variable
     """
-    input_proj_forward = nn.fc(x=input,
-                               size=size * 3,
-                               weight_attr=paddle.ParamAttr(name=name + '_forward_fc_weight'))
-    input_proj_reverse = nn.fc(x=input,
-                               size=size * 3,
-                               weight_attr=paddle.ParamAttr(name=name + '_reverse_fc_weight'))
-    # batch norm is only performed on input-related prohections
+    input_proj_forward = nn.fc(x=input, size=size * 3, weight_attr=paddle.ParamAttr())
+    input_proj_reverse = nn.fc(x=input, size=size * 3, weight_attr=paddle.ParamAttr())
+    # 批标准只在与输入相关的预测上执行
     input_proj_bn_forward = nn.batch_norm(input=input_proj_forward,
                                           act=None,
-                                          param_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_weight'),
-                                          bias_attr=paddle.ParamAttr(name=name + '_forward_batch_norm_bias'),
-                                          moving_mean_name=name + '_forward_batch_norm_moving_mean',
-                                          moving_variance_name=name + '_forward_batch_norm_moving_variance')
+                                          param_attr=paddle.ParamAttr(),
+                                          bias_attr=paddle.ParamAttr())
     input_proj_bn_reverse = nn.batch_norm(input=input_proj_reverse,
                                           act=None,
-                                          param_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_weight'),
-                                          bias_attr=paddle.ParamAttr(name=name + '_reverse_batch_norm_bias'),
-                                          moving_mean_name=name + '_reverse_batch_norm_moving_mean',
-                                          moving_variance_name=name + '_reverse_batch_norm_moving_variance')
+                                          param_attr=paddle.ParamAttr(),
+                                          bias_attr=paddle.ParamAttr())
     # forward and backward in time
     forward_gru = fluid.layers.dynamic_gru(input=input_proj_bn_forward,
                                            size=size,
                                            gate_activation='sigmoid',
                                            candidate_activation=act,
-                                           param_attr=paddle.ParamAttr(name=name + '_forward_gru_weight'),
-                                           bias_attr=paddle.ParamAttr(name=name + '_forward_gru_bias'),
+                                           param_attr=paddle.ParamAttr(),
+                                           bias_attr=paddle.ParamAttr(),
                                            is_reverse=False)
     reverse_gru = fluid.layers.dynamic_gru(input=input_proj_bn_reverse,
                                            size=size,
                                            gate_activation='sigmoid',
                                            candidate_activation=act,
-                                           param_attr=paddle.ParamAttr(name=name + '_reverse_gru_weight'),
-                                           bias_attr=paddle.ParamAttr(name=name + '_reverse_gru_bias'),
+                                           param_attr=paddle.ParamAttr(),
+                                           bias_attr=paddle.ParamAttr(),
                                            is_reverse=True)
     return paddle.concat(x=[forward_gru, reverse_gru], axis=1)
 
@@ -116,12 +103,11 @@ def conv_group(input, num_stacks, seq_len_data, masks):
                          stride=stride,
                          padding=padding,
                          act="brelu",
-                         masks=masks,
-                         name='layer_0', )
+                         masks=masks)
 
     seq_len_data = (np.array(seq_len_data) - filter_size[1] + 2 * padding[1]) // stride[1] + 1
 
-    output_height = (161 - 1) // 2 + 1
+    output_height = (39 - 1) // 2 + 1
 
     for i in range(num_stacks - 1):
         # reshape masks
@@ -133,14 +119,13 @@ def conv_group(input, num_stacks, seq_len_data, masks):
                              stride=(2, 1),
                              padding=(10, 5),
                              act="brelu",
-                             masks=masks,
-                             name='layer_{}'.format(i + 1), )
+                             masks=masks)
 
     output_num_channels = 32
     return conv, output_num_channels, output_height, seq_len_data
 
 
-def rnn_group(input, size, num_stacks, num_conv_layers):
+def rnn_group(input, size, num_stacks):
     """RNN组具有堆叠的双向GRU层
 
     :param input: Input layer.
@@ -154,10 +139,7 @@ def rnn_group(input, size, num_stacks, num_conv_layers):
     """
     output = input
     for i in range(num_stacks):
-        output = bidirectional_gru_bn_layer(name='layer_{}'.format(i + num_conv_layers),
-                                            input=output,
-                                            size=size,
-                                            act="relu")
+        output = bidirectional_gru_bn_layer(input=output, size=size, act="relu")
     return output
 
 
@@ -206,14 +188,8 @@ def deep_speech_v2_network(audio_data,
     seq_len_data = paddle.reshape(seq_len_data, [-1])
     sequence = nn.sequence_unpad(x=reshape_conv_output, length=seq_len_data)
     # RNN组
-    rnn_group_output = rnn_group(input=sequence,
-                                 size=rnn_size,
-                                 num_stacks=num_rnn_layers,
-                                 num_conv_layers=num_conv_layers)
-    fc = nn.fc(x=rnn_group_output,
-               size=dict_size,
-               weight_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_weight'),
-               bias_attr=paddle.ParamAttr(name='layer_{}'.format(num_conv_layers + num_rnn_layers) + '_fc_bias'))
+    rnn_group_output = rnn_group(input=sequence, size=rnn_size, num_stacks=num_rnn_layers)
+    fc = nn.fc(x=rnn_group_output, size=dict_size, weight_attr=paddle.ParamAttr(), bias_attr=paddle.ParamAttr())
     # 输出模型概率分布
     log_probs = paddle.nn.functional.softmax(fc)
     if not text_data:

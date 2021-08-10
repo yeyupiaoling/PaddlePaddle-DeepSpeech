@@ -24,7 +24,7 @@ class AudioFeaturizer(object):
     :param target_sample_rate: Audio are resampled (if upsampling or
                                downsampling is allowed) to this before
                                extracting spectrogram features.
-    :type target_sample_rate: float
+    :type target_sample_rate: int
     :param use_dB_normalization: Whether to normalize the audio to a certain
                                  decibels before extracting the features.
     :type use_dB_normalization: bool
@@ -77,53 +77,38 @@ class AudioFeaturizer(object):
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
         # extract spectrogram
-        return self._compute_specgram(audio_segment.samples,
-                                      audio_segment.sample_rate)
+        return self._compute_mfcc(audio_segment.samples, audio_segment.sample_rate,
+                                  self._stride_ms, self._window_ms, self._max_freq)
 
-    def _compute_specgram(self, samples, sample_rate):
-        """计算音频特征"""
-        return self._compute_linear_specgram(samples, sample_rate, self._stride_ms, self._window_ms, self._max_freq)
-
-    def _compute_linear_specgram(self,
-                                 samples,
-                                 sample_rate,
-                                 stride_ms=10.0,
-                                 window_ms=20.0,
-                                 max_freq=None,
-                                 eps=1e-14):
-        """用 FFT energy计算线性谱图"""
+    # 计算音频梅尔频谱倒谱系数（MFCCs）
+    def _compute_mfcc(self,
+                      samples,
+                      sample_rate,
+                      stride_ms=10.0,
+                      window_ms=20.0,
+                      max_freq=None):
+        """Compute mfcc from samples."""
         if max_freq is None:
             max_freq = sample_rate / 2
         if max_freq > sample_rate / 2:
-            raise ValueError("max_freq不能大于采样率的一半")
+            raise ValueError("max_freq must not be greater than half of sample rate.")
         if stride_ms > window_ms:
-            raise ValueError("stride_ms不能大于window_ms")
-        stride_size = int(0.001 * sample_rate * stride_ms)
-        window_size = int(0.001 * sample_rate * window_ms)
-        specgram, freqs = self._specgram_real(samples,
-                                              window_size=window_size,
-                                              stride_size=stride_size,
-                                              sample_rate=sample_rate)
-        ind = np.where(freqs <= max_freq)[0][-1] + 1
-        return np.log(specgram[:ind, :] + eps)
-
-    def _specgram_real(self, samples, window_size, stride_size, sample_rate):
-        """计算来自真实信号的频谱图样本"""
-        # extract strided windows
-        truncate_size = (len(samples) - window_size) % stride_size
-        samples = samples[:len(samples) - truncate_size]
-        nshape = (window_size, (len(samples) - window_size) // stride_size + 1)
-        nstrides = (samples.strides[0], samples.strides[0] * stride_size)
-        windows = np.lib.stride_tricks.as_strided(samples, shape=nshape, strides=nstrides)
-        assert np.all(windows[:, 1] == samples[stride_size:(stride_size + window_size)])
-        # window weighting, squared Fast Fourier Transform (fft), scaling
-        weighting = np.hanning(window_size)[:, None]
-        fft = np.fft.rfft(windows * weighting, axis=0)
-        fft = np.absolute(fft)
-        fft = fft ** 2
-        scale = np.sum(weighting ** 2) * sample_rate
-        fft[1:-1, :] *= (2.0 / scale)
-        fft[(0, -1), :] /= scale
-        # prepare fft frequency list
-        freqs = float(sample_rate) / window_size * np.arange(fft.shape[0])
-        return fft, freqs
+            raise ValueError("Stride size must not be greater than window size.")
+        # compute the 13 cepstral coefficients, and the first one is replaced
+        # by log(frame energy)
+        mfcc_feat = mfcc(signal=samples,
+                         samplerate=sample_rate,
+                         winlen=0.001 * window_ms,
+                         winstep=0.001 * stride_ms,
+                         highfreq=max_freq)
+        # Deltas
+        d_mfcc_feat = delta(mfcc_feat, 2)
+        # Deltas-Deltas
+        dd_mfcc_feat = delta(d_mfcc_feat, 2)
+        # transpose
+        mfcc_feat = np.transpose(mfcc_feat)
+        d_mfcc_feat = np.transpose(d_mfcc_feat)
+        dd_mfcc_feat = np.transpose(dd_mfcc_feat)
+        # concat above three features
+        concat_mfcc_feat = np.concatenate((mfcc_feat, d_mfcc_feat, dd_mfcc_feat))
+        return concat_mfcc_feat
