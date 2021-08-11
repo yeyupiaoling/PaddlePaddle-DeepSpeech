@@ -16,7 +16,7 @@ add_arg('num_epoch',        int,    50,     "训练的轮数")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
-add_arg('learning_rate',    float,  1e-3,   "初始学习率")
+add_arg('learning_rate',    float,  5e-4,   "初始学习率")
 add_arg('min_duration',     float,  0.0,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('test_off',         bool,   False,  "是否关闭测试")
@@ -68,7 +68,7 @@ def train():
                                  pretrained_model=args.pretrained_model,
                                  resume_model=args.resume_model,
                                  output_model_dir=args.output_model_dir,
-                                 vocab_list=test_generator.vocab_list)
+                                 vocab_list=train_generator.vocab_list)
     # 获取训练数据数量
     num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
     print("[%s] 训练数据数量：%d\n" % (datetime.now(), num_samples))

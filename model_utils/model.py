@@ -196,6 +196,7 @@ class DeepSpeech2Model(object):
 
         if isinstance(self._place, paddle.CUDAPlace):
             dev_count = len(paddle.static.cuda_places())
+            learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
@@ -211,16 +212,17 @@ class DeepSpeech2Model(object):
         train_program = paddle.static.Program()
         startup_prog = paddle.static.Program()
         with paddle.static.program_guard(train_program, startup_prog):
-            train_reader, _, ctc_loss = self.create_network()
-            # 学习率
-            scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83,
-                                                             last_epoch=pre_epoch - 1)
-            # 准备优化器
-            optimizer = paddle.optimizer.Adam(
-                learning_rate=scheduler,
-                weight_decay=paddle.regularizer.L2Decay(1e-06),
-                grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
-            optimizer.minimize(loss=ctc_loss)
+            with paddle.utils.unique_name.guard():
+                train_reader, _, ctc_loss = self.create_network()
+                # 学习率
+                scheduler = paddle.optimizer.lr.ExponentialDecay(learning_rate=learning_rate, gamma=0.83,
+                                                                 last_epoch=pre_epoch - 1)
+                # 准备优化器
+                optimizer = paddle.optimizer.Adam(
+                    learning_rate=scheduler,
+                    weight_decay=paddle.regularizer.L2Decay(1e-06),
+                    grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
+                optimizer.minimize(loss=ctc_loss)
 
         exe = paddle.static.Executor(self._place)
         exe.run(startup_prog)
@@ -403,7 +405,8 @@ class DeepSpeech2Model(object):
 
         # prepare the network
         with paddle.static.program_guard(self.infer_program, startup_prog):
-            self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
+            with paddle.utils.unique_name.guard():
+                self.infer_feeder, self.infer_log_probs, _ = self.create_network(is_infer=True)
 
         self.infer_program = self.infer_program.clone(for_test=True)
         self.infer_exe = paddle.static.Executor(self._place)
