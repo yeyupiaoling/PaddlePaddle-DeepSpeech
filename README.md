@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202-red.svg)
 ![python version](https://img.shields.io/badge/python-3.7+-orange.svg)
-![support os](https://img.shields.io/badge/os-linux-yellow.svg)
+![support os](https://img.shields.io/badge/support%20os-linux%20%26%20windows-yellow)
 ![GitHub Repo stars](https://img.shields.io/github/stars/yeyupiaoling/PaddlePaddle-DeepSpeech?style=social)
 
 本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，支持Nvidia Jetson开发板预测。
@@ -228,7 +228,7 @@ wav_path: ./dataset/test.wav
 
 ## 本地预测
 
-我们可以使用这个脚本使用模型进行预测，如果如何还没导出模型，需要执行上面的操作把模型参数导出为预测模型，通过传递音频文件的路径进行识别。默认使用的是`ctc_greedy`贪心解码策略，这也是为了支持Windows用户。
+在执行预测之前，必须要先查看上一步导出预测模型。我们可以使用这个脚本使用模型进行预测，如果如何还没导出模型，需要执行上面的操作把模型参数导出为预测模型，通过传递音频文件的路径进行识别。默认使用的是`ctc_greedy`贪心解码策略，这也是为了支持Windows用户。
 ```shell script
 python infer_path.py --wav_path=./dataset/test.wav
 ```
