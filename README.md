@@ -202,7 +202,7 @@ language model: is_character_based = 1, max_order = 5, dict_size = 0
 
 ## 导出模型
 
-训练保存的是模型参数，我们要将它到处为预测模型，这样可以直接使用模型，不再需要模型结构代码，同时使用Inference接口可以加速预测，在一些设备也可以使用TensorRT加速。
+训练保存的或者下载作者提供的模型都是模型参数，我们要将它导出为预测模型，这样可以直接使用模型，不再需要模型结构代码，同时使用Inference接口可以加速预测，在一些设备也可以使用TensorRT加速。
 ```shell
 python export_model.py --pretrained_model=./models/step_final/
 ```
@@ -228,7 +228,7 @@ wav_path: ./dataset/test.wav
 
 ## 本地预测
 
-我们可以使用这个脚本使用模型进行预测，通过传递音频文件的路径进行识别。默认使用的是`ctc_greedy`贪心解码策略，这也是为了支持Windows用户。
+我们可以使用这个脚本使用模型进行预测，如果如何还没导出模型，需要执行上面的操作把模型参数导出为预测模型，通过传递音频文件的路径进行识别。默认使用的是`ctc_greedy`贪心解码策略，这也是为了支持Windows用户。
 ```shell script
 python infer_path.py --wav_path=./dataset/test.wav
 ```
@@ -291,10 +291,8 @@ python infer_server.py
 
 ## TODO
 
-1. 修改全部模型接口为新接口。
-2. 数据集读取修改为读取修改为`paddle.io.DataLoader`接口。
-3. 训练三个公开数据集的模型。
-4. 增加音频数据集合成程序和变声程序。
+1. 训练三个公开数据集的模型。
+2. 增加音频数据集合成程序和变声程序。
 
 
 ## 相关项目

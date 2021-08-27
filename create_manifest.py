@@ -50,7 +50,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 json_lines.append(
                     json.dumps(
                         {
-                            'audio_filepath': audio_path,
+                            'audio_filepath': audio_path.replace('\\', '/'),
                             'duration': duration,
                             'text': text
                         },
@@ -116,7 +116,7 @@ def create_noise(path='dataset/audio/noise'):
             json_lines.append(
                 json.dumps(
                     {
-                        'audio_filepath': audio_path,
+                        'audio_filepath': audio_path.replace('\\', '/'),
                         'duration': duration,
                         'text': text
                     },
@@ -153,6 +153,8 @@ def main():
     print('开始生成数据列表...')
     create_manifest(annotation_path=args.annotation_path,
                     manifest_path_prefix=args.manifest_prefix)
+    print('开始生成噪声数据列表...')
+    create_noise(path='dataset/audio/noise')
 
     print('开始生成数据字典...')
     counter = Counter()

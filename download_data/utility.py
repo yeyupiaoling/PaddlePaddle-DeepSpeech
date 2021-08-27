@@ -2,6 +2,7 @@ import distutils.util
 import hashlib
 import os
 import tarfile
+import zipfile
 
 
 def print_arguments(args):
@@ -73,5 +74,9 @@ def unpack(filepath, target_dir, rm_tar=False):
         os.remove(filepath)
 
 
-class XmapEndSignal():
-    pass
+def unzip(filepath, target_dir):
+    """Unzip the file to the target_dir."""
+    print("Unpacking %s ..." % filepath)
+    tar = zipfile.ZipFile(filepath, 'r')
+    tar.extractall(target_dir)
+    tar.close()
