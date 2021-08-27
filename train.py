@@ -2,6 +2,7 @@ import argparse
 import functools
 import io
 from datetime import datetime
+from paddle.io import DataLoader
 from model_utils.model import DeepSpeech2Model
 from data_utils.data import DataGenerator
 from utils.utility import add_arguments, print_arguments, get_data_len
@@ -17,6 +18,7 @@ add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('learning_rate',    float,  5e-4,   "初始学习率")
+add_arg('num_workers',      int,    8,      "读取数据的线程数量")
 add_arg('min_duration',     float,  0.0,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('test_off',         bool,   False,  "是否关闭测试")
@@ -40,7 +42,8 @@ def train():
     # 获取训练数据生成器
     train_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                     mean_std_filepath=args.mean_std_path,
-                                    augmentation_config=io.open(args.augment_conf_path, mode='r', encoding='utf8').read(),
+                                    manifest_path=args.train_manifest,
+                                    augmentation_config=open(args.augment_conf_path, 'r', encoding='utf8').read(),
                                     max_duration=args.max_duration,
                                     min_duration=args.min_duration,
                                     place=place)
@@ -48,17 +51,23 @@ def train():
     # 获取测试数据生成器
     test_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                    mean_std_filepath=args.mean_std_path,
+                                   manifest_path=args.dev_manifest,
                                    keep_transcription_text=True,
                                    place=place,
                                    is_training=False)
     # 获取训练数据
-    train_batch_reader = train_generator.batch_reader_creator(manifest_path=args.train_manifest,
-                                                              batch_size=args.batch_size,
-                                                              shuffle_method=args.shuffle_method)
+    train_loader = DataLoader(dataset=train_generator,
+                              feed_list=train_generator.feed_list,
+                              collate_fn=train_generator.padding_batch,
+                              return_list=False,
+                              batch_size=args.batch_size,
+                              num_workers=args.num_workers)
     # 获取测试数据
-    test_batch_reader = test_generator.batch_reader_creator(manifest_path=args.dev_manifest,
-                                                            batch_size=args.batch_size,
-                                                            shuffle_method=None)
+    test_loader = DataLoader(dataset=test_generator,
+                             collate_fn=test_generator.padding_batch,
+                             batch_size=args.batch_size,
+                             num_workers=args.num_workers)
+
     # 获取DeepSpeech2模型
     ds2_model = DeepSpeech2Model(vocab_size=train_generator.vocab_size,
                                  num_conv_layers=args.num_conv_layers,
@@ -73,8 +82,8 @@ def train():
     num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
     print("[%s] 训练数据数量：%d\n" % (datetime.now(), num_samples))
     # 开始训练
-    ds2_model.train(train_batch_reader=train_batch_reader,
-                    dev_batch_reader=test_batch_reader,
+    ds2_model.train(train_loader=train_loader,
+                    test_loader=test_loader,
                     learning_rate=args.learning_rate,
                     gradient_clipping=400,
                     batch_size=args.batch_size,
