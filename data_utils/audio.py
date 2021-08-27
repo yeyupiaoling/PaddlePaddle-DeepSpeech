@@ -321,47 +321,6 @@ class AudioSegment(object):
                 "无法将段规范化到 %f dB，因为可能的增益已经超过max_gain_db (%f dB)" % (target_db, max_gain_db))
         self.gain_db(min(max_gain_db, target_db - self.rms_db))
 
-    def normalize_online_bayesian(self,
-                                  target_db,
-                                  prior_db,
-                                  prior_samples,
-                                  startup_delay=0.0):
-        """Normalize audio using a production-compatible online/causal
-        algorithm. This uses an exponential likelihood and gamma prior to
-        make online estimates of the RMS even when there are very few samples.
-
-        Note that this is an in-place transformation.
-
-        :param target_db: Target RMS value in decibels.
-        :type target_bd: float
-        :param prior_db: Prior RMS estimate in decibels.
-        :type prior_db: float
-        :param prior_samples: Prior strength in number of samples.
-        :type prior_samples: float
-        :param startup_delay: Default 0.0s. If provided, this function will
-                              accrue statistics for the first startup_delay 
-                              seconds before applying online normalization.
-        :type startup_delay: float
-        """
-        # Estimate total RMS online.
-        startup_sample_idx = min(self.num_samples - 1,
-                                 int(self.sample_rate * startup_delay))
-        prior_mean_squared = 10. ** (prior_db / 10.)
-        prior_sum_of_squares = prior_mean_squared * prior_samples
-        cumsum_of_squares = np.cumsum(self.samples ** 2)
-        sample_count = np.arange(self.num_samples) + 1
-        if startup_sample_idx > 0:
-            cumsum_of_squares[:startup_sample_idx] = \
-                cumsum_of_squares[startup_sample_idx]
-            sample_count[:startup_sample_idx] = \
-                sample_count[startup_sample_idx]
-        mean_squared_estimate = ((cumsum_of_squares + prior_sum_of_squares) /
-                                 (sample_count + prior_samples))
-        rms_estimate_db = 10 * np.log10(mean_squared_estimate)
-        # Compute required time-varying gain.
-        gain_db = target_db - rms_estimate_db
-        self.gain_db(gain_db)
-
     def resample(self, target_sample_rate, filter='kaiser_best'):
         """按目标采样率重新采样音频
 

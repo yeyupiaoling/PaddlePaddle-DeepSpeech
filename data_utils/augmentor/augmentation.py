@@ -9,11 +9,8 @@ from data_utils.augmentor.volume_perturb import VolumePerturbAugmentor
 from data_utils.augmentor.shift_perturb import ShiftPerturbAugmentor
 from data_utils.augmentor.speed_perturb import SpeedPerturbAugmentor
 from data_utils.augmentor.noise_perturb import NoisePerturbAugmentor
-from data_utils.augmentor.impulse_response import ImpulseResponseAugmentor
+from data_utils.augmentor.spec_augment import SpecAugmentor
 from data_utils.augmentor.resample import ResampleAugmentor
-from data_utils.augmentor.online_bayesian_normalization import \
-    OnlineBayesianNormalizationAugmentor
-
 
 class AugmentationPipeline(object):
     """Build a pre-processing pipeline with various augmentation models.Such a
@@ -26,40 +23,57 @@ class AugmentationPipeline(object):
     
     .. code-block::
 
-        [ {
-                "type": "noise",
-                "params": {"min_snr_dB": 10,
-                           "max_snr_dB": 20,
-                           "noise_manifest_path": "datasets/manifest.noise"},
-                "prob": 0.0
-            },
-            {
-                "type": "speed",
-                "params": {"min_speed_rate": 0.9,
-                           "max_speed_rate": 1.1},
-                "prob": 1.0
-            },
-            {
-                "type": "shift",
-                "params": {"min_shift_ms": -5,
-                           "max_shift_ms": 5},
-                "prob": 1.0
-            },
-            {
-                "type": "volume",
-                "params": {"min_gain_dBFS": -10,
-                           "max_gain_dBFS": 10},
-                "prob": 0.0
-            },
-            {
-                "type": "bayesian_normal",
-                "params": {"target_db": -20,
-                           "prior_db": -20,
-                           "prior_samples": 100},
-                "prob": 0.0
-            }
+           [
+        {
+        "type": "noise",
+        "params": {
+          "min_snr_dB": 10,
+          "max_snr_dB": 50,
+          "noise_manifest_path": "dataset/manifest.noise"
+        },
+        "prob": 0.5
+        },
+        {
+        "type": "speed",
+        "params": {
+          "min_speed_rate": 0.9,
+          "max_speed_rate": 1.1
+        },
+        "prob": 0.5
+        },
+        {
+        "type": "shift",
+        "params": {
+          "min_shift_ms": -5,
+          "max_shift_ms": 5
+        },
+        "prob": 0.5
+        },
+        {
+        "type": "volume",
+        "params": {
+          "min_gain_dBFS": -15,
+          "max_gain_dBFS": 15
+        },
+        "prob": 0.5
+        },
+        {
+        "type": "specaug",
+        "params": {
+          "F": 10,
+          "T": 50,
+          "n_freq_masks": 2,
+          "n_time_masks": 2,
+          "p": 1.0,
+          "W": 80,
+          "adaptive_number_ratio": 0,
+          "adaptive_size_ratio": 0,
+          "max_n_time_masks": 20
+        },
+        "prob": 1.0
+        }
         ]
-        
+
     This augmentation configuration inserts two augmentation models
     into the pipeline, with one is VolumePerturbAugmentor and the other
     SpeedPerturbAugmentor. "prob" indicates the probability of the current
@@ -115,11 +129,9 @@ class AugmentationPipeline(object):
             return SpeedPerturbAugmentor(self._rng, **params)
         elif augmentor_type == "resample":
             return ResampleAugmentor(self._rng, **params)
-        elif augmentor_type == "bayesian_normal":
-            return OnlineBayesianNormalizationAugmentor(self._rng, **params)
         elif augmentor_type == "noise":
             return NoisePerturbAugmentor(self._rng, **params)
-        elif augmentor_type == "impulse":
-            return ImpulseResponseAugmentor(self._rng, **params)
+        elif augmentor_type == "specaug":
+            return SpecAugmentor(self._rng, **params)
         else:
             raise ValueError("Unknown augmentor type [%s]." % augmentor_type)
