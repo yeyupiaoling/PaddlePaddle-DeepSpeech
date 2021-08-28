@@ -1,3 +1,20 @@
+# 搭建本地环境
+
+本人用的就是本地环境和使用Anaconda，并创建了Python3.7的虚拟环境，建议读者也本地环境，方便交流，出现安装问题，随时提[issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) ，如果想使用docker，请查看**搭建Docker环境**。
+
+ - 首先安装的是PaddlePaddle 2.1.2的GPU版本，如果已经安装过了，请跳过。
+```shell
+conda install paddlepaddle-gpu==2.1.2 cudatoolkit=10.2 --channel https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/Paddle/
+```
+
+ - 安装其他依赖库。
+```shell
+python -m pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+```
+
+**注意：** 如果出现LLVM版本错误，解决办法[LLVM版本错误](docs/faq.md)。
+
+
 # 搭建Docker环境
 
  - 请提前安装好显卡驱动，然后执行下面的命令。
@@ -56,9 +73,9 @@ sudo systemctl restart docker
 sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 ```
 
- - 拉取PaddlePaddle 2.1.1镜像。
+ - 拉取PaddlePaddle 2.1.2镜像。
 ```shell script
-sudo nvidia-docker pull registry.baidubce.com/paddlepaddle/paddle:2.1.1-gpu-cuda10.2-cudnn7
+sudo nvidia-docker pull registry.baidubce.com/paddlepaddle/paddle:2.1.2-gpu-cuda10.2-cudnn7
 ```
 
 - git clone 本项目源码
@@ -68,7 +85,7 @@ git clone https://github.com/yeyupiaoling/DeepSpeech.git
 
 - 运行PaddlePaddle语音识别镜像，这里设置与主机共同拥有IP和端口号。
 ```shell script
-sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech registry.baidubce.com/paddlepaddle/paddle:2.1.1-gpu-cuda10.2-cudnn7 /bin/bash
+sudo nvidia-docker run -it --net=host -v $(pwd)/DeepSpeech:/DeepSpeech registry.baidubce.com/paddlepaddle/paddle:2.1.2-gpu-cuda10.2-cudnn7 /bin/bash
 ```
 
  - 安装其他依赖库。
