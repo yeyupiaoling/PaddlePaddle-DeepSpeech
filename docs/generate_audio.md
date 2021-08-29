@@ -19,6 +19,7 @@ https://paddlespeech.bj.bcebos.com/Parakeet/waveflow_ljspeech_ckpt_0.3.zip
 cd tools/generate_audio
 git clone https://github.com/aceimnorstuvwxz/dgk_lost_conv.git
 cd dgk_lost_conv/results
+unzip dgk_shooter_z.conv.zip
 unzip xiaohuangji50w_fenciA.conv.zip
 unzip xiaohuangji50w_nofenci.conv.zip
 ```

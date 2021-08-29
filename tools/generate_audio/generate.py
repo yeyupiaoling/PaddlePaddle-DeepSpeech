@@ -97,11 +97,21 @@ with open('corpus.txt', 'w', encoding='utf-8') as f_write:
     corpus_dir = 'dgk_lost_conv/results/'
     for corpus_path in os.listdir(corpus_dir):
         if corpus_path[-5:] != '.conv': continue
-        if corpus_path == 'dgk_shooter_z.conv': continue
         corpus_path = os.path.join(corpus_dir, corpus_path)
         print(corpus_path)
-        with open(corpus_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
+        if 'dgk_shooter_z.conv' in corpus_path:
+            lines = []
+            with open(corpus_path, 'r', encoding='utf-8') as f:
+                while True:
+                    try:
+                        line = f.readline().replace('\n', '')
+                        lines.append(line)
+                        if len(line) == 0: break
+                    except:
+                        continue
+        else:
+            with open(corpus_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
         for line in lines:
             line = line[2:].replace('/', '').replace('\n', '').replace('?', '$').replace(' ', '%').replace('！', '%')
             line = line.replace('。', '%').replace('!', '%').replace('？', '%').replace('"', '').replace('.', '')
@@ -152,4 +162,5 @@ for sentence in tqdm(lines):
     # 保存语音文件
     save_audio_path = os.path.join(save_path, "%s.wav" % int(time.time() * 1000))
     soundfile.write(save_audio_path, wav, samplerate=16000)
-    f_label.write('%s\t%s' % (save_audio_path, sentence.replace('%', '').replace('$', '')))
+    f_label.write('%s\t%s\n' % (save_audio_path.replace('\\','/'), sentence.replace('%', '').replace('$', '')))
+    f_label.flush()
