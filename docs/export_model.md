@@ -7,19 +7,16 @@ python export_model.py --pretrained_model=./models/step_final/
 
 输出结果：
 ```
-成功加载了预训练模型：./models/step_final/
+成功加载了预训练模型：./models/param/50.pdparams
 -----------  Configuration Arguments -----------
 mean_std_path: ./dataset/mean_std.npz
 num_conv_layers: 2
 num_rnn_layers: 3
-pretrained_model: ./models/step_final/
-rnn_layer_size: 2048
+rnn_layer_size: 1024
+pretrained_model: ./models/param/50.pdparams
 save_model_path: ./models/infer/
-share_rnn_weights: False
 use_gpu: True
-use_gru: True
 vocab_path: ./dataset/zh_vocab.txt
-wav_path: ./dataset/test.wav
 ------------------------------------------------
 成功导出模型，模型保存在：./models/infer/
 ```

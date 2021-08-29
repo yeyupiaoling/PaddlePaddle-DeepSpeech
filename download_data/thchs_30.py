@@ -4,8 +4,7 @@ import functools
 from utility import download, unpack
 from utility import add_arguments, print_arguments
 
-URL_ROOT = 'https://openslr.magicdatatech.com/resources/18'
-DATA_URL = URL_ROOT + '/data_thchs30.tgz'
+DATA_URL = 'https://openslr.magicdatatech.com/resources/18/data_thchs30.tgz'
 MD5_DATA = '2d2252bde5c8429929e1841d4cb95e90'
 
 parser = argparse.ArgumentParser(description=__doc__)

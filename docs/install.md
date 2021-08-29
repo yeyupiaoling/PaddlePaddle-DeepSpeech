@@ -12,7 +12,7 @@ conda install paddlepaddle-gpu==2.1.2 cudatoolkit=10.2 --channel https://mirrors
 python -m pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
-**注意：** 如果出现LLVM版本错误，解决办法[LLVM版本错误](docs/faq.md)。
+**注意：** 如果出现LLVM版本错误，解决办法[LLVM版本错误](./faq.md)。
 
 
 # 搭建Docker环境

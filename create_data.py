@@ -27,9 +27,10 @@ args = parser.parse_args()
 # 创建数据列表
 def create_manifest(annotation_path, manifest_path_prefix):
     json_lines = []
-    durations = []
+    durations_all = []
     # 获取全部的标注文件
     for annotation_text in os.listdir(annotation_path):
+        durations = []
         print('正在创建%s的数据列表，请等待 ...' % annotation_text)
         annotation_text = os.path.join(annotation_path, annotation_text)
         # 读取标注文件
@@ -58,6 +59,8 @@ def create_manifest(annotation_path, manifest_path_prefix):
             except Exception as e:
                 print(e)
                 continue
+        durations_all.append(sum(durations))
+        print("%s数据一共[%d]小时!" % (annotation_text, int(sum(durations) / 3600)))
 
     # 将音频的路径，长度和标签写入到数据列表中
     f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
@@ -69,7 +72,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
             f_train.write(line + '\n')
     f_train.close()
     f_test.close()
-    print("创建数量列表完成，全部数据一共[%d]小时!" % int(sum(durations) / 3600))
+    print("创建数量列表完成，全部数据一共[%d]小时!" % int(sum(durations_all) / 3600))
 
 
 # 过滤非文字的字符

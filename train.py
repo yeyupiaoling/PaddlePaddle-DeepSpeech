@@ -23,7 +23,7 @@ add_arg('test_off',         bool,   False,  "是否关闭测试")
 add_arg('resume_model',            str,  None,    "恢复训练，当为None则不使用预训练模型")
 add_arg('pretrained_model',        str,  None,    "使用预训练模型的路径，当为None是不使用预训练模型")
 add_arg('train_manifest',          str,  './dataset/manifest.train',     "训练的数据列表")
-add_arg('dev_manifest',            str,  './dataset/manifest.test',      "测试的数据列表")
+add_arg('test_manifest',            str,  './dataset/manifest.test',      "测试的数据列表")
 add_arg('mean_std_path',           str,  './dataset/mean_std.npz',       "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',              str,  './dataset/zh_vocab.txt',       "数据集的词汇表文件路径")
 add_arg('output_model_dir',        str,  "./models/param",               "保存训练模型的文件夹")
@@ -38,9 +38,10 @@ def train():
     place = paddle.CUDAPlace(0) if args.use_gpu else paddle.CPUPlace()
 
     # 获取训练数据生成器
+    augmentation_config = io.open(args.augment_conf_path, mode='r', encoding='utf8').read() if args.augment_conf_path is not None else '{}'
     train_generator = DataGenerator(vocab_filepath=args.vocab_path,
                                     mean_std_filepath=args.mean_std_path,
-                                    augmentation_config=io.open(args.augment_conf_path, mode='r', encoding='utf8').read(),
+                                    augmentation_config=augmentation_config,
                                     max_duration=args.max_duration,
                                     min_duration=args.min_duration,
                                     place=place)
@@ -56,7 +57,7 @@ def train():
                                                               batch_size=args.batch_size,
                                                               shuffle_method=args.shuffle_method)
     # 获取测试数据
-    test_batch_reader = test_generator.batch_reader_creator(manifest_path=args.dev_manifest,
+    test_batch_reader = test_generator.batch_reader_creator(manifest_path=args.test_manifest,
                                                             batch_size=args.batch_size,
                                                             shuffle_method=None)
     # 获取DeepSpeech2模型
