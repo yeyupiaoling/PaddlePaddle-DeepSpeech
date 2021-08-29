@@ -15,8 +15,7 @@
 ## 更新记录
 
  - 2021.08.29: 完成训练代码和预测代码，同时完善相关文档。
- - 2021.08.07: 使用webrtcvad工具，实现长语音识别。
- - 2021.08.07: 支持导出预测模型，使用预测模型进行推理。
+ - 2021.08.07: 支持导出预测模型，使用预测模型进行推理。使用webrtcvad工具，实现长语音识别。
  - 2021.08.06: 将项目大部分的代码修改为PaddlePaddle2.0之后的新API。
 
 ## 模型下载
@@ -36,8 +35,9 @@
 
 - [快速安装](./docs/install.md)
 - [数据准备](./docs/dataset.md)
-- [训练模型](./docs/train.md)
+- [合成语音数据](./docs/generate_audio.md)
 - [数据增强](./docs/augment.md)
+- [训练模型](./docs/train.md)
 - [集束搜索解码](./docs/beam_search.md)
 - [执行评估](./docs/eval.md)
 - [导出模型](./docs/export_model.md)

@@ -12,3 +12,7 @@ decoders/*.pyc
 model_utils/*.pyc
 nohup.out
 test.py
+tools/generate_audio/speaker_audio/
+tools/generate_audio/models/
+tools/generate_audio/dgk_lost_conv/
+tools/generate_audio/corpus.txt
