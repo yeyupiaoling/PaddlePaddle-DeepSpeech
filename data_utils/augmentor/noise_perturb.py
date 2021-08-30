@@ -33,12 +33,10 @@ class NoisePerturbAugmentor(AugmentorBase):
         :type audio_segment: AudioSegmenet|SpeechSegment
         """
         noise_json = self._rng.sample(self._noise_manifest, 1)[0]
-        if noise_json['duration'] < audio_segment.duration:
-            raise RuntimeError("The duration of sampled noise audio is smaller "
-                               "than the audio segment to add effects to.")
-        diff_duration = noise_json['duration'] - audio_segment.duration
-        start = self._rng.uniform(0, diff_duration)
-        end = start + audio_segment.duration
-        noise_segment = AudioSegment.slice_from_file(noise_json['audio_filepath'], start=start, end=end)
-        snr_dB = self._rng.uniform(self._min_snr_dB, self._max_snr_dB)
-        audio_segment.add_noise(noise_segment, snr_dB, allow_downsampling=True, rng=self._rng)
+        if noise_json['duration'] >= audio_segment.duration:
+            diff_duration = noise_json['duration'] - audio_segment.duration
+            start = self._rng.uniform(0, diff_duration)
+            end = start + audio_segment.duration
+            noise_segment = AudioSegment.slice_from_file(noise_json['audio_filepath'], start=start, end=end)
+            snr_dB = self._rng.uniform(self._min_snr_dB, self._max_snr_dB)
+            audio_segment.add_noise(noise_segment, snr_dB, allow_downsampling=True, rng=self._rng)

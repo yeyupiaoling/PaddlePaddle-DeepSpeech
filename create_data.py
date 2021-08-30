@@ -5,6 +5,8 @@ import os
 import wave
 from collections import Counter
 
+import numpy as np
+import soundfile
 from tqdm import tqdm
 
 from data_utils.normalizer import FeatureNormalizer
@@ -28,6 +30,9 @@ args = parser.parse_args()
 def create_manifest(annotation_path, manifest_path_prefix):
     json_lines = []
     durations_all = []
+    duration_0_10 = 0
+    duration_10_20 = 0
+    duration_20 = 0
     # 获取全部的标注文件
     for annotation_text in os.listdir(annotation_path):
         durations = []
@@ -47,6 +52,12 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 # 获取音频的长度
                 f_wave = wave.open(audio_path, "rb")
                 duration = f_wave.getnframes() / f_wave.getframerate()
+                if duration <= 10:
+                    duration_0_10 += 1
+                elif 10 < duration <= 20:
+                    duration_10_20 += 1
+                else:
+                    duration_20 += 1
                 durations.append(duration)
                 json_lines.append(
                     json.dumps(
@@ -61,6 +72,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 continue
         durations_all.append(sum(durations))
         print("%s数据一共[%d]小时!" % (annotation_text, int(sum(durations) / 3600)))
+        print("0-10秒的数量：%d，10-20秒的数量：%d，大于20秒的数量：%d" % (duration_0_10, duration_10_20, duration_20))
 
     # 将音频的路径，长度和标签写入到数据列表中
     f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
@@ -100,7 +112,7 @@ def is_uchar(uchar):
 
 
 # 生成噪声的数据列表
-def create_noise(path='dataset/audio/noise'):
+def create_noise(path='dataset/audio/noise', min_duration=30):
     if not os.path.exists(path):
         print('噪声音频文件为空，已跳过！')
         return
@@ -116,6 +128,15 @@ def create_noise(path='dataset/audio/noise'):
                 change_rate(audio_path)
             f_wave = wave.open(audio_path, "rb")
             duration = f_wave.getnframes() / f_wave.getframerate()
+            # 拼接音频
+            if duration < min_duration:
+                wav = soundfile.read(audio_path)[0]
+                data = wav
+                for i in range(int(min_duration / duration) + 1):
+                    data = np.hstack([data, wav])
+                soundfile.write(audio_path, data, samplerate=16000)
+                f_wave = wave.open(audio_path, "rb")
+                duration = f_wave.getnframes() / f_wave.getframerate()
             json_lines.append(
                 json.dumps(
                     {
@@ -124,7 +145,7 @@ def create_noise(path='dataset/audio/noise'):
                         'text': text
                     },
                     ensure_ascii=False))
-        except:
+        except Exception as e:
             continue
     with open(os.path.join(args.manifest_prefix, 'manifest.noise'), 'w', encoding='utf-8') as f_noise:
         for json_line in json_lines:
@@ -156,8 +177,10 @@ def main():
     print('开始生成数据列表...')
     create_manifest(annotation_path=args.annotation_path,
                     manifest_path_prefix=args.manifest_prefix)
+    print('='*70)
     print('开始生成噪声数据列表...')
     create_noise(path='dataset/audio/noise')
+    print('='*70)
 
     print('开始生成数据字典...')
     counter = Counter()
@@ -175,9 +198,11 @@ def main():
             if count < args.count_threshold: break
             fout.write(char + '\n')
     print('数据词汇表已生成完成，保存与：%s' % args.vocab_path)
+    print('='*70)
 
     print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)
     compute_mean_std(manifest_paths[0], args.num_samples, args.output_path)
+    print('='*70)
 
 
 if __name__ == '__main__':

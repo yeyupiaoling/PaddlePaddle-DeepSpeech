@@ -30,4 +30,7 @@ def is_uchar(in_str):
     for i in range(len(in_str)):
         uchar = in_str[i]
         if u'\u4e00' <= uchar <= u'\u9fa5':
-            return True
+            pass
+        else:
+            return False
+    return True

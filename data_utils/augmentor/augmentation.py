@@ -12,6 +12,7 @@ from data_utils.augmentor.noise_perturb import NoisePerturbAugmentor
 from data_utils.augmentor.spec_augment import SpecAugmentor
 from data_utils.augmentor.resample import ResampleAugmentor
 
+
 class AugmentationPipeline(object):
     """Build a pre-processing pipeline with various augmentation models.Such a
     data augmentation pipeline is oftern leveraged to augment the training

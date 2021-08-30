@@ -14,6 +14,7 @@ add_arg('is_long_audio',    bool,   True,  "是否为长语音")
 add_arg('use_gpu',          bool,   False,   "是否使用GPU预测")
 add_arg('use_tensorrt',     bool,   False,  "是否使用TensorRT加速")
 add_arg('enable_mkldnn',    bool,   False,  "是否使用mkldnn加速")
+add_arg('to_an',            bool,   True,   "是否转为阿拉伯数字")
 add_arg('beam_size',        int,    10,     "集束搜索解码相关参数，搜索的大小，范围:[5, 500]")
 add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM系数")
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
@@ -34,7 +35,7 @@ audio_process = AudioInferProcess(vocab_filepath=args.vocab_path, mean_std_filep
 predictor = Predictor(model_dir=args.model_dir, audio_process=audio_process, decoding_method=args.decoding_method,
                       alpha=args.alpha, beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
                       cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
-                      use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn)
+                      use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn, to_an=args.to_an)
 
 
 def predict_long_audio():

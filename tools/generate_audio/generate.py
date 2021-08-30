@@ -3,6 +3,7 @@ import random
 import re
 import time
 
+import cn2an
 import numpy as np
 import paddle
 import soundfile
@@ -118,6 +119,7 @@ with open('corpus.txt', 'w', encoding='utf-8') as f_write:
             line = line.replace('～', '$').replace('，', '$').replace(',', '$').replace('、', '%')
             line = line.replace('%%', '%').replace('$$', '$')
             line = line.replace('%%', '%').replace('$$', '$')
+            line = cn2an.transform(line, "an2cn")
             if len(line) < 2: continue
             if not is_uchar(line.replace('$', '').replace('%', '')): continue
             my_re = re.compile(r'[A-Za-z0-9]', re.S)
@@ -162,5 +164,5 @@ for sentence in tqdm(lines):
     # 保存语音文件
     save_audio_path = os.path.join(save_path, "%s.wav" % int(time.time() * 1000))
     soundfile.write(save_audio_path, wav, samplerate=16000)
-    f_label.write('%s\t%s\n' % (save_audio_path.replace('\\','/'), sentence.replace('%', '').replace('$', '')))
+    f_label.write('%s\t%s\n' % (save_audio_path[6:].replace('\\','/'), sentence.replace('%', '').replace('$', '')))
     f_label.flush()
