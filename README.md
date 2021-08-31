@@ -7,6 +7,8 @@
 
 本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，支持Nvidia Jetson开发板预测。
 
+**注意：** 这个是旧版本，更好的效果请查看[新版本](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech)
+
 本项目使用的环境：
  - Python 3.7
  - PaddlePaddle 2.1.1
