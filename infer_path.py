@@ -9,9 +9,9 @@ from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('wav_path',         str,    './dataset/test_vad.wav', "预测音频的路径")
-add_arg('is_long_audio',    bool,   True,  "是否为长语音")
-add_arg('use_gpu',          bool,   False,   "是否使用GPU预测")
+add_arg('wav_path',         str,    './dataset/test.wav', "预测音频的路径")
+add_arg('is_long_audio',    bool,   False,  "是否为长语音")
+add_arg('use_gpu',          bool,   True,   "是否使用GPU预测")
 add_arg('use_tensorrt',     bool,   False,  "是否使用TensorRT加速")
 add_arg('enable_mkldnn',    bool,   False,  "是否使用mkldnn加速")
 add_arg('to_an',            bool,   True,   "是否转为阿拉伯数字")

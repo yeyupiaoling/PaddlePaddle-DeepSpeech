@@ -14,20 +14,21 @@
 
 ## 更新记录
 
- - 2021.08.30: 支持中文数字转阿拉伯数字。
+ - 2021.09.01: 提供三个公开数据的预训练模型。
+ - 2021.08.30: 支持中文数字转阿拉伯数字，具体请看[预测文档](./docs/infer.md)。
  - 2021.08.29: 完成训练代码和预测代码，同时完善相关文档。
  - 2021.08.07: 支持导出预测模型，使用预测模型进行推理。使用webrtcvad工具，实现长语音识别。
  - 2021.08.06: 将项目大部分的代码修改为PaddlePaddle2.0之后的新API。
 
 ## 模型下载
-| 数据集 | 字错率 | 下载地址 |
-| :---: | :---: | :---: |
-| AISHELL |训练中 | [训练中]() |
-| free_st_chinese_mandarin_corpus | 训练中 | [训练中]() |
-| thchs_30 | 训练中 | [训练中]() |
-| 超大数据集(1600+小时) | 训练中 | [训练中]() |
+| 数据集 | 训练集字错率 | 测试集字错率 | 下载地址 |
+| :---: | :---: | :---: | :---: |
+| aishell | 0.000428 | 0.123783 | [点击下载](https://download.csdn.net/download/qq_33200967/21773253) |
+| free_st_chinese_mandarin_corpus | 训练中 | 训练中 | [训练中]() |
+| thchs_30 | 0.000009 |0.023864 | [点击下载](https://download.csdn.net/download/qq_33200967/21774247) |
+| 超大数据集(1600多小时真实数据)+(1000多小时合成数据) | 训练中 | 训练中 | [训练中]() |
 
-**说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](./docs/export_model.md)
+**说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](./docs/export_model.md)，
 
 >有问题欢迎提 [issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 交流
 
@@ -46,6 +47,7 @@
    - [本地模型](./docs/infer.md)
    - [长语音模型](./docs/infer.md)
    - [Web部署模型](./docs/infer.md)
+   - [Nvidia Jetson部署](./docs/nvidia-jetson.md)
 
 
 ## 快速预测
@@ -65,28 +67,18 @@ cutoff_prob: 1.0
 cutoff_top_n: 40
 decoding_method: ctc_greedy
 enable_mkldnn: False
+is_long_audio: False
 lang_model_path: ./lm/zh_giga.no_cna_cmn.prune01244.klm
 mean_std_path: ./dataset/mean_std.npz
 model_dir: ./models/infer/
+to_an: True
 use_gpu: True
 use_tensorrt: False
 vocab_path: ./dataset/zh_vocab.txt
 wav_path: ./dataset/test.wav
 ------------------------------------------------
-I0729 19:48:39.860693 14609 analysis_config.cc:424] use_dlnne_:0
-I0729 19:48:39.860721 14609 analysis_config.cc:424] use_dlnne_:0
-I0729 19:48:39.860729 14609 analysis_config.cc:424] use_dlnne_:0
-I0729 19:48:39.860736 14609 analysis_config.cc:424] use_dlnne_:0
-I0729 19:48:39.860746 14609 analysis_config.cc:424] use_dlnne_:0
-I0729 19:48:39.860757 14609 analysis_config.cc:424] use_dlnne_:0
 消耗时间：260, 识别结果: 近几年不但我用书给女儿儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书, 得分: 94
 ```
-
-## TODO
-
-1. 训练三个公开数据集的模型。
-2. 增加音频数据集合成程序和变声程序。
-
 
 ## 相关项目
  - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
