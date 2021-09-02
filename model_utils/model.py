@@ -220,7 +220,7 @@ class DeepSpeech2Model(object):
                 # 准备优化器
                 optimizer = paddle.optimizer.Adam(
                     learning_rate=scheduler,
-                    weight_decay=paddle.regularizer.L2Decay(1e-06),
+                    weight_decay=paddle.regularizer.L2Decay(1e-5),
                     grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
