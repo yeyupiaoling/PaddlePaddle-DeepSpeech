@@ -84,7 +84,10 @@ def evaluate(args, fastspeech2_config, pwg_config):
         utt_id, sentence = sentences[i]
         # 随机说话人
         spk_id = random.randint(0, num_speakers - 1)
-        input_ids = frontend.get_input_ids(sentence, merge_sentences=True)
+        try:
+            input_ids = frontend.get_input_ids(sentence, merge_sentences=True)
+        except:
+            continue
         phone_ids = input_ids["phone_ids"]
         flags = 0
         for part_phone_ids in phone_ids:

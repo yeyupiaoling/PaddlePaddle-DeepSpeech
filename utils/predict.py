@@ -11,7 +11,7 @@ from decoders.ctc_greedy_decoder import greedy_decoder
 class Predictor:
     def __init__(self, model_dir, audio_process, decoding_method='ctc_greedy', alpha=1.2, beta=0.35, to_an=False,
                  lang_model_path=None, beam_size=10, cutoff_prob=1.0, cutoff_top_n=40, use_gpu=True, gpu_mem=500,
-                 use_tensorrt=False, enable_mkldnn=False, num_threads=10):
+                 enable_mkldnn=False, num_threads=10):
         self.audio_process = audio_process
         self.decoding_method = decoding_method
         self.alpha = alpha
@@ -30,16 +30,16 @@ class Predictor:
                 raise Exception('缺少ctc_decoders库，请在decoders目录中安装ctc_decoders库，如果是Windows系统，请使用ctc_greed。')
 
         # 创建 config
-        self.config = paddle_infer.Config(os.path.join(model_dir, 'inference.pdmodel'),
-                                          os.path.join(model_dir, 'inference.pdiparams'))
+        model_path = os.path.join(model_dir, 'inference.pdmodel')
+        params_path = os.path.join(model_dir, 'inference.pdiparams')
+        if not os.path.exists(model_path) or not os.path.exists(params_path):
+            raise Exception("模型文件不存在，请检查%s和%s是否存在！" % (model_path, params_path))
+        self.config = paddle_infer.Config(model_path, params_path)
         self.config.enable_use_gpu(1000, 0)
         self.config.enable_memory_optim()
 
         if use_gpu:
             self.config.enable_use_gpu(gpu_mem, 0)
-            if use_tensorrt:
-                self.config.enable_tensorrt_engine(
-                    precision_mode=paddle_infer.PrecisionType.Float32)
         else:
             self.config.disable_gpu()
             self.config.set_cpu_math_library_num_threads(num_threads)

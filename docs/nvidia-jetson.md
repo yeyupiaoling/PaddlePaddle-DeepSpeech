@@ -20,7 +20,31 @@ pip3 install --verbose --no-build-isolation --editable .
 pip3 install -r requirements.txt
 ```
 
-3. 执行预测，直接使用根目录下的预测代码，针对支持TensorRT的设备，还可以使用tensorRT加速。
+3. 执行预测，直接使用根目录下的预测代码。
 ```shell
-python infer_path.py --use_tensorrt=True --wav_path=./dataset/test.wav
+python infer_path.py --wav_path=./dataset/test.wav
+```
+
+以Nvidia AGX为例，输出结果如下：
+```
+WARNING: AVX is not support on your machine. Hence, no_avx core will be imported, It has much worse preformance than avx core.
+-----------  Configuration Arguments -----------
+alpha: 1.2
+beam_size: 10
+beta: 0.35
+cutoff_prob: 1.0
+cutoff_top_n: 40
+decoding_method: ctc_greedy
+enable_mkldnn: False
+is_long_audio: False
+lang_model_path: ./lm/zh_giga.no_cna_cmn.prune01244.klm
+mean_std_path: ./dataset/mean_std.npz
+model_dir: ./models/infer/
+to_an: True
+use_gpu: True
+use_tensorrt: False
+vocab_path: ./dataset/zh_vocab.txt
+wav_path: ./dataset/test.wav
+------------------------------------------------
+消耗时间：416ms, 识别结果: 近几年不但我用书给女儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书, 得分: 97
 ```

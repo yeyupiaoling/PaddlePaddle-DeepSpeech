@@ -21,7 +21,6 @@ mean_std_path: ./dataset/mean_std.npz
 model_dir: ./models/infer/
 to_an: True
 use_gpu: True
-use_tensorrt: False
 vocab_path: ./dataset/zh_vocab.txt
 wav_path: ./dataset/test.wav
 ------------------------------------------------
