@@ -21,7 +21,7 @@ add_arg('cutoff_prob',      float,  1.0,    "集束搜索解码相关参数，�
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
-add_arg('model_dir',       str,     './models/infer/',             "导出的预测模型文件夹路径")
+add_arg('model_dir',        str,    './models/infer/',             "导出的预测模型文件夹路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "集束搜索解码相关参数，语言模型文件路径")
 add_arg('decoding_method',  str,    'ctc_greedy',    "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 args = parser.parse_args()
@@ -34,7 +34,7 @@ audio_process = AudioInferProcess(vocab_filepath=args.vocab_path, mean_std_filep
 predictor = Predictor(model_dir=args.model_dir, audio_process=audio_process, decoding_method=args.decoding_method,
                       alpha=args.alpha, beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
                       cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
-                      enable_mkldnn=args.enable_mkldnn, to_an=args.to_an)
+                      enable_mkldnn=args.enable_mkldnn)
 
 
 def predict_long_audio():
@@ -45,7 +45,7 @@ def predict_long_audio():
     scores = []
     # 执行识别
     for i, audio_path in enumerate(audios_path):
-        score, text = predictor.predict(audio_path=audio_path)
+        score, text = predictor.predict(audio_path=audio_path, to_an=args.to_an)
         texts = texts + '，' + text
         scores.append(score)
         print("第%d个分割音频, 得分: %d, 识别结果: %s" % (i, score, text))
@@ -54,7 +54,7 @@ def predict_long_audio():
 
 def predict_audio():
     start = time.time()
-    score, text = predictor.predict(audio_path=args.wav_path)
+    score, text = predictor.predict(audio_path=args.wav_path, to_an=args.to_an)
     print("消耗时间：%dms, 识别结果: %s, 得分: %d" % (round((time.time() - start) * 1000), text, score))
 
 

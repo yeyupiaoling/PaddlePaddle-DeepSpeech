@@ -36,9 +36,21 @@ python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
 
 
 ## Web部署
- - 在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别。启动服务之后，在浏览器上访问`http://localhost:5000`。支持中文数字转阿拉伯数字，将参数`--to_an`设置为True即可，默认为True。
+
+在服务器执行下面命令通过创建一个Web服务，通过提供HTTP接口来实现语音识别。启动服务之后，如果在本地运行的话，在浏览器上访问`http://localhost:5000`，否则修改为对应的 IP地址。打开页面之后可以选择上传长音或者短语音音频文件，也可以在页面上直接录音，录音完成之后点击上传，播放功能只支持录音的音频。支持中文数字转阿拉伯数字，将参数`--to_an`设置为True即可，默认为True。
 ```shell script
 python infer_server.py
 ```
 
-![录音测试页面](https://img-blog.csdnimg.cn/20210402091159951.png)
+打开页面如下：
+![录音测试页面](./images/infer_server.jpg)
+
+
+## GUI界面部署
+通过打开页面，在页面上选择长语音或者短语音进行识别，也支持录音识别，同时播放识别的音频。默认使用的是贪心解码策略，如果需要使用集束搜索方法的话，需要在启动参数的时候指定。
+```shell script
+python infer_gui.py
+```
+
+打开界面如下：
+![GUI界面](./images/infer_gui.jpg)

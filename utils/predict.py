@@ -9,14 +9,13 @@ from decoders.ctc_greedy_decoder import greedy_decoder
 
 
 class Predictor:
-    def __init__(self, model_dir, audio_process, decoding_method='ctc_greedy', alpha=1.2, beta=0.35, to_an=False,
+    def __init__(self, model_dir, audio_process, decoding_method='ctc_greedy', alpha=1.2, beta=0.35,
                  lang_model_path=None, beam_size=10, cutoff_prob=1.0, cutoff_top_n=40, use_gpu=True, gpu_mem=500,
                  enable_mkldnn=False, num_threads=10):
         self.audio_process = audio_process
         self.decoding_method = decoding_method
         self.alpha = alpha
         self.beta = beta
-        self.to_an = to_an
         self.lang_model_path = lang_model_path
         self.beam_size = beam_size
         self.cutoff_prob = cutoff_prob
@@ -70,7 +69,7 @@ class Predictor:
             print('预热文件不存在，忽略预热！', file=sys.stderr)
 
     # 预测图片
-    def predict(self, audio_path):
+    def predict(self, audio_path, to_an=False):
         # 加载音频文件，并进行预处理
         audio_feature = self.audio_process.process_utterance(audio_path)
         audio_len = audio_feature.shape[1]
@@ -117,6 +116,6 @@ class Predictor:
 
         score, text = result[0], result[1]
         # 是否转为阿拉伯数字
-        if self.to_an:
+        if to_an:
             text = cn2an.transform(text, "cn2an")
         return score, text

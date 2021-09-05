@@ -101,7 +101,8 @@ def evaluate(args, fastspeech2_config, pwg_config):
                     wav = paddle.concat([wav, temp_wav])
         save_audio_path = str(output_dir / (utt_id + ".wav"))
         soundfile.write(save_audio_path, wav.numpy(), samplerate=fastspeech2_config.fs)
-        f_ann.write('%s\t%s\n' % (save_audio_path[6:].replace('\\', '/'), sentence.replace('。', '').replace('，', '')))
+        f_ann.write('%s\t%s\n' % (save_audio_path[6:].replace('\\', '/'), sentence.replace('。', '').replace('，', '')
+                                  .replace('！', '').replace('？', '')))
         f_ann.flush()
 
 

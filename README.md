@@ -14,6 +14,7 @@
 
 ## 更新记录
 
+ - 2021.09.05: 提供GUI界面识别部署。
  - 2021.09.04: 提供三个公开数据的预训练模型。
  - 2021.08.30: 支持中文数字转阿拉伯数字，具体请看[预测文档](./docs/infer.md)。
  - 2021.08.29: 完成训练代码和预测代码，同时完善相关文档。
@@ -52,7 +53,7 @@
 
 ## 快速预测
 
-下载作者提供的模型或者训练模型，然后执行[导出模型](./docs/export_model.md)，使用`infer_path.py`预测音频，通过参数`--wav_path`指定需要预测的音频路径，完成语音识别。
+ - 下载作者提供的模型或者训练模型，然后执行[导出模型](./docs/export_model.md)，使用`infer_path.py`预测音频，通过参数`--wav_path`指定需要预测的音频路径，完成语音识别，详情请查看[模型部署](./docs/infer.md)。
 ```shell script
 python infer_path.py --wav_path=./dataset/test.wav
 ```
@@ -79,6 +80,24 @@ wav_path: ./dataset/test.wav
 ------------------------------------------------
 消耗时间：132, 识别结果: 近几年不但我用书给女儿儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书, 得分: 94
 ```
+
+
+ - 长语音预测
+
+```shell script
+python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
+```
+
+
+ - Web部署
+
+![录音测试页面](./docs/images/infer_server.jpg)
+
+
+ - GUI界面部署
+
+![GUI界面](./docs/images/infer_gui.jpg)
+
 
 ## 相关项目
  - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
