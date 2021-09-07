@@ -93,7 +93,7 @@ class DeepSpeech2Model(object):
         if not is_infer:
             input_fields = {
                 'names': ['audio_data', 'text_data', 'seq_len_data', 'masks'],
-                'shapes': [[None, 39, None], [None, 1], [None, 1], [None, 32, 20, None]],
+                'shapes': [[None, 161, None], [None, 1], [None, 1], [None, 32, 81, None]],
                 'dtypes': ['float32', 'int32', 'int64', 'float32'],
                 'lod_levels': [0, 1, 0, 0]
             }
@@ -114,7 +114,7 @@ class DeepSpeech2Model(object):
             (audio_data, text_data, seq_len_data, masks) = inputs
         else:
             audio_data = paddle.static.data(name='audio_data',
-                                            shape=[None, 39, None],
+                                            shape=[None, 161, None],
                                             dtype='float32',
                                             lod_level=0)
             seq_len_data = paddle.static.data(name='seq_len_data',
@@ -122,7 +122,7 @@ class DeepSpeech2Model(object):
                                               dtype='int64',
                                               lod_level=0)
             masks = paddle.static.data(name='masks',
-                                       shape=[None, 32, 20, None],
+                                       shape=[None, 32, 81, None],
                                        dtype='float32',
                                        lod_level=0)
             text_data = None
@@ -196,7 +196,6 @@ class DeepSpeech2Model(object):
 
         if isinstance(self._place, paddle.CUDAPlace):
             dev_count = len(paddle.static.cuda_places())
-            learning_rate = learning_rate * dev_count
         else:
             dev_count = int(os.environ.get('CPU_NUM', 1))
 
@@ -220,7 +219,7 @@ class DeepSpeech2Model(object):
                 # 准备优化器
                 optimizer = paddle.optimizer.Adam(
                     learning_rate=scheduler,
-                    weight_decay=paddle.regularizer.L2Decay(1e-5),
+                    weight_decay=paddle.regularizer.L2Decay(5e-4),
                     grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=gradient_clipping))
                 optimizer.minimize(loss=ctc_loss)
 
@@ -425,7 +424,7 @@ class DeepSpeech2Model(object):
         # 加载预训练模型
         self.load_param(self.infer_program, self._resume_model)
         audio_data = paddle.static.data(name='audio_data',
-                                        shape=[None, 39, None],
+                                        shape=[None, 161, None],
                                         dtype='float32',
                                         lod_level=0)
         seq_len_data = paddle.static.data(name='seq_len_data',
@@ -433,7 +432,7 @@ class DeepSpeech2Model(object):
                                           dtype='int64',
                                           lod_level=0)
         masks = paddle.static.data(name='masks',
-                                   shape=[None, 32, 20, None],
+                                   shape=[None, 32, 81, None],
                                    dtype='float32',
                                    lod_level=0)
         if not os.path.exists(os.path.dirname(model_path)):

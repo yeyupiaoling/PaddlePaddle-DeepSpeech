@@ -37,10 +37,6 @@ class DataGenerator(object):
     :type stride_ms: float
     :param window_ms: Window size (in milliseconds) for generating frames.
     :type window_ms: float
-    :param max_freq: Used when specgram_type is 'linear', only FFT bins
-                     corresponding to frequencies between [0, max_freq] are
-                     returned.
-    :types max_freq: None|float
     :param use_dB_normalization: Whether to normalize the audio to -20 dB
                                 before extracting the features.
     :type use_dB_normalization: bool
@@ -65,7 +61,6 @@ class DataGenerator(object):
                  min_duration=0.0,
                  stride_ms=10.0,
                  window_ms=20.0,
-                 max_freq=None,
                  use_dB_normalization=True,
                  random_seed=0,
                  keep_transcription_text=False,
@@ -79,7 +74,6 @@ class DataGenerator(object):
         self._speech_featurizer = SpeechFeaturizer(vocab_filepath=vocab_filepath,
                                                    stride_ms=stride_ms,
                                                    window_ms=window_ms,
-                                                   max_freq=max_freq,
                                                    use_dB_normalization=use_dB_normalization)
         self._rng = random.Random(random_seed)
         self._keep_transcription_text = keep_transcription_text

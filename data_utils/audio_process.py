@@ -15,8 +15,6 @@ class AudioInferProcess(object):
     :type stride_ms: float
     :param window_ms: 用于生成帧的窗口大小(毫秒)
     :type window_ms: float
-    :param max_freq: 当specgram_type为'linear'时使用，只返回与[0,max_freq]之间频率对应的FFT bins
-    :types max_freq: None|float
     :param use_dB_normalization: 提取特征前是否将音频归一化至-20 dB
     :type use_dB_normalization: bool
     """
@@ -26,13 +24,11 @@ class AudioInferProcess(object):
                  mean_std_filepath,
                  stride_ms=10.0,
                  window_ms=20.0,
-                 max_freq=None,
                  use_dB_normalization=True):
         self._normalizer = FeatureNormalizer(mean_std_filepath)
         self._speech_featurizer = SpeechFeaturizer(vocab_filepath=vocab_filepath,
                                                    stride_ms=stride_ms,
                                                    window_ms=window_ms,
-                                                   max_freq=max_freq,
                                                    use_dB_normalization=use_dB_normalization)
 
     def process_utterance(self, audio_file):

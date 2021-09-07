@@ -20,15 +20,10 @@ class SpeechFeaturizer(object):
     :type stride_ms: float
     :param window_ms: Window size (in milliseconds) for generating frames.
     :type window_ms: float
-    :param max_freq: When specgram_type is 'linear', only FFT bins
-                     corresponding to frequencies between [0, max_freq] are
-                     returned; when specgram_type is 'mfcc', max_freq is the
-                     highest band edge of mel filters.
-    :types max_freq: None|float
     :param target_sample_rate: Speech are resampled (if upsampling or
                                downsampling is allowed) to this before
                                extracting spectrogram features.
-    :type target_sample_rate: float
+    :type target_sample_rate: int
     :param use_dB_normalization: Whether to normalize the audio to a certain
                                  decibels before extracting the features.
     :type use_dB_normalization: bool
@@ -40,13 +35,11 @@ class SpeechFeaturizer(object):
                  vocab_filepath,
                  stride_ms=10.0,
                  window_ms=20.0,
-                 max_freq=None,
                  target_sample_rate=16000,
                  use_dB_normalization=True,
                  target_dB=-20):
         self._audio_featurizer = AudioFeaturizer(stride_ms=stride_ms,
                                                  window_ms=window_ms,
-                                                 max_freq=max_freq,
                                                  target_sample_rate=target_sample_rate,
                                                  use_dB_normalization=use_dB_normalization,
                                                  target_dB=target_dB)

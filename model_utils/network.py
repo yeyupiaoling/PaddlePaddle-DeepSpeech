@@ -107,7 +107,7 @@ def conv_group(input, num_stacks, seq_len_data, masks):
 
     seq_len_data = (np.array(seq_len_data) - filter_size[1] + 2 * padding[1]) // stride[1] + 1
 
-    output_height = (39 - 1) // 2 + 1
+    output_height = (161 - 1) // 2 + 1
 
     for i in range(num_stacks - 1):
         # reshape masks

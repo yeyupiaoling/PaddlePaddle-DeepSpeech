@@ -78,7 +78,7 @@ def create_manifest(annotation_path, manifest_path_prefix):
     f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
     f_test = open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', encoding='utf-8')
     for i, line in enumerate(json_lines):
-        if i % 500 == 0:
+        if i % 500 == 0 and i != 0:
             f_test.write(line + '\n')
         else:
             f_train.write(line + '\n')

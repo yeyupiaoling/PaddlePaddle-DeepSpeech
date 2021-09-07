@@ -1,7 +1,9 @@
+import _thread
 import argparse
 import logging
 import os
 import random
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -17,11 +19,11 @@ from parakeet.modules.normalizer import ZScore
 from frontend import Frontend
 
 
-def evaluate(args, fastspeech2_config, pwg_config):
+def generate(args, fastspeech2_config, pwg_config):
     # dataloader has been too verbose
     logging.getLogger("DataLoader").disabled = True
 
-    # construct dataset for evaluation
+    # construct dataset for generate
     sentences = []
     with open(args.text, 'rt', encoding='utf-8') as f:
         for line in f:
@@ -162,7 +164,7 @@ def main():
     print(fastspeech2_config)
     print(pwg_config)
 
-    evaluate(args, fastspeech2_config, pwg_config)
+    generate(args, fastspeech2_config, pwg_config)
 
 
 if __name__ == "__main__":
