@@ -2,6 +2,7 @@
 __pycache__/
 dataset/*
 !dataset/test.wav
+!dataset/test_vad.wav
 models/
 lm/
 log/

@@ -97,7 +97,6 @@ def evaluate():
         # 计算字错率
         for target, result in zip(target_transcripts, result_transcripts):
             errors, len_ref = errors_func(target, result)
-            print(errors)
             errors_sum += errors
             len_refs += len_ref
             num_ins += 1
