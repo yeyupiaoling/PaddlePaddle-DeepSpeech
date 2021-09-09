@@ -7,7 +7,7 @@ cd Parakeet
 python setup.py install
 ```
 
-2. 然后分别下载以下三个模型并解压到`tools/generate_audio/models`目录下。
+2. 然后分别下载以下两个模型并解压到`tools/generate_audio/models`目录下。
 ```shell
 https://paddlespeech.bj.bcebos.com/MFA/AISHELL-3/with_tone/aishell3_alignment_tone.tar.gz
 https://paddlespeech.bj.bcebos.com/Parakeet/fastspeech2_nosil_aishell3_ckpt_0.4.zip
