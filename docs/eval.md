@@ -2,7 +2,7 @@
 
 执行下面这个脚本对模型进行评估，通过字符错误率来评价模型的性能。
 ```shell
-python eval.py --model_path=./models/param/50.pdparams
+python eval.py --resume_model=./models/param/50.pdparams
 ```
 
 输出结果：

@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 import numpy as np
 import argparse
 import functools
-import paddle.fluid as fluid
+import paddle
 from tqdm import tqdm
 from decoders.beam_search_decoder import BeamSearchDecoder
 from data_utils.data import DataGenerator
@@ -36,11 +36,11 @@ add_arg('beta',             float,  0.35,  "定向搜索的WC系数")
 add_arg('cutoff_prob',      float,  1.0,   "剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,    "剪枝的最大值")
 add_arg('use_gpu',          bool,   True,  "是否使用GPU训练")
-add_arg('tune_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
-add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
-add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "语言模型文件路径")
-add_arg('model_path',       str,    './models/param/50.pdparams',               "训练保存的模型文件夹路径")
+add_arg('tune_manifest',    str,    'dataset/manifest.test',     "需要评估的测试数据列表")
+add_arg('mean_std_path',    str,    'dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
+add_arg('vocab_path',       str,    'dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
+add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',   "语言模型文件路径")
+add_arg('model_path',       str,    'models/param/50.pdparams',               "训练保存的模型文件夹路径")
 add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 
@@ -53,7 +53,7 @@ def tune():
         raise ValueError("num_betas must be non-negative!")
 
     # 是否使用GPU
-    place = fluid.CUDAPlace(0) if args.use_gpu else fluid.CPUPlace()
+    place = paddle.CUDAPlace(0) if args.use_gpu else paddle.CPUPlace()
 
     # 获取数据生成器
     data_generator = DataGenerator(vocab_filepath=args.vocab_path,
@@ -70,11 +70,8 @@ def tune():
                                  num_conv_layers=args.num_conv_layers,
                                  num_rnn_layers=args.num_rnn_layers,
                                  rnn_layer_size=args.rnn_layer_size,
-                                 use_gru=args.use_gru,
                                  place=place,
-                                 pretrained_model=args.model_path,
-                                 share_rnn_weights=args.share_rnn_weights,
-                                 is_infer=True)
+                                 resume_model=args.model_path)
 
     # 初始化集束搜索方法
     beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)

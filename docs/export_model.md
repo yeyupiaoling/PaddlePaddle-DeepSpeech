@@ -1,8 +1,8 @@
 # 导出模型
 
-训练保存的或者下载作者提供的模型都是模型参数，我们要将它导出为预测模型，这样可以直接使用模型，不再需要模型结构代码，同时使用Inference接口可以加速预测，在一些设备也可以使用TensorRT加速。
+训练保存的或者下载作者提供的模型都是模型参数，我们要将它导出为预测模型，这样可以直接使用模型，不再需要模型结构代码，同时使用Inference接口可以加速预测。
 ```shell
-python export_model.py --pretrained_model=./models/step_final/
+python export_model.py --pretrained_model=./models/param/50.pdparams
 ```
 
 输出结果：
