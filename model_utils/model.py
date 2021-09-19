@@ -279,7 +279,7 @@ class DeepSpeech2Model(object):
                         # 执行训练
                         _ = exe.run(program=train_compiled_prog, fetch_list=[], return_numpy=False)
                     # 每2000个batch保存一次模型
-                    if batch_id % 2000 == 0 and batch_id != 0:
+                    if batch_id % 10000 == 0 and batch_id != 0:
                         self.save_param(train_program, epoch_id)
                     batch_id = batch_id + 1
                 except fluid.core.EOFException:

@@ -10,3 +10,4 @@ resampy==0.2.2
 webrtcvad==2.0.10
 python_speech_features==0.6
 cn2an==0.5.11
+zhconv==1.4.2

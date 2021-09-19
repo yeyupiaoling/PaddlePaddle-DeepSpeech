@@ -4,6 +4,7 @@ import json
 import os
 import wave
 from collections import Counter
+from zhconv import convert
 
 import numpy as np
 import soundfile
@@ -17,10 +18,10 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('--annotation_path',    str,  'dataset/annotation/',      '标注文件的路径')
 add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据清单，包括音频路径和标注信息')
 add_arg('is_change_frame_rate', bool, True,                       '是否统一改变音频为16000Hz，这会消耗大量的时间')
-add_arg('count_threshold',      int,  0,                          '字符计数的截断阈值，0为不做限制')
+add_arg('count_threshold',      int,  2,                          '字符计数的截断阈值，0为不做限制')
 add_arg('vocab_path',           str,  'dataset/zh_vocab.txt',     '生成的数据字典文件')
 add_arg('num_workers',          int,   8,                         '读取数据的线程数量')
-add_arg('manifest_paths',       str,  'dataset/manifest.train,dataset/manifest.test',   '数据列表路径,多个用英文逗号隔开')
+add_arg('manifest_paths',       str,  'dataset/manifest.train',   '数据列表路径')
 add_arg('num_samples',          int,  -1,                         '用于计算均值和标准值得音频数量，当为-1使用全部数据')
 add_arg('output_path',          str,  './dataset/mean_std.npz',   '保存均值和标准值得numpy文件路径，后缀 (.npz).')
 args = parser.parse_args()
@@ -46,6 +47,8 @@ def create_manifest(annotation_path, manifest_path_prefix):
             try:
                 # 过滤非法的字符
                 text = is_ustr(line.split('\t')[1].replace('\n', '').replace('\r', ''))
+                # 保证全部都是简体
+                text = convert(text, 'zh-cn')
                 # 重新调整音频格式并保存
                 if args.is_change_frame_rate:
                     change_rate(audio_path)
@@ -184,24 +187,21 @@ def main():
 
     print('开始生成数据字典...')
     counter = Counter()
-    # 获取全部数据列表
-    manifest_paths = [path for path in args.manifest_paths.split(',')]
     # 获取全部数据列表中的标签字符
-    for manifest_path in manifest_paths:
-        count_manifest(counter, manifest_path)
+    count_manifest(counter, args.manifest_paths)
     # 为每一个字符都生成一个ID
     count_sorted = sorted(counter.items(), key=lambda x: x[1], reverse=True)
     with open(args.vocab_path, 'w', encoding='utf-8') as fout:
-        fout.write('<blank>\n')
+        fout.write('<blank>\t-1\n')
         for char, count in count_sorted:
             # 跳过指定的字符阈值，超过这大小的字符都忽略
             if count < args.count_threshold: break
-            fout.write(char + '\n')
+            fout.write('%s\t%d\n' % (char, count))
     print('数据词汇表已生成完成，保存与：%s' % args.vocab_path)
     print('='*70)
 
     print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)
-    compute_mean_std(manifest_paths[0], args.num_samples, args.output_path)
+    compute_mean_std(args.manifest_paths, args.num_samples, args.output_path)
     print('='*70)
 
 
