@@ -140,11 +140,14 @@ class DeepSpeech2Model(object):
         return reader, log_probs, loss
 
     # 加载模型
-    def load_param(self, program, model_path):
+    def load_param(self, program, model_path, ignore_opt=False):
         if not os.path.exists(model_path):
             raise Warning("The pretrained params [%s] do not exist." % model_path)
 
         load_state_dict = paddle.load(model_path)
+        if ignore_opt:
+            for key in program.state_dict(mode='opt').keys():
+                load_state_dict.pop(key)
         program.set_state_dict(load_state_dict)
         print('[{}] 成功加载模型：{}'.format(datetime.now(), model_path))
 
@@ -231,7 +234,7 @@ class DeepSpeech2Model(object):
             if self._resume_model is not None:
                 self.load_param(train_program, self._resume_model)
             else:
-                self.load_param(train_program, self._pretrained_model)
+                self.load_param(train_program, self._pretrained_model, ignore_opt=True)
 
         build_strategy = paddle.static.BuildStrategy()
         exec_strategy = paddle.static.ExecutionStrategy()
@@ -278,7 +281,7 @@ class DeepSpeech2Model(object):
                     else:
                         # 执行训练
                         _ = exe.run(program=train_compiled_prog, fetch_list=[], return_numpy=False)
-                    # 每2000个batch保存一次模型
+                    # 每10000个batch保存一次模型
                     if batch_id % 10000 == 0 and batch_id != 0:
                         self.save_param(train_program, epoch_id)
                     batch_id = batch_id + 1
