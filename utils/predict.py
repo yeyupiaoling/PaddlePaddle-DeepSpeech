@@ -10,7 +10,7 @@ from decoders.ctc_greedy_decoder import greedy_decoder
 class Predictor:
     def __init__(self, model_dir, data_generator, decoding_method='ctc_greedy', alpha=1.2, beta=0.35,
                  lang_model_path=None, beam_size=10, cutoff_prob=1.0, cutoff_top_n=40, use_gpu=True, gpu_mem=500,
-                 use_tensorrt=False, enable_mkldnn=False, num_threads=10):
+                 enable_mkldnn=False, num_threads=10):
         self.data_generator = data_generator
         self.decoding_method = decoding_method
         self.alpha = alpha
@@ -37,9 +37,6 @@ class Predictor:
 
         if use_gpu:
             self.config.enable_use_gpu(gpu_mem, 0)
-            if use_tensorrt:
-                self.config.enable_tensorrt_engine(
-                    precision_mode=paddle_infer.PrecisionType.Float32)
         else:
             self.config.disable_gpu()
             self.config.set_cpu_math_library_num_threads(num_threads)

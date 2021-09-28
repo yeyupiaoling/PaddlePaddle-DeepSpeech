@@ -21,7 +21,6 @@ add_arg('beta',             float,  0.35,   "定向搜索的WC系数")
 add_arg('cutoff_prob',      float,  1.0,    "剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "剪枝的最大值")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU预测")
-add_arg('use_tensorrt',     bool,   False,  "是否使用TensorRT加速")
 add_arg('enable_mkldnn',    bool,   False,  "是否使用mkldnn加速")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
@@ -43,7 +42,7 @@ data_generator = DataGenerator(vocab_filepath=args.vocab_path,
 predictor = Predictor(model_dir=args.model_dir, data_generator=data_generator, decoding_method=args.decoding_method,
                       alpha=args.alpha, beta=args.beta, lang_model_path=args.lang_model_path, beam_size=args.beam_size,
                       cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
-                      use_tensorrt=args.use_tensorrt, enable_mkldnn=args.enable_mkldnn)
+                      enable_mkldnn=args.enable_mkldnn)
 
 
 # 语音识别接口
