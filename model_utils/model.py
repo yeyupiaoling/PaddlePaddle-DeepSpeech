@@ -1,5 +1,3 @@
-"""Contains DeepSpeech2 model."""
-
 import logging
 import os
 import shutil
@@ -21,27 +19,28 @@ paddle.enable_static()
 class DeepSpeech2Model(object):
     """DeepSpeech2Model class.
 
-    :param vocab_size: Decoding vocabulary size.
+    :param vocab_size: 词汇表大小
     :type vocab_size: int
-    :param num_conv_layers: Number of stacking convolution layers.
+    :param num_conv_layers: 叠加卷积层数
     :type num_conv_layers: int
-    :param num_rnn_layers: Number of stacking RNN layers.
+    :param num_rnn_layers: 叠加RNN层数
     :type num_rnn_layers: int
-    :param rnn_layer_size: RNN layer size (number of RNN cells).
+    :param rnn_layer_size: RNN层大小
     :type rnn_layer_size: int
-    :param use_gru: Use gru if set True. Use simple rnn if set False.
-    :type use_gru: bool
-    :param share_rnn_weights: Whether to share input-hidden weights between
-                              forward and backward directional RNNs.Notice that
-                              for GRU, weight sharing is not supported.
-    :type share_rnn_weights: bool
     :param place: Program running place.
     :type place: CPUPlace or CUDAPlace
-    :param pretrained_model: Pretrained model path. If None, will train
-                                  from stratch.
+    :param resume_model: 恢复模型路径
+    :type resume_model: string|None
+    :param pretrained_model: 预训练模型路径
     :type pretrained_model: string|None
-    :param output_model_dir: Output model directory. If None, output to current directory.
+    :param output_model_dir: 保存模型的路径
     :type output_model_dir: string|None
+    :param error_rate_type: 测试计算错误率的方式
+    :type error_rate_type: string|None
+    :param vocab_list: 词汇表列表
+    :type vocab_list: list|None
+    :param blank: 损失函数的空白索引
+    :type blank: int
     """
 
     def __init__(self,
@@ -107,7 +106,7 @@ class DeepSpeech2Model(object):
             ]
 
             reader = fluid.io.DataLoader.from_generator(feed_list=inputs,
-                                                        capacity=128,
+                                                        capacity=64,
                                                         iterable=False,
                                                         use_double_buffer=True)
 
