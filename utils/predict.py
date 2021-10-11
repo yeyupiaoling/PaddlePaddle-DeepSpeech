@@ -1,5 +1,6 @@
 import os
 import sys
+
 from LAC import LAC
 import cn2an
 import numpy as np
@@ -20,6 +21,8 @@ class Predictor:
         self.beam_size = beam_size
         self.cutoff_prob = cutoff_prob
         self.cutoff_top_n = cutoff_top_n
+        self.use_gpu = use_gpu
+        self.lac = None
         # 集束搜索方法的处理
         if decoding_method == "ctc_beam_search":
             try:
@@ -37,7 +40,7 @@ class Predictor:
         self.config.enable_use_gpu(1000, 0)
         self.config.enable_memory_optim()
 
-        if use_gpu:
+        if self.use_gpu:
             self.config.enable_use_gpu(gpu_mem, 0)
         else:
             self.config.disable_gpu()
@@ -60,11 +63,10 @@ class Predictor:
 
         # 获取输出的名称
         self.output_names = self.predictor.get_output_names()
-        self.lac = None
         # 预热
         warmup_audio_path = 'dataset/test.wav'
         if os.path.exists(warmup_audio_path):
-            self.predict(warmup_audio_path)
+            self.predict(warmup_audio_path, to_an=True)
         else:
             print('预热文件不存在，忽略预热！', file=sys.stderr)
 
@@ -124,9 +126,8 @@ class Predictor:
     def cn2an(self, text):
         # 获取分词模型
         if self.lac is None:
-            self.lac = LAC(mode='lac')
+            self.lac = LAC(mode='lac', use_cuda=self.use_gpu)
         lac_result = self.lac.run(text)
-        print(lac_result)
         result_text = ''
         for t, r in zip(lac_result[0], lac_result[1]):
             if r == 'm' or r == 'TIME':
