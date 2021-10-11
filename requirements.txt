@@ -14,3 +14,4 @@ zhconv==1.4.2
 pyaudio~=0.2.11
 flask~=1.1.2
 flask-cors
+lac

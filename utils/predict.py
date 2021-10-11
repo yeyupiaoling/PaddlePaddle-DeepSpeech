@@ -1,6 +1,6 @@
 import os
 import sys
-
+from LAC import LAC
 import cn2an
 import numpy as np
 import paddle.inference as paddle_infer
@@ -60,7 +60,7 @@ class Predictor:
 
         # 获取输出的名称
         self.output_names = self.predictor.get_output_names()
-
+        self.lac = None
         # 预热
         warmup_audio_path = 'dataset/test.wav'
         if os.path.exists(warmup_audio_path):
@@ -117,5 +117,19 @@ class Predictor:
         score, text = result[0], result[1]
         # 是否转为阿拉伯数字
         if to_an:
-            text = cn2an.transform(text, "cn2an")
+            text = self.cn2an(text)
         return score, text
+
+    # 是否转为阿拉伯数字
+    def cn2an(self, text):
+        # 获取分词模型
+        if self.lac is None:
+            self.lac = LAC(mode='lac')
+        lac_result = self.lac.run(text)
+        print(lac_result)
+        result_text = ''
+        for t, r in zip(lac_result[0], lac_result[1]):
+            if r == 'm' or r == 'TIME':
+                t = cn2an.transform(t, "cn2an")
+            result_text += t
+        return result_text
