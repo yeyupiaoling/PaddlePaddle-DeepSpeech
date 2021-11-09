@@ -14,6 +14,7 @@
 
 ## 更新记录
 
+ - 2021.11.09: 提供WenetSpeech数据集制作脚本。
  - 2021.09.05: 提供GUI界面识别部署。
  - 2021.09.04: 提供三个公开数据的预训练模型。
  - 2021.08.30: 支持中文数字转阿拉伯数字，具体请看[预测文档](./docs/infer.md)。
@@ -38,6 +39,7 @@
 
 - [快速安装](./docs/install.md)
 - [数据准备](./docs/dataset.md)
+- [WenetSpeech数据集](./docs/wenetspeech.md)
 - [合成语音数据](./docs/generate_audio.md)
 - [数据增强](./docs/augment.md)
 - [训练模型](./docs/train.md)

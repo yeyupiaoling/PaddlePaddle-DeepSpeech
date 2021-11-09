@@ -15,21 +15,23 @@ from utils.utility import add_arguments, print_arguments, read_manifest, change_
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('--annotation_path',    str,  'dataset/annotation/',      '标注文件的路径')
+add_arg('annotation_path',      str,  'dataset/annotation/',      '标注文件的路径，如果annotation_path包含了test.txt，就全部使用test.txt的数据作为测试数据')
 add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据清单，包括音频路径和标注信息')
 add_arg('is_change_frame_rate', bool, True,                       '是否统一改变音频为16000Hz，这会消耗大量的时间')
+add_arg('max_test_manifest',    int,  10000,                      '最大的测试数据数量')
 add_arg('count_threshold',      int,  2,                          '字符计数的截断阈值，0为不做限制')
 add_arg('vocab_path',           str,  'dataset/zh_vocab.txt',     '生成的数据字典文件')
 add_arg('num_workers',          int,   8,                         '读取数据的线程数量')
 add_arg('manifest_paths',       str,  'dataset/manifest.train',   '数据列表路径')
-add_arg('num_samples',          int,  -1,                         '用于计算均值和标准值得音频数量，当为-1使用全部数据')
+add_arg('num_samples',          int,  1000000,                    '用于计算均值和标准值得音频数量，当为-1使用全部数据')
 add_arg('output_path',          str,  './dataset/mean_std.npz',   '保存均值和标准值得numpy文件路径，后缀 (.npz).')
 args = parser.parse_args()
 
 
 # 创建数据列表
 def create_manifest(annotation_path, manifest_path_prefix):
-    json_lines = []
+    data_list = []
+    test_list = []
     durations_all = []
     duration_0_10 = 0
     duration_10_20 = 0
@@ -38,9 +40,9 @@ def create_manifest(annotation_path, manifest_path_prefix):
     for annotation_text in os.listdir(annotation_path):
         durations = []
         print('正在创建%s的数据列表，请等待 ...' % annotation_text)
-        annotation_text = os.path.join(annotation_path, annotation_text)
+        annotation_text_path = os.path.join(annotation_path, annotation_text)
         # 读取标注文件
-        with open(annotation_text, 'r', encoding='utf-8') as f:
+        with open(annotation_text_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         for line in tqdm(lines):
             audio_path = line.split('\t')[0]
@@ -62,14 +64,18 @@ def create_manifest(annotation_path, manifest_path_prefix):
                 else:
                     duration_20 += 1
                 durations.append(duration)
-                json_lines.append(
-                    json.dumps(
+                d = json.dumps(
                         {
                             'audio_filepath': audio_path.replace('\\', '/'),
                             'duration': duration,
                             'text': text
                         },
-                        ensure_ascii=False))
+                        ensure_ascii=False)
+
+                if annotation_text == 'test.txt':
+                    test_list.append(d)
+                else:
+                    data_list.append(d)
             except Exception as e:
                 print(e)
                 continue
@@ -80,9 +86,17 @@ def create_manifest(annotation_path, manifest_path_prefix):
     # 将音频的路径，长度和标签写入到数据列表中
     f_train = open(os.path.join(manifest_path_prefix, 'manifest.train'), 'w', encoding='utf-8')
     f_test = open(os.path.join(manifest_path_prefix, 'manifest.test'), 'w', encoding='utf-8')
-    for i, line in enumerate(json_lines):
-        if i % 500 == 0 and i != 0:
-            f_test.write(line + '\n')
+    for line in test_list:
+        f_test.write(line + '\n')
+    interval = 500
+    if len(data_list) / 500 > args.max_test_manifest:
+        interval = len(data_list) // args.max_test_manifest
+    for i, line in enumerate(data_list):
+        if i % interval == 0 and i != 0:
+            if len(test_list) == 0:
+                f_test.write(line + '\n')
+            else:
+                f_train.write(line + '\n')
         else:
             f_train.write(line + '\n')
     f_train.close()
