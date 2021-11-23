@@ -16,13 +16,13 @@ add_arg('batch_size',       int,    64,     "评估是每一批数据的大小")
 add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
-add_arg('beam_size',        int,    10,     "集束搜索解码相关参数，搜索大小，范围:[5, 500]")
+add_arg('beam_size',        int,    100,    "集束搜索解码相关参数，搜索大小，范围:[5, 500]")
 add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM系数")
 add_arg('num_proc_bsearch', int,    8,      "集束搜索解码相关参数，使用CPU数量")
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
-add_arg('cutoff_prob',      float,  1.0,    "集束搜索解码相关参数，剪枝的概率")
+add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('test_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
+add_arg('test_manifest',    str,    './dataset/manifest.train',     "需要评估的测试数据列表")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
 add_arg('resume_model',     str,    './models/param/50.pdparams',  "恢复模型文件路径")
@@ -65,7 +65,7 @@ def evaluate():
             from decoders.beam_search_decoder import BeamSearchDecoder
             beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
         except ModuleNotFoundError:
-            raise Exception('缺少ctc_decoders库，请在decoders目录中安装ctc_decoders库，如果是Windows系统，请使用ctc_greed。')
+            raise Exception('缺少swig_decoders库，请根据文档安装，如果是Windows系统，请使用ctc_greed。')
 
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
