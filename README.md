@@ -141,10 +141,9 @@ wget https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm
 
 这里我也提示几点，在预测中可以提升性能的几个参数，预测包括评估，推理，部署等等一系列使用到模型预测音频的程序。解码方法，通过`decoding_method`方法选择不同的解码方法，支持`ctc_beam_search`集束搜索和`ctc_greedy`贪心解码策略两种，Windows只支持`ctc_greedy`贪心解码策略，其中`ctc_beam_search`集束搜索效果是最好的，但是速度就比较慢，这个可以通过`beam_size`参数设置集束搜索的宽度，以提高执行速度，范围[5, 500]，越大准确率就越高，同时执行速度就越慢。如果对准确率没有太严格的要求，可以考虑直接使用`ctc_greedy`贪心解码策略，其实准确率也低不了多少，而且Windows，Linux都支持，省去编译`ctc_decoders`的麻烦。
 
- - 如果需要使用`ctc_beam_search`集束搜索，需要编译`ctc_decoders`库，该编译只支持Ubuntu，其他Linux版本没测试过。
+ - 如果需要使用`ctc_beam_search`集束搜索，需要安装`swig_decoders`库，该编译只支持Ubuntu且Python版本为3.7。
 ```shell
-cd decoders
-sh setup.sh
+pip3 install paddlespeech-ctcdecoders==0.0.2a0
 ```
 
  - 如果是如果是Windows用户可以直接掉过该步骤。使用`ctc_beam_search`集束搜索方法有两个参数通过调整可以达到最好的准确率。该程序主要是为了寻找`ctc_beam_search`集束搜索方法中最优的`alpha`，`beta`参数，以获得最好的识别准确率。默认的参数是比较好的，如果如果对准确率没有太严格的要求可以直接跳过这一步。
