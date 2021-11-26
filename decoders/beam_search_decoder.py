@@ -35,7 +35,6 @@ class BeamSearchDecoder:
                                                      cutoff_prob=cutoff_prob,
                                                      cutoff_top_n=cutoff_top_n,
                                                      blank_id=blank_id)
-        beam_search_result = sorted(beam_search_result, key=lambda r:r[0])
         return beam_search_result[0]
 
     # 一批数据解码
@@ -54,8 +53,5 @@ class BeamSearchDecoder:
                                                             cutoff_prob=cutoff_prob,
                                                             cutoff_top_n=cutoff_top_n,
                                                             blank_id=blank_id)
-        results = []
-        for result in beam_search_results:
-            result = sorted(result, key=lambda r: r[0])
-            results.append(result[0][1])
+        results = [result[0][1] for result in beam_search_results]
         return results

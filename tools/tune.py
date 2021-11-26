@@ -20,20 +20,18 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('num_batches',      int,    -1,    "用于评估的数据数量，当为-1时使用全部数据")
 add_arg('batch_size',       int,    64,    "评估是每一批数据的大小")
-add_arg('beam_size',        int,    10,    "定向搜索的大小，范围:[5, 500]")
-add_arg('num_proc_bsearch', int,    8,     "定向搜索方法使用CPU数量")
+add_arg('beam_size',        int,    300,   "定向搜索的大小，范围:[5, 500]")
+add_arg('num_proc_bsearch', int,    10,    "定向搜索方法使用CPU数量")
 add_arg('num_conv_layers',  int,    2,     "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,     "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,  "循环神经网络的大小")
-add_arg('num_alphas',       int,    45,    "用于调优的alpha候选项")
-add_arg('num_betas',        int,    8,     "用于调优的beta候选项")
+add_arg('num_alphas',       int,    30,    "用于调优的alpha候选项")
+add_arg('num_betas',        int,    20,    "用于调优的beta候选项")
 add_arg('alpha_from',       float,  1.0,   "alpha调优开始大小")
 add_arg('alpha_to',         float,  3.2,   "alpha调优结速大小")
 add_arg('beta_from',        float,  0.1,   "beta调优开始大小")
-add_arg('beta_to',          float,  0.45,  "beta调优结速大小")
-add_arg('alpha',            float,  1.2,   "定向搜索的LM系数")
-add_arg('beta',             float,  0.35,  "定向搜索的WC系数")
-add_arg('cutoff_prob',      float,  1.0,   "剪枝的概率")
+add_arg('beta_to',          float,  4.5,   "beta调优结速大小")
+add_arg('cutoff_prob',      float,  0.99,  "剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,    "剪枝的最大值")
 add_arg('use_gpu',          bool,   True,  "是否使用GPU训练")
 add_arg('tune_manifest',    str,    'dataset/manifest.test',     "需要评估的测试数据列表")
@@ -73,9 +71,6 @@ def tune():
                                  place=place,
                                  resume_model=args.model_path)
 
-    # 初始化集束搜索方法
-    beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
-
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
     # 创建用于搜索的alphas参数和betas参数
@@ -98,6 +93,8 @@ def tune():
         num_ins += len(target_transcripts)
         # 搜索alphas参数和betas参数
         for index, (alpha, beta) in enumerate(tqdm(params_grid)):
+            # 初始化集束搜索方法
+            beam_search_decoder = BeamSearchDecoder(alpha, beta, args.lang_model_path, data_generator.vocab_list)
             result_transcripts = beam_search_decoder.decode_batch_beam_search(probs_split=probs_split,
                                                                               beam_alpha=alpha,
                                                                               beam_beta=beta,
