@@ -99,6 +99,7 @@ class DataGenerator(object):
         self._augmentation_pipeline.transform_audio(speech_segment)
         specgram, transcript_part = self._speech_featurizer.featurize(speech_segment, self._keep_transcription_text)
         specgram = self._normalizer.apply(specgram)
+        specgram = self._augmentation_pipeline.transform_feature(specgram)
         return specgram, transcript_part
 
     def batch_reader_creator(self,

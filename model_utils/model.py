@@ -257,10 +257,10 @@ class DeepSpeech2Model(object):
             epoch_loss = []
             time_begin = time.time()
             batch_id = 0
+            start = time.time()
             while True:
                 try:
                     if batch_id % 100 == 0:
-                        start = time.time()
                         # 执行训练
                         fetch = exe.run(program=train_compiled_prog, fetch_list=[ctc_loss.name], return_numpy=False)
                         each_loss = fetch[0]
@@ -284,6 +284,7 @@ class DeepSpeech2Model(object):
                     if batch_id % 10000 == 0 and batch_id != 0:
                         self.save_param(train_program, epoch_id)
                     batch_id = batch_id + 1
+                    start = time.time()
                 except fluid.core.EOFException:
                     train_reader.reset()
                     break
