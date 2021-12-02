@@ -9,7 +9,7 @@
 
 本项目使用的环境：
  - Python 3.7
- - PaddlePaddle 2.1.2
+ - PaddlePaddle 2.2.0
  - Windows or Ubuntu
 
 ## 更新记录

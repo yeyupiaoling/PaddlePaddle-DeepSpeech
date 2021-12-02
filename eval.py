@@ -65,7 +65,7 @@ def evaluate():
             from decoders.beam_search_decoder import BeamSearchDecoder
             beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
         except ModuleNotFoundError:
-            raise Exception('缺少swig_decoders库，请根据文档安装，如果是Windows系统，请使用ctc_greed。')
+            raise Exception('缺少swig_decoders库，请根据文档安装，如果是Windows系统，请使用ctc_greedy。')
 
     # 获取评估函数，有字错率和词错率
     errors_func = char_errors if args.error_rate_type == 'cer' else word_errors

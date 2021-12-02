@@ -169,7 +169,8 @@ class DeepSpeech2Model(object):
               gradient_clipping,
               num_epoch,
               batch_size,
-              num_samples,
+              train_num_samples,
+              test_num_samples,
               test_off=False):
         """Train the model.
 
@@ -185,8 +186,10 @@ class DeepSpeech2Model(object):
         :type num_epoch: int
         :param batch_size: Number of batch size.
         :type batch_size: int
-        :param num_samples: The num of train samples.
-        :type num_samples: int
+        :param train_num_samples: The num of train samples.
+        :type train_num_samples: int
+        :param test_num_samples: The num of test samples.
+        :type test_num_samples: int
         :param test_off: Turn off testing.
         :type test_off: bool
         """
@@ -248,8 +251,9 @@ class DeepSpeech2Model(object):
 
         train_step = 0
         test_step = 0
-        num_batch = num_samples // batch_size // dev_count
-        sum_batch = num_batch * (num_epoch - pre_epoch)
+        train_num_batch = train_num_samples // batch_size // dev_count
+        test_num_batch = test_num_samples // batch_size
+        sum_batch = train_num_batch * (num_epoch - pre_epoch)
         # run train
         for epoch_id in range(pre_epoch, num_epoch):
             epoch_id += 1
@@ -265,13 +269,12 @@ class DeepSpeech2Model(object):
                         fetch = exe.run(program=train_compiled_prog, fetch_list=[ctc_loss.name], return_numpy=False)
                         each_loss = fetch[0]
                         epoch_loss.extend(np.array(each_loss[0]) / batch_size)
-
                         eta_sec = ((time.time() - start) * 1000) * (
-                                sum_batch - (epoch_id - pre_epoch - 1) * num_batch - batch_id)
+                                sum_batch - (epoch_id - pre_epoch - 1) * train_num_batch - batch_id)
                         eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
                         print(
                             "Train [%s] epoch: [%d/%d], batch: [%d/%d], learning rate: %.8f, train loss: %f, eta: %s" %
-                            (datetime.now(), epoch_id, num_epoch, batch_id, num_batch, scheduler.get_lr(),
+                            (datetime.now(), epoch_id, num_epoch, batch_id, train_num_batch, scheduler.get_lr(),
                              np.mean(each_loss[0]) / batch_size, eta_str))
                         # 记录训练损失值
                         writer.add_scalar('Train loss', np.mean(each_loss[0]) / batch_size, train_step)
@@ -300,10 +303,10 @@ class DeepSpeech2Model(object):
             else:
                 print('\n======================Begin test=====================')
                 # 执行测试
-                test_result = self.test(test_reader=dev_batch_reader)
-                print("Train time: %s, epoch: %d, train loss: %f, test %s: %f"
-                      % (str(timedelta(seconds=int(used_time))), epoch_id, float(np.mean(np.array(epoch_loss))),
-                         self.error_rate_type, test_result))
+                test_result = self.test(test_reader=dev_batch_reader, epoch_id=epoch_id, test_num_batch=test_num_batch)
+                print("Test [%s] train time: %s, epoch: %d, train loss: %f, test %s: %f"
+                      % (datetime.now(), str(timedelta(seconds=int(used_time))), epoch_id,
+                         float(np.mean(np.array(epoch_loss))), self.error_rate_type, test_result))
                 print('======================Stop Test=====================\n')
                 # 记录测试结果
                 writer.add_scalar('Test %s' % self.error_rate_type, test_result, test_step)
@@ -312,11 +315,15 @@ class DeepSpeech2Model(object):
         self.save_param(train_program, num_epoch)
         print("\n------------Training finished!!!-------------")
 
-    def test(self, test_reader):
+    def test(self, test_reader, epoch_id, test_num_batch):
         '''Test the model.
 
         :param test_reader: Reader of test.
         :type test_reader: Reader
+        :param epoch_id: Train epoch id
+        :type epoch_id: int
+        :param test_num_batch: Test batch number
+        :type test_num_batch: int
         :return: Wer/Cer rate.
         :rtype: float
         '''
@@ -326,7 +333,7 @@ class DeepSpeech2Model(object):
         self.load_param(self.infer_program, self._resume_model)
         errors_sum, len_refs = 0.0, 0
         errors_func = char_errors if self.error_rate_type == 'cer' else word_errors
-        for infer_data in test_reader():
+        for batch_id, infer_data in enumerate(test_reader()):
             # 执行预测
             probs_split = self.infer_batch_data(infer_data=infer_data)
             # 使用最优路径解码
@@ -337,6 +344,9 @@ class DeepSpeech2Model(object):
                 errors, len_ref = errors_func(target, result)
                 errors_sum += errors
                 len_refs += len_ref
+            if batch_id % 100 == 0:
+                print("Test [%s] epoch: %d, batch: [%d/%d], %s: %f" %
+                      (datetime.now(), epoch_id, batch_id, test_num_batch, self.error_rate_type, errors_sum / len_refs))
         return errors_sum / len_refs
 
     # 预测一个batch的音频

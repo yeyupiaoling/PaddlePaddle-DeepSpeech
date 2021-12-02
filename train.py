@@ -71,15 +71,19 @@ def train():
                                  output_model_dir=args.output_model_dir,
                                  vocab_list=train_generator.vocab_list)
     # 获取训练数据数量
-    num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
-    print("[%s] 训练数据数量：%d\n" % (datetime.now(), num_samples))
+    train_num_samples = get_data_len(args.train_manifest, args.max_duration, args.min_duration)
+    print("[%s] 训练数据数量：%d\n" % (datetime.now(), train_num_samples))
+    # 获取训测试据数量
+    test_num_samples = get_data_len(args.test_manifest, args.max_duration, args.min_duration)
+    print("[%s] 测试数据数量：%d\n" % (datetime.now(), test_num_samples))
     # 开始训练
     ds2_model.train(train_batch_reader=train_batch_reader,
                     dev_batch_reader=test_batch_reader,
                     learning_rate=args.learning_rate,
                     gradient_clipping=400,
                     batch_size=args.batch_size,
-                    num_samples=num_samples,
+                    train_num_samples=train_num_samples,
+                    test_num_samples=test_num_samples,
                     num_epoch=args.num_epoch,
                     test_off=args.test_off)
 
