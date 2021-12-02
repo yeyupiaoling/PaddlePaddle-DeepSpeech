@@ -77,7 +77,7 @@ class DataGenerator(object):
                                                    use_dB_normalization=use_dB_normalization)
         self._rng = random.Random(random_seed)
         self._keep_transcription_text = keep_transcription_text
-        self._epoch = 0
+        self.epoch = 0
         self._is_training = is_training
         # for caching tar files info
         self._local_data = local()
@@ -151,9 +151,8 @@ class DataGenerator(object):
                                      max_duration=self._max_duration,
                                      min_duration=self._min_duration)
             # 将数据列表长到短排序
-            if self._epoch == 0:
-                manifest.sort(key=lambda x: x["duration"])
-                manifest.reverse()
+            if self.epoch == 0:
+                manifest.sort(key=lambda x: x["duration"], reverse=False)
             else:
                 if shuffle_method == "batch_shuffle":
                     manifest = self._batch_shuffle(manifest, batch_size, clipped=False)
@@ -176,7 +175,7 @@ class DataGenerator(object):
                     batch = []
             if len(batch) >= 1:
                 yield self._padding_batch(batch, padding_to, flatten)
-            self._epoch += 1
+            self.epoch += 1
 
         return batch_reader
 

@@ -1,6 +1,7 @@
 import argparse
 import functools
 import io
+import os
 from datetime import datetime
 from model_utils.model import DeepSpeech2Model
 from data_utils.data import DataGenerator
@@ -20,7 +21,7 @@ add_arg('learning_rate',    float,  5e-4,   "初始学习率")
 add_arg('min_duration',     float,  0.5,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('test_off',         bool,   False,  "是否关闭测试")
-add_arg('resume_model',            str,  None,    "恢复训练，当为None则不使用预训练模型")
+add_arg('resume_model',            str,  'models/param/1.pdparams',    "恢复训练，当为None则不使用预训练模型")
 add_arg('pretrained_model',        str,  None,    "使用预训练模型的路径，当为None是不使用预训练模型")
 add_arg('train_manifest',          str,  './dataset/manifest.train',     "训练的数据列表")
 add_arg('test_manifest',           str,  './dataset/manifest.test',      "测试的数据列表")
@@ -45,6 +46,12 @@ def train():
                                     max_duration=args.max_duration,
                                     min_duration=args.min_duration,
                                     place=place)
+    if args.resume_model:
+        try:
+            pre_epoch = os.path.basename(args.resume_model).split('.')[0]
+            train_generator.epoch = int(pre_epoch)
+        except:
+            pass
 
     # 获取测试数据生成器
     test_generator = DataGenerator(vocab_filepath=args.vocab_path,
