@@ -287,7 +287,6 @@ class DataGenerator(object):
         :return: Batch shuffled mainifest.
         :rtype: list
         """
-        manifest.sort(key=lambda x: x["duration"])
         shift_len = self._rng.randint(0, batch_size - 1)
         batch_manifest = list(zip(*[iter(manifest[shift_len:])] * batch_size))
         self._rng.shuffle(batch_manifest)

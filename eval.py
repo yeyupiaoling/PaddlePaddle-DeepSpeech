@@ -22,7 +22,7 @@ add_arg('num_proc_bsearch', int,    8,      "集束搜索解码相关参数，�
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
 add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('test_manifest',    str,    './dataset/manifest.train',     "需要评估的测试数据列表")
+add_arg('test_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
 add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
 add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
 add_arg('resume_model',     str,    './models/param/50.pdparams',  "恢复模型文件路径")

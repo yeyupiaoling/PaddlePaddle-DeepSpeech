@@ -27,6 +27,7 @@ class AugmentationPipeline(object):
     [
       {
         "type": "noise",
+        "aug_type": "audio",
         "params": {
           "min_snr_dB": 10,
           "max_snr_dB": 50,
@@ -36,6 +37,7 @@ class AugmentationPipeline(object):
       },
       {
         "type": "speed",
+        "aug_type": "audio",
         "params": {
           "min_speed_rate": 0.9,
           "max_speed_rate": 1.1,
@@ -45,6 +47,7 @@ class AugmentationPipeline(object):
       },
       {
         "type": "shift",
+        "aug_type": "audio",
         "params": {
           "min_shift_ms": -5,
           "max_shift_ms": 5
@@ -53,6 +56,7 @@ class AugmentationPipeline(object):
       },
       {
         "type": "volume",
+        "aug_type": "audio",
         "params": {
           "min_gain_dBFS": -15,
           "max_gain_dBFS": 15
@@ -61,6 +65,7 @@ class AugmentationPipeline(object):
       },
       {
         "type": "specaug",
+        "aug_type": "feature",
         "params": {
           "W": 0,
           "warp_mode": "PIL",

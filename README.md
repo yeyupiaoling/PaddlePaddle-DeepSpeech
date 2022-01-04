@@ -29,7 +29,6 @@
 | aishell(179小时) | 2 | 3 | 1024 | 0.084532 | [点击下载](https://download.csdn.net/download/qq_33200967/21773253) |
 | free_st_chinese_mandarin_corpus(109小时) | 2 | 3 | 1024 | 0.170260 | [点击下载](https://download.csdn.net/download/qq_33200967/21866900) |
 | thchs_30(34小时) | 2 | 3 | 1024 | 0.026838 | [点击下载](https://download.csdn.net/download/qq_33200967/21774247) |
-| 超大数据集(1600多小时真实数据)+(1300多小时合成数据) | 2 | 3 | 1024 | 训练中 | [训练中]() |
 
 **说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](./docs/export_model.md)，使用的解码方法是集束搜索。
 
