@@ -9,6 +9,14 @@
 
 **注意：** 这个是旧版本，更好的效果请查看[新版本](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech)
 
+
+**欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`1169600237`，问题答案为博主Github的ID`yeyupiaoling`。
+
+<div align="center">
+  <img src="docs/images/qq.png"/>
+</div>
+
+
 本项目使用的环境：
  - Python 3.7
  - PaddlePaddle 2.1.1

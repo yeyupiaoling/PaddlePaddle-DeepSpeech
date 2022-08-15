@@ -6,6 +6,7 @@ models/
 lm/
 log/
 audios_cache/
+generate_audio/
 data_utils/*.pyc
 data_utils/featurizer/*.pyc
 decoders/*.pyc
