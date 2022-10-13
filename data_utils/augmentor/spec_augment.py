@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from PIL.Image import BICUBIC
 
-from ppasr.data_utils.augmentor.base import AugmentorBase
+from data_utils.augmentor.base import AugmentorBase
 
 
 class SpecAugmentor(AugmentorBase):
