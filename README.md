@@ -102,6 +102,13 @@ python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
 
 ![GUI界面](./docs/images/infer_gui.jpg)
 
+## 打赏作者
+
+<br/>
+<div align="center">
+<p>打赏一块钱支持一下作者</p>
+<img src="https://yeyupiaoling.cn/reward.png" alt="打赏作者" width="400">
+</div>
 
 ## 相关项目
  - 基于PaddlePaddle实现的声纹识别：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
