@@ -12,6 +12,6 @@ python_speech_features==0.6
 cn2an==0.5.11
 zhconv==1.4.2
 pyaudio~=0.2.11
-flask~=1.1.2
+flask~=2.2.5
 flask-cors
 lac
