@@ -1,5 +1,5 @@
 numpy>=1.21.2
-scipy==1.6.1
+scipy==1.10.0
 tqdm==4.59.0
 pytest-runner
 librosa==0.8.0
