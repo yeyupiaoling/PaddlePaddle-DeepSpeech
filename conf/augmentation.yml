@@ -1,0 +1,70 @@
+# 语速增强
+speed:
+  # 增强概率
+  prob: 0.5
+
+# 音量增强
+volume:
+  # 增强概率
+  prob: 0.5
+  # 最小增益
+  min_gain_dBFS: -15
+  # 最大增益
+  max_gain_dBFS: 15
+
+# 位移增强
+shift:
+  # 增强概率
+  prob: 0.5
+  # 最小偏移，单位为毫秒
+  min_shift_ms: -5
+  # 最大偏移，单位为毫秒
+  max_shift_ms: 5
+
+# 重采样增强
+resample:
+  # 增强概率
+  prob: 0.0
+  # 最小增益
+  new_sample_rate: [ 8000, 16000, 24000 ]
+
+# 噪声增强
+noise:
+  # 增强概率
+  prob: 0.5
+  # 噪声增强的噪声文件夹
+  noise_dir: 'dataset/noise'
+  # 针对噪声的最小音量增益
+  min_snr_dB: 10
+  # 针对噪声的最大音量增益
+  max_snr_dB: 50
+
+# 混响增强
+reverb:
+  # 增强概率
+  prob: 0.2
+  # 混响增强的混响文件夹
+  reverb_dir: 'dataset/reverb'
+
+# Spec增强
+spec_aug:
+  # 增强概率
+  prob: 0.5
+  # 频域掩蔽的比例
+  freq_mask_ratio: 0.15
+  # 频域掩蔽次数
+  n_freq_masks: 2
+  # 频域掩蔽的比例
+  time_mask_ratio: 0.05
+  # 频域掩蔽次数
+  n_time_masks: 2
+  # 最大时间扭曲
+  max_time_warp: 5
+
+spec_sub_aug:
+  # 增强概率
+  prob: 0.5
+  # 时间替换的最大宽度
+  max_time: 30
+  # 时间替换的的次数
+  num_time_sub: 3

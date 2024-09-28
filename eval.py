@@ -1,21 +1,31 @@
 import argparse
 import functools
+import os
 import time
 
 import paddle
-from data_utils.data import DataGenerator
-from model_utils.model import DeepSpeech2Model
-from utils.error_rate import char_errors, word_errors
+from loguru import logger
+from paddle.io import DataLoader
+from tqdm import tqdm
+
+from data_utils.collate_fn import collate_fn
+from data_utils.featurizer.audio_featurizer import AudioFeaturizer
+from data_utils.featurizer.text_featurizer import TextFeaturizer
+from data_utils.reader import CustomDataset
 from decoders.ctc_greedy_decoder import greedy_decoder_batch
-from utils.utility import add_arguments, print_arguments
+from model_utils.model import DeepSpeech2Model
+from utils.checkpoint import load_pretrained
+from utils.metrics import wer, cer
+from utils.utils import add_arguments, print_arguments, labels_to_string
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('use_gpu',          bool,   True,   "是否使用GPU评估")
-add_arg('batch_size',       int,    64,     "评估是每一批数据的大小")
-add_arg('num_conv_layers',  int,    2,      "卷积层数量")
+add_arg('batch_size',       int,    32,     "评估是每一批数据的大小")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
+add_arg('min_duration',     float,  0.5,    "最短的用于训练的音频长度")
+add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('beam_size',        int,    300,    "集束搜索解码相关参数，搜索大小，范围:[5, 500]")
 add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM系数")
 add_arg('num_proc_bsearch', int,    8,      "集束搜索解码相关参数，使用CPU数量")
@@ -23,88 +33,99 @@ add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC
 add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
 add_arg('test_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
-add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的字典文件路径")
-add_arg('resume_model',     str,    './models/param/50.pdparams',  "恢复模型文件路径")
+add_arg('mean_istd_path',   str,    './dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
+add_arg('vocab_path',       str,    './dataset/vocabulary.txt',    "数据集的字典文件路径")
+add_arg('pretrained_model', str,    './models/epoch_15/',          "模型文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
-add_arg('decoding_method',  str,    'ctc_greedy',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
-add_arg('error_rate_type',  str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
+add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('metrics_type',     str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
+
+beam_search_decoder = None
 
 
 # 评估模型
 def evaluate():
     # 是否使用GPU
-    place = paddle.CUDAPlace(0) if args.use_gpu else paddle.CPUPlace()
+    if args.use_gpu:
+        assert paddle.is_compiled_with_cuda(), 'GPU不可用'
+        paddle.device.set_device("gpu")
+    else:
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        paddle.device.set_device("cpu")
 
-    # 获取数据生成器
-    data_generator = DataGenerator(vocab_filepath=args.vocab_path,
-                                   mean_std_filepath=args.mean_std_path,
-                                   keep_transcription_text=True,
-                                   place=place,
-                                   is_training=False)
-    # 获取评估数据
-    batch_reader = data_generator.batch_reader_creator(manifest_path=args.test_manifest,
-                                                       batch_size=args.batch_size,
-                                                       shuffle_method=None)
-    # 获取DeepSpeech2模型，并设置为预测
-    ds2_model = DeepSpeech2Model(vocab_size=data_generator.vocab_size,
-                                 num_conv_layers=args.num_conv_layers,
-                                 num_rnn_layers=args.num_rnn_layers,
-                                 rnn_layer_size=args.rnn_layer_size,
-                                 place=place,
-                                 resume_model=args.resume_model)
+    audio_featurizer = AudioFeaturizer(mode="train")
+    text_featurizer = TextFeaturizer(args.vocab_path)
+    # 获取苹果数据
+    test_dataset = CustomDataset(data_manifest=args.test_manifest,
+                                 audio_featurizer=audio_featurizer,
+                                 text_featurizer=text_featurizer,
+                                 min_duration=args.min_duration,
+                                 max_duration=args.max_duration,
+                                 mode="eval")
+    test_loader = DataLoader(dataset=test_dataset,
+                             collate_fn=collate_fn,
+                             batch_size=args.batch_size,
+                             num_workers=4)
 
-    # 读取数据列表
-    with open(args.test_manifest, 'r', encoding='utf-8') as f_m:
-        test_len = len(f_m.readlines())
+    model = DeepSpeech2Model(input_dim=test_dataset.feature_dim,
+                             vocab_size=test_dataset.vocab_size,
+                             mean_istd_path=args.mean_istd_path,
+                             num_rnn_layers=args.num_rnn_layers,
+                             rnn_layer_size=args.rnn_layer_size)
 
+    model = load_pretrained(model, args.pretrained_model)
+
+    start = time.time()
+    model.eval()
+    error_results = []
+    with paddle.no_grad():
+        for batch_id, batch in enumerate(tqdm(test_loader())):
+            inputs, labels, input_lens, label_lens = batch
+            output = model.predict(inputs, input_lens).numpy()
+            out_strings = decoder_result(output, text_featurizer.vocab_list)
+            labels_str = labels_to_string(labels, text_featurizer.vocab_list)
+            for out_string, label in zip(*(out_strings, labels_str)):
+                # 计算字错率或者词错率
+                if args.metrics_type == 'wer':
+                    error_rate = wer(label, out_string)
+                else:
+                    error_rate = cer(label, out_string)
+                error_results.append(error_rate)
+                logger.info(f'预测结果为：{out_string}')
+                logger.info(f'实际标签为：{label}')
+                logger.info(f'这条数据的{args.metrics_type}：{round(error_rate, 6)}，'
+                            f'当前{args.metrics_type}：{round(sum(error_results) / len(error_results), 6)}')
+                logger.info('-' * 70)
+    error_result = float(sum(error_results) / len(error_results)) if len(error_results) > 0 else -1
+    print(f"消耗时间：{time.time() - start}s, [{args.metrics_type}]：{error_result}")
+
+
+def decoder_result(outs, vocabulary):
+    global beam_search_decoder
     # 集束搜索方法的处理
-    if args.decoding_method == "ctc_beam_search":
+    if args.decoder == "ctc_beam_search" and beam_search_decoder is None:
         try:
             from decoders.beam_search_decoder import BeamSearchDecoder
-            beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.lang_model_path, data_generator.vocab_list)
+            beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.beam_size, args.cutoff_prob,
+                                                    args.cutoff_top_n, args.vocab_list,
+                                                    language_model_path=args.lang_model_path)
         except ModuleNotFoundError:
-            raise Exception('缺少swig_decoders库，请根据文档安装，如果是Windows系统，请使用ctc_greedy。')
+            logger.warning('==================================================================')
+            logger.warning('缺少 paddlespeech-ctcdecoders 库，请根据文档安装。')
+            logger.warning(
+                'python -m pip install paddlespeech_ctcdecoders -U -i https://ppasr.yeyupiaoling.cn/pypi/simple/')
+            logger.warning('【注意】现在已自动切换为ctc_greedy解码器，ctc_greedy解码器准确率相对较低。')
+            logger.warning('==================================================================\n')
+            args.decoder = 'ctc_greedy'
 
-    # 获取评估函数，有字错率和词错率
-    errors_func = char_errors if args.error_rate_type == 'cer' else word_errors
-    errors_sum, len_refs, num_ins = 0.0, 0, 0
-    ds2_model.logger.info("开始评估 ...")
-    start = time.time()
-    # 开始评估
-    for infer_data in batch_reader():
-        # 获取一批的识别结果
-        probs_split = ds2_model.infer_batch_data(infer_data=infer_data)
-
-        # 执行解码
-        if args.decoding_method == 'ctc_greedy':
-            # 贪心解码策略
-            result_transcripts = greedy_decoder_batch(probs_split=probs_split, vocabulary=data_generator.vocab_list)
-        else:
-            # 集束搜索解码策略
-            result_transcripts = beam_search_decoder.decode_batch_beam_search(probs_split=probs_split,
-                                                                              beam_alpha=args.alpha,
-                                                                              beam_beta=args.beta,
-                                                                              beam_size=args.beam_size,
-                                                                              cutoff_prob=args.cutoff_prob,
-                                                                              cutoff_top_n=args.cutoff_top_n,
-                                                                              vocab_list=data_generator.vocab_list,
-                                                                              num_processes=args.num_proc_bsearch)
-        # 实际的结果
-        target_transcripts = infer_data[1]
-
-        # 计算字错率
-        for target, result in zip(target_transcripts, result_transcripts):
-            errors, len_ref = errors_func(target, result)
-            errors_sum += errors
-            len_refs += len_ref
-            num_ins += 1
-        print("错误率：[%s] (%d/%d) = %f" % (args.error_rate_type, num_ins, test_len, errors_sum / len_refs))
-    end = time.time()
-    print("消耗时间：%ds, 总错误率：[%s] (%d/%d) = %f" % ((end - start), args.error_rate_type, num_ins, num_ins, errors_sum / len_refs))
-
-    ds2_model.logger.info("完成评估！")
+    # 执行解码
+    outs = [outs[i, :, :] for i, _ in enumerate(range(outs.shape[0]))]
+    if args.decoder == 'ctc_greedy':
+        result = greedy_decoder_batch(outs, vocabulary)
+    else:
+        result = beam_search_decoder.decode_batch_beam_search_offline(probs_split=outs)
+    return result
 
 
 def main():

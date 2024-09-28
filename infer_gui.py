@@ -5,14 +5,13 @@ import os
 import time
 import tkinter.messagebox
 import wave
+from tkinter import *
 from tkinter.filedialog import *
 
 import pyaudio
 
-from data_utils.audio_process import AudioInferProcess
-from utils.audio_vad import crop_audio_vad
 from utils.predict import Predictor
-from utils.utility import add_arguments, print_arguments
+from utils.utils import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
@@ -23,11 +22,11 @@ add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
 add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('mean_std_path',    str,    './dataset/mean_std.npz',      "数据集的均值和标准值的npy文件路径")
-add_arg('vocab_path',       str,    './dataset/zh_vocab.txt',      "数据集的词汇表文件路径")
+add_arg('mean_std_path',    str,    './dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
+add_arg('vocab_path',       str,    './dataset/vocabulary.txt',    "数据集的词汇表文件路径")
 add_arg('model_dir',        str,    './models/infer/',             "导出的预测模型文件夹路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "集束搜索解码相关参数，语言模型文件路径")
-add_arg('decoding_method',  str,    'ctc_greedy',    "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('decoder',          str,    'ctc_greedy',    "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 args = parser.parse_args()
 print_arguments(args)
 
@@ -40,7 +39,7 @@ class SpeechRecognitionApp:
         self.playing = False
         self.recording = False
         self.stream = None
-        self.to_an = True
+        self.to_itn = False
         # 最大录音时长
         self.max_record = 20
         # 录音保存的路径
@@ -52,47 +51,46 @@ class SpeechRecognitionApp:
         # 固定窗口大小
         self.window.geometry('870x500')
         self.window.resizable(False, False)
-        # 识别短语音按钮
-        self.short_button = Button(self.window, text="选择短语音识别", width=20, command=self.predict_audio_thread)
+        # 识别语音按钮
+        self.short_button = Button(self.window, text="选择语音识别", width=20, command=self.predict_audio_thread)
         self.short_button.place(x=10, y=10)
-        # 识别长语音按钮
-        self.long_button = Button(self.window, text="选择长语音识别", width=20, command=self.predict_long_audio_thread)
-        self.long_button.place(x=170, y=10)
         # 录音按钮
         self.record_button = Button(self.window, text="录音识别", width=20, command=self.record_audio_thread)
-        self.record_button.place(x=330, y=10)
+        self.record_button.place(x=170, y=10)
         # 播放音频按钮
         self.play_button = Button(self.window, text="播放音频", width=20, command=self.play_audio_thread)
-        self.play_button.place(x=490, y=10)
+        self.play_button.place(x=330, y=10)
         # 输出结果文本框
         self.result_label = Label(self.window, text="输出日志：")
         self.result_label.place(x=10, y=70)
         self.result_text = Text(self.window, width=120, height=30)
         self.result_text.place(x=10, y=100)
-        # 转阿拉伯数字控件
+        # 逆文本标准化控件
         self.an_frame = Frame(self.window)
         self.check_var = BooleanVar()
-        self.to_an_check = Checkbutton(self.an_frame, text='中文数字转阿拉伯数字', variable=self.check_var, command=self.to_an_state)
+        self.to_an_check = Checkbutton(self.an_frame, text='逆文本标准化', variable=self.check_var, command=self.to_itn_state)
         self.to_an_check.grid(row=0)
-        self.to_an_check.select()
         self.an_frame.grid(row=1)
         self.an_frame.place(x=700, y=10)
 
-        # 获取数据生成器，处理数据和获取字典需要
-        self.audio_process = AudioInferProcess(vocab_filepath=args.vocab_path, mean_std_filepath=args.mean_std_path)
-
-        # 获取识别器中文数字转阿拉伯数字
-        self.predictor = Predictor(model_dir=args.model_dir, audio_process=self.audio_process,
-                                   decoding_method=args.decoding_method, alpha=args.alpha, beta=args.beta,
-                                   lang_model_path=args.lang_model_path, beam_size=args.beam_size,
-                                   cutoff_prob=args.cutoff_prob, cutoff_top_n=args.cutoff_top_n, use_gpu=args.use_gpu,
+        # 获取识别器
+        self.predictor = Predictor(model_dir=args.model_dir,
+                                   vocab_path=args.vocab_path,
+                                   decoder=args.decoder,
+                                   alpha=args.alpha,
+                                   beta=args.beta,
+                                   lang_model_path=args.lang_model_path,
+                                   beam_size=args.beam_size,
+                                   cutoff_prob=args.cutoff_prob,
+                                   cutoff_top_n=args.cutoff_top_n,
+                                   use_gpu=args.use_gpu,
                                    enable_mkldnn=args.enable_mkldnn)
 
-    # 是否中文数字转阿拉伯数字
-    def to_an_state(self):
-        self.to_an = self.check_var.get()
+    # 是否逆文本标准化
+    def to_itn_state(self):
+        self.to_itn = self.check_var.get()
 
-    # 预测短语音线程
+    # 预测语音线程
     def predict_audio_thread(self):
         if not self.predicting:
             self.wav_path = askopenfilename(filetypes=[("音频文件", "*.wav"), ("音频文件", "*.mp3")], initialdir='./dataset')
@@ -104,48 +102,13 @@ class SpeechRecognitionApp:
         else:
             tkinter.messagebox.showwarning('警告', '正在预测，请等待上一轮预测结束！')
 
-    # 预测短语音
+    # 预测语音
     def predict_audio(self, wav_path):
         self.predicting = True
         try:
             start = time.time()
-            score, text = self.predictor.predict(audio_path=wav_path, to_an=self.to_an)
-            self.result_text.insert(END, "消耗时间：%dms, 识别结果: %s, 得分: %d\n" % (
-            round((time.time() - start) * 1000), text, score))
-        except Exception as e:
-            print(e)
-        self.predicting = False
-
-    # 预测长语音线程
-    def predict_long_audio_thread(self):
-        if not self.predicting:
-            self.wav_path = askopenfilename(filetypes=[("音频文件", "*.wav"), ("音频文件", "*.mp3")], initialdir='./dataset')
-            if self.wav_path == '': return
-            self.result_text.delete('1.0', 'end')
-            self.result_text.insert(END, "已选择音频文件：%s\n" % self.wav_path)
-            self.result_text.insert(END, "正在识别中...\n")
-            _thread.start_new_thread(self.predict_long_audio, (self.wav_path, ))
-        else:
-            tkinter.messagebox.showwarning('警告', '正在预测，请等待上一轮预测结束！')
-
-    # 预测长语音
-    def predict_long_audio(self, wav_path):
-        self.predicting = True
-        try:
-            start = time.time()
-            # 分割长音频
-            audios_path = crop_audio_vad(wav_path)
-            texts = ''
-            scores = []
-            # 执行识别
-            for i, audio_path in enumerate(audios_path):
-                score, text = self.predictor.predict(audio_path=audio_path, to_an=self.to_an)
-                texts = texts + '，' + text
-                scores.append(score)
-                self.result_text.insert(END, "第%d个分割音频, 得分: %d, 识别结果: %s\n" % (i, score, text))
-            self.result_text.insert(END, "=====================================================\n")
-            self.result_text.insert(END, "最终结果，消耗时间：%d, 得分: %d, 识别结果: %s\n" %
-                                    (round((time.time() - start) * 1000), sum(scores) / len(scores), texts))
+            text = self.predictor.predict(audio_path=wav_path, to_itn=self.to_itn)
+            self.result_text.insert(END, f"消耗时间：{round((time.time() - start) * 1000)}ms, 识别结果: {text}\n")
         except Exception as e:
             print(e)
         self.predicting = False

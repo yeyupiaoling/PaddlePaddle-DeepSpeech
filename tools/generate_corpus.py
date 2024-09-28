@@ -1,8 +1,6 @@
 import os
 import re
 
-import cn2an
-
 
 # 判断是否为中文字符
 def is_uchar(in_str):
@@ -41,7 +39,6 @@ with open('corpus.txt', 'w', encoding='utf-8') as f_write:
             line = line.replace('～', '！').replace(',', '，').replace('、', '，').replace('!', '！').replace('"', '')
             line = line.replace('，，', '，').replace('。。', '。').replace('！！', '！').replace('？？', '？')
             line = line.replace('，，', '，').replace('。。', '。').replace('！！', '！').replace('？？', '？')
-            line = cn2an.transform(line, "an2cn")
             if len(line) < 2: continue
             if not is_uchar(line.replace('，', '').replace('。', '').replace('？', '').replace('！', '')): continue
             my_re = re.compile(r'[A-Za-z0-9]', re.S)
