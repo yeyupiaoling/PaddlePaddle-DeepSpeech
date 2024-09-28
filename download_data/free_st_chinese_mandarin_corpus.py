@@ -4,19 +4,13 @@ import os
 from utility import download, unpack
 from utility import add_arguments, print_arguments
 
-DATA_URL = 'https://openslr.magicdatatech.com/resources/38/ST-CMDS-20170001_1-OS.tar.gz'
+DATA_URL = 'https://openslr.trmal.net/resources/38/ST-CMDS-20170001_1-OS.tar.gz'
 MD5_DATA = 'c28ddfc8e4ebe48949bc79a0c23c5545'
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-parser.add_argument("--target_dir",
-                    default="../dataset/audio/",
-                    type=str,
-                    help="存放音频文件的目录 (默认: %(default)s)")
-parser.add_argument("--annotation_text",
-                    default="../dataset/annotation/",
-                    type=str,
-                    help="存放音频标注文件的目录 (默认: %(default)s)")
+add_arg("target_dir", default="../dataset/audio/", type=str, help="存放音频文件的目录")
+add_arg("annotation_text", default="../dataset/annotation/", type=str, help="存放音频标注文件的目录")
 args = parser.parse_args()
 
 
@@ -26,10 +20,10 @@ def create_annotation_text(data_dir, annotation_path):
     for subfolder, _, filelist in sorted(os.walk(data_dir)):
         for file in filelist:
             if '.wav' in file:
-                file = os.path.join(subfolder, file)
+                file = os.path.join(subfolder, file).replace('\\', '/')
                 with open(file[:-4] + '.txt', 'r', encoding='utf-8') as f:
                     line = f.readline()
-                f_a.write(file[3:] + '\t' + line + '\n')
+                f_a.write(file.replace('../', '') + '\t' + line + '\n')
     f_a.close()
 
 
