@@ -5,13 +5,13 @@
 ![support os](https://img.shields.io/badge/os-linux-yellow.svg)
 ![GitHub Repo stars](https://img.shields.io/github/stars/yeyupiaoling/PaddlePaddle-DeepSpeech?style=social)
 
-本项目是基于PaddlePaddle的[DeepSpeech](https://github.com/PaddlePaddle/DeepSpeech) 项目开发的，做了较大的修改，方便训练中文自定义数据集，同时也方便测试和使用。DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，支持Nvidia Jetson等开发板推理预测，该分支为新版本，如果要使用旧版本，请查看[release/1.0分支](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/tree/release/1.0)。
+DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引擎，其论文为[《Baidu's Deep Speech 2 paper》](http://proceedings.mlr.press/v48/amodei16.pdf) ，本项目同时还支持各种数据增强方法，以适应不同的使用场景。支持在Windows，Linux下训练和预测，支持Nvidia Jetson等开发板推理预测，该分支为新版本，如果要使用旧版本，请查看[release/1.1分支](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/tree/release/1.1)。
 
 **动态图版本使用更简单，支持Deepspeech2、Conformer、Squeezeformer模型：[PPASR](https://github.com/yeyupiaoling/PPASR)**
 
 本项目使用的环境：
- - Python 3.7
- - PaddlePaddle 2.2.0
+ - Python 3.11
+ - PaddlePaddle 2.6.1
  - Windows or Ubuntu
 
 ## 更新记录
@@ -24,15 +24,16 @@
  - 2021.08.29: 完成训练代码和预测代码，同时完善相关文档。
  - 2021.08.07: 支持导出预测模型，使用预测模型进行推理。使用webrtcvad工具，实现长语音识别。
  - 2021.08.06: 将项目大部分的代码修改为PaddlePaddle2.0之后的新API。
+ - 2024.10.01: 重构项目，抛弃就得fluid接口。
 
 ## 模型下载
-| 数据集 | 卷积层数量 | 循环神经网络的数量 | 循环神经网络的大小 | 测试集字错率 | 下载地址 |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| aishell(179小时) | 2 | 3 | 1024 | 0.084532 | [点击下载](https://download.csdn.net/download/qq_33200967/21773253) |
-| free_st_chinese_mandarin_corpus(109小时) | 2 | 3 | 1024 | 0.170260 | [点击下载](https://download.csdn.net/download/qq_33200967/21866900) |
-| thchs_30(34小时) | 2 | 3 | 1024 | 0.026838 | [点击下载](https://download.csdn.net/download/qq_33200967/21774247) |
+|                  数据集                   | 循环神经网络的数量 | 循环神经网络的大小 |  测试集字错率  | 下载地址 |
+|:--------------------------------------:|:---------:|:---------:|:--------:|:----:|
+|             aishell(179小时)             |     3     |   1024    | 0.084532 |      |
+| free_st_chinese_mandarin_corpus(109小时) |     3     |   1024    | 0.170260 |      |
+|             thchs_30(34小时)             |     3     |   1024    | 0.026838 |      |
 
-**说明：** 这里提供的是训练参数，如果要用于预测，还需要执行[导出模型](./docs/export_model.md)，使用的解码方法是集束搜索。
+**说明：** 这里使用的解码方法是集束搜索。
 
 >有问题欢迎提 [issue](https://github.com/yeyupiaoling/PaddlePaddle-DeepSpeech/issues) 交流
 
@@ -82,14 +83,7 @@ use_tensorrt: False
 vocab_path: ./dataset/zh_vocab.txt
 wav_path: ./dataset/test.wav
 ------------------------------------------------
-消耗时间：132, 识别结果: 近几年不但我用书给女儿儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书, 得分: 94
-```
-
-
- - 长语音预测
-
-```shell script
-python infer_path.py --wav_path=./dataset/test_vad.wav --is_long_audio=True
+消耗时间：132, 识别结果: 近几年不但我用书给女儿儿压岁也劝说亲朋不要给女儿压岁钱而改送压岁书
 ```
 
 

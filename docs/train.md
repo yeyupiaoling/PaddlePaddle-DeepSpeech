@@ -7,42 +7,65 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py
 
 训练输出结果如下：
 ```
------------  Configuration Arguments -----------
-augment_conf_path: ./conf/augmentation.json
-batch_size: 32
-learning_rate: 0.0001
-max_duration: 20.0
-mean_std_path: ./dataset/mean_std.npz
-min_duration: 0.0
-num_conv_layers: 2
-num_epoch: 50
-num_rnn_layers: 3
-output_model_dir: ./models/param
-pretrained_model: None
-resume_model: None
-rnn_layer_size: 1024
-shuffle_method: batch_shuffle_clipped
-test_manifest: ./dataset/manifest.test
-test_off: False
-train_manifest: ./dataset/manifest.train
-use_gpu: True
-vocab_path: ./dataset/zh_vocab.txt
-------------------------------------------------
-dataset/manifest.noise不存在，已经忽略噪声增强操作！
-[2021-08-31 22:40:36.473431] 训练数据数量：102394
-
-W0831 22:40:36.624647  4879 device_context.cc:404] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.0, Runtime API Version: 10.2
-W0831 22:40:36.626874  4879 device_context.cc:422] device: 0, cuDNN Version: 7.6.
-W0831 22:40:37.996898  4879 parallel_executor.cc:601] Cannot enable P2P access from 0 to 1
-W0831 22:40:37.996917  4879 parallel_executor.cc:601] Cannot enable P2P access from 1 to 0
-W0831 22:40:39.725975  4879 fuse_all_reduce_op_pass.cc:76] Find all_reduce operators: 44. To make the speed faster, some all_reduce ops are fused during training, after fusion, the number of all_reduce ops is 23.
-Train [2021-08-31 22:40:41.633553] epoch: [1/50], batch: [0/1599], learning rate: 0.00020000, train loss: 2053.378662, eta: 3 days, 8:51:04
-Train [2021-08-31 22:41:43.713666] epoch: [1/50], batch: [100/1599], learning rate: 0.00020000, train loss: 86.532333, eta: 12:59:38
-Train [2021-08-31 22:42:40.098206] epoch: [1/50], batch: [200/1599], learning rate: 0.00020000, train loss: 87.101303, eta: 12:07:12
-Train [2021-08-31 22:43:33.444587] epoch: [1/50], batch: [300/1599], learning rate: 0.00020000, train loss: 84.560562, eta: 11:42:34
-Train [2021-08-31 22:44:24.759048] epoch: [1/50], batch: [400/1599], learning rate: 0.00020000, train loss: 81.681633, eta: 11:18:40
-Train [2021-08-31 22:45:14.196539] epoch: [1/50], batch: [500/1599], learning rate: 0.00020000, train loss: 72.275848, eta: 10:27:17
-Train [2021-08-31 22:46:02.194968] epoch: [1/50], batch: [600/1599], learning rate: 0.00020000, train loss: 76.041451, eta: 9:51:43
+2024-09-28 11:57:46.355 | INFO     | utils.utils:print_arguments:11 - ----------- 额外配置参数 -----------
+2024-09-28 11:57:46.355 | INFO     | utils.utils:print_arguments:13 - augment_conf_path: ./conf/augmentation.yml
+2024-09-28 11:57:46.355 | INFO     | utils.utils:print_arguments:13 - batch_size: 8
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - learning_rate: 0.0005
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - max_duration: 20.0
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - mean_istd_path: ./dataset/mean_istd.json
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - metrics_type: cer
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - min_duration: 0.5
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - num_epoch: 100
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - num_rnn_layers: 3
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - output_model_dir: ./models/
+2024-09-28 11:57:46.356 | INFO     | utils.utils:print_arguments:13 - pretrained_model: None
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - resume_model: None
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - rnn_layer_size: 1024
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - test_manifest: ./dataset/manifest.test
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - train_manifest: ./dataset/manifest.train
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - use_gpu: True
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:13 - vocab_path: ./dataset/vocabulary.txt
+2024-09-28 11:57:46.357 | INFO     | utils.utils:print_arguments:14 - ------------------------------------------------
+2024-09-28 11:57:46.365 | INFO     | utils.utils:print_arguments:17 - ----------- 数据增强配置 -----------
+2024-09-28 11:57:46.365 | INFO     | utils.utils:print_arguments:21 - noise:
+2024-09-28 11:57:46.365 | INFO     | utils.utils:print_arguments:28 - 	max_snr_dB: 50
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	min_snr_dB: 10
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	noise_dir: dataset/noise
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:21 - resample:
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	new_sample_rate: [8000, 16000, 24000]
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.0
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:21 - reverb:
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.2
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	reverb_dir: dataset/reverb
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:21 - shift:
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	max_shift_ms: 5
+2024-09-28 11:57:46.366 | INFO     | utils.utils:print_arguments:28 - 	min_shift_ms: -5
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:21 - spec_aug:
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	freq_mask_ratio: 0.15
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	max_time_warp: 5
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	n_freq_masks: 2
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	n_time_masks: 2
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	time_mask_ratio: 0.05
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:21 - spec_sub_aug:
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	max_time: 30
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	num_time_sub: 3
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.367 | INFO     | utils.utils:print_arguments:21 - speed:
+2024-09-28 11:57:46.368 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.368 | INFO     | utils.utils:print_arguments:21 - volume:
+2024-09-28 11:57:46.371 | INFO     | utils.utils:print_arguments:28 - 	max_gain_dBFS: 15
+2024-09-28 11:57:46.371 | INFO     | utils.utils:print_arguments:28 - 	min_gain_dBFS: -15
+2024-09-28 11:57:46.371 | INFO     | utils.utils:print_arguments:28 - 	prob: 0.5
+2024-09-28 11:57:46.371 | INFO     | utils.utils:print_arguments:31 - ------------------------------------------------
+2024-09-28 11:57:46.373 | INFO     | yeaudio.augmentation:__init__:135 - 噪声增强的噪声音频文件数量: 0
+2024-09-28 11:57:46.374 | INFO     | yeaudio.augmentation:__init__:170 - 混响增强音频文件数量: 0
+W0928 11:57:47.821491 35864 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 12.4, Runtime API Version: 11.7
+W0928 11:57:47.825518 35864 gpu_resources.cc:164] device: 0, cuDNN Version: 8.4.
+2024-09-28 11:57:50.527 | INFO     | __main__:train:146 - Train epoch: [1/200], batch: [0/17664], loss: 63.13452, learning_rate: 0.00000004, eta: 110 days, 1:57:04
+2024-09-28 11:58:04.960 | INFO     | __main__:train:146 - Train epoch: [1/200], batch: [100/17664], loss: 55.69350, learning_rate: 0.00000204, eta: 5 days, 21:14:44
 ```
 
 
@@ -62,12 +85,12 @@ visualdl --logdir=log --host=0.0.0.0
 如果在训练的时候中断了，可以通过参数`resume_model`指定模型，然后在这基础上恢复训练，在启动训练之后会加载该模型，并以当前epoch继续训练。
 
 ```shell script
-CUDA_VISIBLE_DEVICES=0,1 python train.py --resume_model=models/param/23.pdparams
+CUDA_VISIBLE_DEVICES=0,1 python train.py --resume_model=./models/epoch_100/
 ```
 
 # 微调模型
-如果读者已经训练或者下载了模型，想使用自己的数据集微调模型，除了使用`resume_model`参数指定模型外，还需要修改训练的`num_epoch`，因为该模型已经是最大`num_epoch`保存的模型，如果不修改参数的话，可能直接就停止训练了，可以设置为60，模型就会在原来的模型在训练10个epoch。数据集需要加上原来的数据合并一起训练。
+如果读者已经训练或者下载了模型，想使用自己的数据集微调模型，除了使用`resume_model`参数指定模型外，还需要修改训练的`num_epoch`，因为该模型已经是最大`num_epoch`保存的模型，如果不修改参数的话，可能直接就停止训练了，可以设置为110，模型就会在原来的模型在训练10个epoch。数据集需要加上原来的数据合并一起训练。
 
 ```shell script
-CUDA_VISIBLE_DEVICES=0,1 python train.py --resume_model=models/param/50.pdparams --num_epoch=60
+CUDA_VISIBLE_DEVICES=0,1 python train.py --resume_model=./models/epoch_100/ --num_epoch=110
 ```

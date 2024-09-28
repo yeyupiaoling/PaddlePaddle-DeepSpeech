@@ -5,68 +5,86 @@
 目前提供五个可选的增强组件供选择，配置并插入处理过程。
 
 - 噪声干扰（需要背景噪音的音频文件）
+- 混响（需要混响音频文件）
+- 随机采样率增强
 - 速度扰动
 - 移动扰动
 - 音量扰动
-- SpenAugment增强方式
+- SpecAugment增强方式
+- SpecSubAugment增强方式
 
-为了让训练模块知道需要哪些增强组件以及它们的处理顺序，需要事先准备一个JSON格式的*扩展配置文件*。例如：
+在项目提供了数据增强的配置参数，路径在`configs/augmentation.yml`，示例配置文件如下所示：
+```yaml
+# 语速增强
+speed:
+  # 增强概率
+  prob: 0.5
 
-```json
-[
-  {
-    "type": "noise",
-    "params": {
-      "min_snr_dB": 10,
-      "max_snr_dB": 50,
-      "noise_manifest_path": "dataset/manifest.noise"
-    },
-    "prob": 0.5
-  },
-  {
-    "type": "speed",
-    "params": {
-      "min_speed_rate": 0.9,
-      "max_speed_rate": 1.1
-    },
-    "prob": 0.5
-  },
-  {
-    "type": "shift",
-    "params": {
-      "min_shift_ms": -5,
-      "max_shift_ms": 5
-    },
-    "prob": 0.5
-  },
-  {
-    "type": "volume",
-    "params": {
-      "min_gain_dBFS": -15,
-      "max_gain_dBFS": 15
-    },
-    "prob": 0.5
-  },
-  {
-    "type": "specaug",
-    "params": {
-      "F": 10,
-      "T": 50,
-      "n_freq_masks": 2,
-      "n_time_masks": 2,
-      "p": 1.0,
-      "W": 80,
-      "adaptive_number_ratio": 0,
-      "adaptive_size_ratio": 0,
-      "max_n_time_masks": 20
-    },
-    "prob": 1.0
-  }
-]
+# 音量增强
+volume:
+  # 增强概率
+  prob: 0.5
+  # 最小增益
+  min_gain_dBFS: -15
+  # 最大增益
+  max_gain_dBFS: 15
+
+# 位移增强
+shift:
+  # 增强概率
+  prob: 0.5
+  # 最小偏移，单位为毫秒
+  min_shift_ms: -5
+  # 最大偏移，单位为毫秒
+  max_shift_ms: 5
+
+# 重采样增强
+resample:
+  # 增强概率
+  prob: 0.0
+  # 最小增益
+  new_sample_rate: [ 8000, 16000, 24000 ]
+
+# 噪声增强
+noise:
+  # 增强概率
+  prob: 0.5
+  # 噪声增强的噪声文件夹
+  noise_dir: 'dataset/noise'
+  # 针对噪声的最小音量增益
+  min_snr_dB: 10
+  # 针对噪声的最大音量增益
+  max_snr_dB: 50
+
+# 混响增强
+reverb:
+  # 增强概率
+  prob: 0.2
+  # 混响增强的混响文件夹
+  reverb_dir: 'dataset/reverb'
+
+# Spec增强
+spec_aug:
+  # 增强概率
+  prob: 0.5
+  # 频域掩蔽的比例
+  freq_mask_ratio: 0.15
+  # 频域掩蔽次数
+  n_freq_masks: 2
+  # 频域掩蔽的比例
+  time_mask_ratio: 0.05
+  # 频域掩蔽次数
+  n_time_masks: 2
+  # 最大时间扭曲
+  max_time_warp: 5
+
+spec_sub_aug:
+  # 增强概率
+  prob: 0.5
+  # 时间替换的最大宽度
+  max_time: 30
+  # 时间替换的的次数
+  num_time_sub: 3
 ```
 
-当`train.py`的`--augment_conf_file`参数被设置为上述示例配置文件的路径时，每个epoch中的每个音频片段都将被处理。首先，均匀随机采样速率会有50％的概率在 0.95 和 1.05
-之间对音频片段进行速度扰动。然后，音频片段有 50％ 的概率在时间上被挪移，挪移偏差值是 -5 毫秒和 5 毫秒之间的随机采样。最后，这个新合成的音频片段将被传送给特征提取器，以用于接下来的训练。
-
-使用数据增强技术时要小心，由于扩大了训练和测试集的差异，不恰当的增强会对训练模型不利，导致训练和预测的差距增大。
-
+当`train.py`的`--data_augment_configs`参数被设置为上述示例配置文件的路径时，每个epoch中的每个音频片段都将被处理。使用数据增强技术时要小心，由于扩大了训练和测试集的差异，不恰当的增强会对训练模型不利，导致训练和预测的差距增大。
