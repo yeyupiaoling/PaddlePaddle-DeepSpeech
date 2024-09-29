@@ -37,7 +37,7 @@ add_arg('mean_istd_path',   str,    './dataset/mean_istd.json',    "均值和标
 add_arg('vocab_path',       str,    './dataset/vocabulary.txt',    "数据集的字典文件路径")
 add_arg('pretrained_model', str,    './models/epoch_15/',          "模型文件路径")
 add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
-add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索(ctc_beam_search)、贪婪策略(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
+add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('metrics_type',     str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 

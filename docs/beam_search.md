@@ -1,6 +1,6 @@
 # 集束搜索解码
 
-本项目目前支持两种解码方法，分别是集束搜索(ctc_beam_search)和贪婪策略(ctc_greedy)，项目全部默认都是使用贪婪策略解码的，首先要安装`paddlespeech_ctcdecoders`，执行下面命令安装。
+本项目目前支持两种解码方法，分别是集束搜索解码器(ctc_beam_search)和贪心解码器(ctc_greedy)，项目全部默认都是使用贪婪策略解码的，首先要安装`paddlespeech_ctcdecoders`，执行下面命令安装。
 ```shell
 python -m pip install  -U -i https://ppasr.yeyupiaoling.cn/pypi/simple/
 ```
