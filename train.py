@@ -21,12 +21,14 @@ from model_utils.model import DeepSpeech2Model
 from utils.checkpoint import load_checkpoint, load_pretrained, save_checkpoint
 from utils.metrics import wer, cer
 from utils.scheduler import WarmupLR
+from utils.summary import summary
 from utils.utils import add_arguments, print_arguments, dict_to_object, labels_to_string
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('batch_size',       int,    8,      "训练每一批数据的大小")
+add_arg('num_workers',      int,    8,      "读取数据的线程数量")
 add_arg('num_epoch',        int,    200,    "训练的轮数")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
@@ -80,7 +82,7 @@ def train():
     train_loader = DataLoader(dataset=train_dataset,
                               collate_fn=collate_fn,
                               batch_sampler=train_batch_sampler,
-                              num_workers=4)
+                              num_workers=args.num_workers)
 
     test_dataset = CustomDataset(data_manifest=args.test_manifest,
                                  audio_featurizer=audio_featurizer,
@@ -92,13 +94,15 @@ def train():
     test_loader = DataLoader(dataset=test_dataset,
                              collate_fn=collate_fn,
                              batch_size=args.batch_size,
-                             num_workers=4)
+                             num_workers=args.num_workers)
 
     model = DeepSpeech2Model(input_dim=train_dataset.feature_dim,
                              vocab_size=train_dataset.vocab_size,
                              mean_istd_path=args.mean_istd_path,
                              num_rnn_layers=args.num_rnn_layers,
                              rnn_layer_size=args.rnn_layer_size)
+    input_data = [paddle.rand((1, 100, train_dataset.feature_dim)), paddle.to_tensor([100], dtype='int64')]
+    summary(model, inputs=input_data)
 
     scheduler = WarmupLR(learning_rate=args.learning_rate)
     optimizer = paddle.optimizer.Adam(parameters=model.parameters(),

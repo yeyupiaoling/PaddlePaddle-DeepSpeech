@@ -1,6 +1,4 @@
 import numpy as np
-import paddle
-from paddleaudio.compliance.kaldi import fbank
 
 
 class AudioFeaturizer(object):
@@ -25,6 +23,9 @@ class AudioFeaturizer(object):
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
         self._mode = mode
+        self._stride_ms = 10.0
+        self._window_ms = 20.0
+        self._eps = 1e-14
 
     def featurize(self, audio_segment):
         """从AudioSegment中提取音频特征
@@ -40,17 +41,29 @@ class AudioFeaturizer(object):
         # decibel normalization
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
-        dither = 0.1 if self._mode == "train" else 0.0
-        waveform = paddle.to_tensor(np.expand_dims(audio_segment.samples, 0), dtype=paddle.float32)
-        # 计算Fbank
-        mat = fbank(waveform,
-                    n_mels=80,
-                    frame_shift=10,
-                    frame_length=25,
-                    dither=dither,
-                    sr=audio_segment.sample_rate)
-        fbank_feat = mat.numpy()
-        return fbank_feat
+        samples = audio_segment.samples
+        sample_rate = audio_segment.sample_rate
+        stride_size = int(0.001 * sample_rate * self._stride_ms)
+        window_size = int(0.001 * sample_rate * self._window_ms)
+        truncate_size = (len(samples) - window_size) % stride_size
+        samples = samples[:len(samples) - truncate_size]
+        nshape = (window_size, (len(samples) - window_size) // stride_size + 1)
+        nstrides = (samples.strides[0], samples.strides[0] * stride_size)
+        windows = np.lib.stride_tricks.as_strided(samples, shape=nshape, strides=nstrides)
+        assert np.all(windows[:, 1] == samples[stride_size:(stride_size + window_size)])
+        # 快速傅里叶变换
+        weighting = np.hanning(window_size)[:, None]
+        fft = np.fft.rfft(windows * weighting, n=None, axis=0)
+        fft = np.absolute(fft)
+        fft = fft ** 2
+        scale = np.sum(weighting ** 2) * sample_rate
+        fft[1:-1, :] *= (2.0 / scale)
+        fft[(0, -1), :] /= scale
+        freqs = float(sample_rate) / window_size * np.arange(fft.shape[0])
+        ind = np.where(freqs <= (sample_rate / 2))[0][-1] + 1
+        features = np.log(fft[:ind, :] + self._eps)
+        features = features.T
+        return features
 
     @property
     def feature_dim(self):
@@ -59,4 +72,4 @@ class AudioFeaturizer(object):
         :return: 特征大小
         :rtype: int
         """
-        return 80
+        return 161
