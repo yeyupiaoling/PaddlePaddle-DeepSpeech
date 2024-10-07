@@ -32,11 +32,11 @@ add_arg('num_proc_bsearch', int,    8,      "集束搜索解码相关参数，�
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
 add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('test_manifest',    str,    './dataset/manifest.test',     "需要评估的测试数据列表")
-add_arg('mean_istd_path',   str,    './dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
-add_arg('vocab_path',       str,    './dataset/vocabulary.txt',    "数据集的字典文件路径")
-add_arg('pretrained_model', str,    './models/epoch_15/',          "模型文件路径")
-add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
+add_arg('test_manifest',    str,    'dataset/manifest.test',     "需要评估的测试数据列表")
+add_arg('mean_istd_path',   str,    'dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
+add_arg('vocab_path',       str,    'dataset/vocabulary.txt',    "数据集的字典文件路径")
+add_arg('pretrained_model', str,    'models/epoch_15/',          "模型文件路径")
+add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
 add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('metrics_type',     str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
@@ -98,7 +98,7 @@ def evaluate():
                             f'当前{args.metrics_type}：{round(sum(error_results) / len(error_results), 6)}')
                 logger.info('-' * 70)
     error_result = float(sum(error_results) / len(error_results)) if len(error_results) > 0 else -1
-    print(f"消耗时间：{time.time() - start}s, [{args.metrics_type}]：{error_result}")
+    print(f"消耗时间：{int(time.time() - start)}s, {args.metrics_type}：{error_result}")
 
 
 def decoder_result(outs, vocabulary):
@@ -108,7 +108,7 @@ def decoder_result(outs, vocabulary):
         try:
             from decoders.beam_search_decoder import BeamSearchDecoder
             beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.beam_size, args.cutoff_prob,
-                                                    args.cutoff_top_n, args.vocab_list,
+                                                    args.cutoff_top_n, vocabulary,
                                                     language_model_path=args.lang_model_path)
         except ModuleNotFoundError:
             logger.warning('==================================================================')
