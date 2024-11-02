@@ -9,6 +9,7 @@ from yeaudio.audio import AudioSegment
 from zhconv import convert
 
 from data_utils.normalizer import FeatureNormalizer
+from data_utils.tokenizer import Tokenizer
 from utils.utils import add_arguments, print_arguments, read_manifest
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -17,10 +18,12 @@ add_arg('annotation_path',      str,  'dataset/annotation/',      '标注文件�
 add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据清单，包括音频路径和标注信息')
 add_arg('max_test_manifest',    int,  10000,                      '最大的测试数据数量')
 add_arg('count_threshold',      int,  2,                          '字符计数的截断阈值，0为不做限制')
-add_arg('vocab_path',           str,  'dataset/vocabulary.txt',   '生成的数据字典文件')
+add_arg('vocab_dir',            str,  'dataset/vocab_model',      '生成的数据字典模型文件夹')
+add_arg('vocab_model_type',     str,  'char',                     '生成的数据字典模型类型，中文等字符类型的用char，其他的用unigram')
+add_arg('vocab_size',           int,  8000,                       '生成的数据字典的大小，如果vocab_model_type是char则无效')
 add_arg('manifest_path',        str,  'dataset/manifest.train',   '数据列表路径')
 add_arg('num_samples',          int,  1000000,                    '用于计算均值和标准值得音频数量，当为-1使用全部数据')
-add_arg('mean_istd_filepath',   str,  './dataset/mean_istd.json', '均值和标准值得json文件路径，后缀 (.json)')
+add_arg('mean_istd_filepath',   str,  'dataset/mean_istd.json',   '均值和标准值得json文件路径，后缀 (.json)')
 args = parser.parse_args()
 
 
@@ -144,18 +147,12 @@ def main():
                     manifest_path_prefix=args.manifest_prefix)
 
     print('开始生成数据字典...')
-    counter = Counter()
-    # 获取全部数据列表中的标签字符
-    count_manifest(counter, args.manifest_path)
-    # 为每一个字符都生成一个ID
-    count_sorted = sorted(counter.items(), key=lambda x: x[1], reverse=True)
-    with open(args.vocab_path, 'w', encoding='utf-8') as fout:
-        fout.write('<blank>\t-1\n')
-        for char, count in count_sorted:
-            # 跳过指定的字符阈值，超过这大小的字符都忽略
-            if count < args.count_threshold: break
-            fout.write('%s\t%d\n' % (char, count))
-    print('数据词汇表已生成完成，保存与：%s' % args.vocab_path)
+    tokenizer = Tokenizer(vocab_model_dir=args.vocab_dir,
+                          model_type=args.vocab_model_type,
+                          build_vocab_size=args.vocab_size,
+                          is_build_vocab=True)
+    tokenizer.build_vocab(manifest_paths=[args.manifest_path])
+    print('数据词汇表已生成完成，保存与：%s' % args.vocab_dir)
     print('='*70)
 
     print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)

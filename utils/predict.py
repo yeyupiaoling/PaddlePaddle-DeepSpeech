@@ -6,15 +6,15 @@ import paddle.inference as paddle_infer
 from loguru import logger
 from yeaudio.audio import AudioSegment
 
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
-from data_utils.featurizer.text_featurizer import TextFeaturizer
-from decoders.ctc_greedy_decoder import greedy_decoder
+from data_utils.audio_featurizer import AudioFeaturizer
+from data_utils.tokenizer import Tokenizer
+from decoders.ctc_greedy_search import ctc_greedy_search
 
 
 class Predictor:
     def __init__(self,
                  model_dir,
-                 vocab_path,
+                 vocab_dir,
                  decoder='ctc_greedy',
                  alpha=1.2,
                  beta=0.35,
@@ -27,7 +27,7 @@ class Predictor:
                  enable_mkldnn=False,
                  num_threads=10):
         self.audio_featurizer = AudioFeaturizer(mode="infer")
-        self.textFeaturizer = TextFeaturizer(vocab_path)
+        self.tokenizer = Tokenizer(vocab_dir)
         self.decoder = decoder
         self.use_gpu = use_gpu
         self.inv_normalizer = None
@@ -63,7 +63,7 @@ class Predictor:
         self.output_names = self.predictor.get_output_names()
 
         # 初始化解码器
-        vocab_list = self.textFeaturizer.vocab_list
+        vocab_list = self.tokenizer.vocab_list
         self.__init_decoder(alpha, beta, beam_size, cutoff_prob, cutoff_top_n, vocab_list, lang_model_path)
         # 预热
         warmup_audio_path = 'dataset/test.wav'
@@ -122,7 +122,7 @@ class Predictor:
 
     def _infer(self, audio_segment, to_itn=False):
         # 进行预处理
-        audio_feature = self.audio_featurizer.featurize(audio_segment)
+        audio_feature = self.audio_featurizer.featurize(audio_segment.samples, audio_segment.sample_rate)
         audio_len = audio_feature.shape[1]
         audio_data = np.array(audio_feature).astype('float32')[np.newaxis, :]
         seq_len_data = np.array([audio_len]).astype('int64')
@@ -137,18 +137,21 @@ class Predictor:
         self.predictor.run()
 
         # 获取输出
-        output_handle = self.predictor.get_output_handle(self.output_names[0])
-        output_data = output_handle.copy_to_cpu()[0]
+        ctc_probs_handle = self.predictor.get_output_handle(self.output_names[0])
+        ctc_probs_data = ctc_probs_handle.copy_to_cpu()
+        ctc_lens_handle = self.predictor.get_output_handle(self.output_names[1])
+        ctc_lens_data = ctc_lens_handle.copy_to_cpu()
 
         # 执行解码
         if self.decoder == 'ctc_beam_search':
             # 集束搜索解码策略
-            result = self.beam_search_decoder.decode_beam_search_offline(probs_split=output_data)
+            text = self.beam_search_decoder.decode_beam_search_offline(probs_split=output_data)
         else:
             # 贪心解码策略
-            result = greedy_decoder(probs_seq=output_data, vocabulary=self.textFeaturizer.vocab_list)
-
-        score, text = result[0], result[1]
+            out_tokens = ctc_greedy_search(ctc_probs=ctc_probs_data,
+                                           ctc_lens=ctc_lens_data,
+                                           blank_id=self.tokenizer.blank_id)
+            text = self.tokenizer.ids2text([t for t in out_tokens])[0]
         # 是否逆文本标准化
         if to_itn:
             if self.inv_normalizer is None:

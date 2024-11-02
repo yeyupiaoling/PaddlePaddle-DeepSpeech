@@ -94,7 +94,7 @@ class DeepSpeech2Model(nn.Layer):
             x = self.layernorm_list[i](x)
         x = self.output(x)
         ctc_probs = F.softmax(x, axis=2)
-        return ctc_probs
+        return ctc_probs, x_lens
 
     def export(self):
         static_model = paddle.jit.to_static(

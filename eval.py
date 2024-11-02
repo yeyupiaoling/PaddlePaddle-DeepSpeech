@@ -4,19 +4,19 @@ import os
 import time
 
 import paddle
+from data_utils.audio_featurizer import AudioFeaturizer
 from loguru import logger
 from paddle.io import DataLoader
 from tqdm import tqdm
 
 from data_utils.collate_fn import collate_fn
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
-from data_utils.featurizer.text_featurizer import TextFeaturizer
 from data_utils.reader import CustomDataset
-from decoders.ctc_greedy_decoder import greedy_decoder_batch
+from data_utils.tokenizer import Tokenizer
+from decoders.ctc_greedy_search import ctc_greedy_search
 from model_utils.model import DeepSpeech2Model
 from utils.checkpoint import load_pretrained
 from utils.metrics import wer, cer
-from utils.utils import add_arguments, print_arguments, labels_to_string
+from utils.utils import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
@@ -34,8 +34,8 @@ add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，�
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
 add_arg('test_manifest',    str,    'dataset/manifest.test',     "需要评估的测试数据列表")
 add_arg('mean_istd_path',   str,    'dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
-add_arg('vocab_path',       str,    'dataset/vocabulary.txt',    "数据集的字典文件路径")
-add_arg('pretrained_model', str,    'models/epoch_15/',          "模型文件路径")
+add_arg('vocab_dir',        str,    'dataset/vocab_model',       "数据字典模型文件夹")
+add_arg('pretrained_model', str,    'models/epoch_0/',           "模型文件路径")
 add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
 add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('metrics_type',     str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
@@ -55,11 +55,11 @@ def evaluate():
         paddle.device.set_device("cpu")
 
     audio_featurizer = AudioFeaturizer(mode="train")
-    text_featurizer = TextFeaturizer(args.vocab_path)
+    tokenizer = Tokenizer(args.vocab_dir)
     # 获取苹果数据
     test_dataset = CustomDataset(data_manifest=args.test_manifest,
                                  audio_featurizer=audio_featurizer,
-                                 text_featurizer=text_featurizer,
+                                 tokenizer=tokenizer,
                                  min_duration=args.min_duration,
                                  max_duration=args.max_duration,
                                  mode="eval")
@@ -82,9 +82,13 @@ def evaluate():
     with paddle.no_grad():
         for batch_id, batch in enumerate(tqdm(test_loader())):
             inputs, labels, input_lens, label_lens = batch
-            output = model.predict(inputs, input_lens).numpy()
-            out_strings = decoder_result(output, text_featurizer.vocab_list)
-            labels_str = labels_to_string(labels, text_featurizer.vocab_list)
+            ctc_probs, ctc_lens = model.predict(inputs, input_lens)
+            ctc_probs, ctc_lens = ctc_probs.numpy(), ctc_lens.numpy()
+            out_strings = decoder_result(ctc_probs, ctc_lens, tokenizer)
+            labels = labels.numpy().tolist()
+            # 移除每条数据的-1值
+            labels = [list(filter(lambda x: x != -1, label)) for label in labels]
+            labels_str = tokenizer.ids2text(labels)
             for out_string, label in zip(*(out_strings, labels_str)):
                 # 计算字错率或者词错率
                 if args.metrics_type == 'wer':
@@ -101,14 +105,14 @@ def evaluate():
     print(f"消耗时间：{int(time.time() - start)}s, {args.metrics_type}：{error_result}")
 
 
-def decoder_result(outs, vocabulary):
+def decoder_result(ctc_probs, ctc_lens, tokenizer:Tokenizer):
     global beam_search_decoder
     # 集束搜索方法的处理
     if args.decoder == "ctc_beam_search" and beam_search_decoder is None:
         try:
             from decoders.beam_search_decoder import BeamSearchDecoder
             beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.beam_size, args.cutoff_prob,
-                                                    args.cutoff_top_n, vocabulary,
+                                                    args.cutoff_top_n, tokenizer.vocab_list,
                                                     language_model_path=args.lang_model_path)
         except ModuleNotFoundError:
             logger.warning('==================================================================')
@@ -120,9 +124,10 @@ def decoder_result(outs, vocabulary):
             args.decoder = 'ctc_greedy'
 
     # 执行解码
-    outs = [outs[i, :, :] for i, _ in enumerate(range(outs.shape[0]))]
+    # outs = [outs[i, :, :] for i, _ in enumerate(range(outs.shape[0]))]
     if args.decoder == 'ctc_greedy':
-        result = greedy_decoder_batch(outs, vocabulary)
+        out_tokens = ctc_greedy_search(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
+        result = tokenizer.ids2text([t for t in out_tokens])
     else:
         result = beam_search_decoder.decode_batch_beam_search_offline(probs_split=outs)
     return result

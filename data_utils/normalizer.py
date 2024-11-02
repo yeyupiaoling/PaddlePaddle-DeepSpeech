@@ -11,7 +11,7 @@ from tqdm import tqdm
 from paddle.io import Dataset, DataLoader
 from data_utils.utils import read_manifest
 from yeaudio.audio import AudioSegment
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
+from data_utils.audio_featurizer import AudioFeaturizer
 
 
 class FeatureNormalizer(object):
@@ -95,7 +95,7 @@ class NormalizerDataset(Dataset):
         instance = self.sampled_manifest[idx]
         # 获取音频特征
         audio = AudioSegment.from_file(instance["audio_filepath"])
-        feature = self.audio_featurizer.featurize(audio)
+        feature = self.audio_featurizer.featurize(audio.samples, audio.sample_rate)
         return feature.astype(np.float32), 0
 
     def __len__(self):

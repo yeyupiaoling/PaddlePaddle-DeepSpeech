@@ -8,8 +8,8 @@ from yeaudio.audio import AudioSegment
 from yeaudio.augmentation import ReverbPerturbAugmentor, SpecAugmentor, SpecSubAugmentor
 from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor
 
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
-from data_utils.featurizer.text_featurizer import TextFeaturizer
+from data_utils.audio_featurizer import AudioFeaturizer
+from data_utils.tokenizer import Tokenizer
 
 
 # 音频数据加载器
@@ -17,7 +17,7 @@ class CustomDataset(Dataset):
     def __init__(self,
                  data_manifest: [str or List],
                  audio_featurizer: AudioFeaturizer,
-                 text_featurizer: TextFeaturizer = None,
+                 tokenizer: Tokenizer = None,
                  min_duration=0,
                  max_duration=20,
                  aug_conf=None,
@@ -38,7 +38,7 @@ class CustomDataset(Dataset):
         self.spec_augment = None
         self.spec_sub_augment = None
         self._audio_featurizer = audio_featurizer
-        self._text_featurizer = text_featurizer
+        self._tokenizer = tokenizer
         # 获取数据增强器
         if mode == "train" and aug_conf is not None:
             self.get_augmentor(aug_conf)
@@ -70,16 +70,17 @@ class CustomDataset(Dataset):
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
         # 预处理，提取特征
-        feature = self._audio_featurizer.featurize(audio_segment)
-        transcript = self._text_featurizer.featurize(transcript)
+        feature = self._audio_featurizer.featurize(audio_segment.samples, audio_segment.sample_rate)
+        text_ids = self._tokenizer.text2ids(transcript)
         # 特征增强
         if self.mode == 'train':
             if self.spec_augment is not None:
                 feature = self.spec_augment(feature)
             if self.spec_sub_augment is not None:
                 feature = self.spec_sub_augment(feature)
-        transcript = np.array(transcript, dtype=np.int32)
-        return feature.astype(np.float32), transcript
+        feature = feature.astype(np.float32)
+        text_ids = np.array(text_ids, dtype=np.int32)
+        return feature, text_ids
 
     def __len__(self):
         return len(self.data_list)
@@ -100,7 +101,7 @@ class CustomDataset(Dataset):
         :return: 词汇表大小
         :rtype: int
         """
-        return self._text_featurizer.vocab_size
+        return self._tokenizer.vocab_size
 
     @property
     def vocab_list(self):
@@ -109,7 +110,7 @@ class CustomDataset(Dataset):
         :return: 词汇表列表
         :rtype: list
         """
-        return self._text_featurizer.vocab_list
+        return self._tokenizer.vocab_list
 
     # 获取数据增强器
     def get_augmentor(self, aug_conf):

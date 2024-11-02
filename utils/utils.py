@@ -66,15 +66,6 @@ def dict_to_object(dict_obj):
     return inst
 
 
-def labels_to_string(label, vocabulary, blank_index=0):
-    labels = []
-    for l in label:
-        index_list = [index for index in l if index != blank_index and index != -1]
-        labels.append(
-            (''.join([vocabulary[index] for index in index_list])).replace('<space>', ' ').replace('<unk>', ''))
-    return labels
-
-
 def read_manifest(manifest_path, max_duration=float('inf'), min_duration=0.5):
     """解析数据列表
     持续时间在[min_duration, max_duration]之外的实例将被过滤。

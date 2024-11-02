@@ -12,17 +12,17 @@ from tqdm import tqdm
 from visualdl import LogWriter
 
 from data_utils.collate_fn import collate_fn
-from data_utils.featurizer.audio_featurizer import AudioFeaturizer
-from data_utils.featurizer.text_featurizer import TextFeaturizer
+from data_utils.audio_featurizer import AudioFeaturizer
+from data_utils.tokenizer import Tokenizer
 from data_utils.reader import CustomDataset
 from data_utils.sampler import SortagradBatchSampler
-from decoders.ctc_greedy_decoder import greedy_decoder_batch
+from decoders.ctc_greedy_search import ctc_greedy_search
 from model_utils.model import DeepSpeech2Model
 from utils.checkpoint import load_checkpoint, load_pretrained, save_checkpoint
 from utils.metrics import wer, cer
 from utils.scheduler import WarmupLR
 from utils.summary import summary
-from utils.utils import add_arguments, print_arguments, dict_to_object, labels_to_string
+from utils.utils import add_arguments, print_arguments, dict_to_object
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
@@ -37,12 +37,12 @@ add_arg('min_duration',     float,  0.5,    "最短的用于训练的音频长�
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
 add_arg('resume_model',            str,  None,    "恢复训练，当为None则不使用预训练模型")
 add_arg('pretrained_model',        str,  None,    "使用预训练模型的路径，当为None是不使用预训练模型")
-add_arg('train_manifest',          str,  './dataset/manifest.train',     "训练的数据列表")
-add_arg('test_manifest',           str,  './dataset/manifest.test',      "测试的数据列表")
-add_arg('mean_istd_path',          str,  './dataset/mean_istd.json',     "均值和标准值得json文件路径，后缀 (.json)")
-add_arg('vocab_path',              str,  './dataset/vocabulary.txt',     "数据集的词汇表文件路径")
-add_arg('output_model_dir',        str,  './models/',                    "保存训练模型的文件夹")
-add_arg('augment_conf_path',       str,  './conf/augmentation.yml',      "数据增强的配置文件，为json格式")
+add_arg('train_manifest',          str,  'dataset/manifest.train',     "训练的数据列表")
+add_arg('test_manifest',           str,  'dataset/manifest.test',      "测试的数据列表")
+add_arg('mean_istd_path',          str,  'dataset/mean_istd.json',     "均值和标准值得json文件路径，后缀 (.json)")
+add_arg('vocab_dir',               str,  'dataset/vocab_model',        "生成的数据字典模型文件夹")
+add_arg('output_model_dir',        str,  'models/',                    "保存训练模型的文件夹")
+add_arg('augment_conf_path',       str,  'conf/augmentation.yml',      "数据增强的配置文件，为json格式")
 add_arg('metrics_type',            str,  'cer', "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 print_arguments(args=args)
@@ -66,10 +66,10 @@ def train():
 
     # 获取训练数据
     audio_featurizer = AudioFeaturizer(mode="train")
-    text_featurizer = TextFeaturizer(args.vocab_path)
+    tokenizer = Tokenizer(args.vocab_dir)
     train_dataset = CustomDataset(data_manifest=args.train_manifest,
                                   audio_featurizer=audio_featurizer,
-                                  text_featurizer=text_featurizer,
+                                  tokenizer=tokenizer,
                                   min_duration=args.min_duration,
                                   max_duration=args.max_duration,
                                   aug_conf=data_augment_configs,
@@ -86,7 +86,7 @@ def train():
 
     test_dataset = CustomDataset(data_manifest=args.test_manifest,
                                  audio_featurizer=audio_featurizer,
-                                 text_featurizer=text_featurizer,
+                                 tokenizer=tokenizer,
                                  min_duration=args.min_duration,
                                  max_duration=args.max_duration,
                                  aug_conf=data_augment_configs,
@@ -156,7 +156,7 @@ def train():
             start = time.time()
 
         train_time_str = str(timedelta(seconds=int(time.time() - start_epoch)))
-        error_result = evaluate(model, test_loader, text_featurizer)
+        error_result = evaluate(model, test_loader, tokenizer)
         writer.add_scalar(f'Test/{args.metrics_type}', error_result, epoch_id)
         logger.info(f'Test epoch: {epoch_id + 1}，训练耗时：{train_time_str}, {args.metrics_type}: {error_result}')
 
@@ -164,15 +164,20 @@ def train():
                         error_rate=error_result, metrics_type=args.metrics_type)
 
 
-def evaluate(model, test_loader, text_featurizer):
+def evaluate(model, test_loader, tokenizer):
     model.eval()
     error_results = []
     with paddle.no_grad():
         for batch_id, batch in enumerate(tqdm(test_loader())):
             inputs, labels, input_lens, label_lens = batch
-            output = model.predict(inputs, input_lens).numpy()
-            out_strings = greedy_decoder_batch(output, text_featurizer.vocab_list)
-            labels_str = labels_to_string(labels, text_featurizer.vocab_list)
+            ctc_probs, ctc_lens = model.predict(inputs, input_lens)
+            ctc_probs, ctc_lens = ctc_probs.numpy(), ctc_lens.numpy()
+            out_tokens = ctc_greedy_search(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
+            out_strings = tokenizer.ids2text([t for t in out_tokens])
+            labels = labels.numpy().tolist()
+            # 移除每条数据的-1值
+            labels = [list(filter(lambda x: x != -1, label)) for label in labels]
+            labels_str = tokenizer.ids2text(labels)
             for out_string, label in zip(*(out_strings, labels_str)):
                 # 计算字错率或者词错率
                 if args.metrics_type == 'wer':

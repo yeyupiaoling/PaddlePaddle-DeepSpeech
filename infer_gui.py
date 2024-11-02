@@ -22,10 +22,10 @@ add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM
 add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
 add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
 add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('mean_std_path',    str,    './dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
-add_arg('vocab_path',       str,    './dataset/vocabulary.txt',    "数据集的词汇表文件路径")
-add_arg('model_dir',        str,    './models/infer/',             "导出的预测模型文件夹路径")
-add_arg('lang_model_path',  str,    './lm/zh_giga.no_cna_cmn.prune01244.klm',   "集束搜索解码相关参数，语言模型文件路径")
+add_arg('mean_std_path',    str,    'dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
+add_arg('vocab_dir',        str,    'dataset/vocab_model',    "数据字典模型文件夹")
+add_arg('model_dir',        str,    'models/inference/',      "导出的预测模型文件夹路径")
+add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',   "集束搜索解码相关参数，语言模型文件路径")
 add_arg('decoder',          str,    'ctc_greedy',    "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 args = parser.parse_args()
 print_arguments(args)
@@ -75,7 +75,7 @@ class SpeechRecognitionApp:
 
         # 获取识别器
         self.predictor = Predictor(model_dir=args.model_dir,
-                                   vocab_path=args.vocab_path,
+                                   vocab_dir=args.vocab_dir,
                                    decoder=args.decoder,
                                    alpha=args.alpha,
                                    beta=args.beta,
