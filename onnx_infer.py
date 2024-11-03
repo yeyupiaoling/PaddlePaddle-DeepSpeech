@@ -2,7 +2,7 @@ import argparse
 import functools
 import time
 
-from runtime.onnxruntime.predict import ONNXPredictor
+from utils.onnx_predict import ONNXPredictor
 from utils.utils import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
