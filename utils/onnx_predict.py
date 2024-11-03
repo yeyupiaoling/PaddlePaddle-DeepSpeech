@@ -1,5 +1,4 @@
 import os
-import sys
 
 import numpy as np
 from loguru import logger
@@ -36,12 +35,14 @@ class ONNXPredictor:
         sess_opt.intra_op_num_threads = num_threads
         providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if use_gpu else ['CPUExecutionProvider']
         self.session = InferenceSession(model_path, sess_options=sess_opt, providers=providers)
+        if self.use_gpu and 'CUDAExecutionProvider' not in self.session.get_providers():
+            logger.warning(f'当前无法使用GPU推理，请确认您的环境支持GPU加速！已自动切换到CPU推理！')
         # 预热
         warmup_audio_path = 'dataset/test.wav'
         if os.path.exists(warmup_audio_path):
             self.predict(warmup_audio_path, to_itn=False)
         else:
-            print('预热文件不存在，忽略预热！', file=sys.stderr)
+            logger.warning('预热文件不存在，忽略预热！')
 
     def get_input_names(self):
         return [v.name for v in self.session.get_inputs()]
@@ -100,7 +101,7 @@ class ONNXPredictor:
     def _infer(self, audio_segment, to_itn=False):
         # 进行预处理
         audio_feature = self.audio_featurizer.featurize(audio_segment.samples, audio_segment.sample_rate)
-        audio_len = audio_feature.shape[1]
+        audio_len = audio_feature.shape[0]
         audio_data = np.array(audio_feature).astype('float32')[np.newaxis, :]
         seq_len_data = np.array([audio_len]).astype('int64')
 

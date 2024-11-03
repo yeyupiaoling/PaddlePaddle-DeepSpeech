@@ -70,7 +70,7 @@ class Predictor:
         if os.path.exists(warmup_audio_path):
             self.predict(warmup_audio_path, to_itn=False)
         else:
-            print('预热文件不存在，忽略预热！', file=sys.stderr)
+            logger.warning('预热文件不存在，忽略预热！', file=sys.stderr)
 
     # 初始化解码器
     def __init_decoder(self, alpha, beta, beam_size, cutoff_prob, cutoff_top_n, vocab_list, lang_model_path):
@@ -123,7 +123,7 @@ class Predictor:
     def _infer(self, audio_segment, to_itn=False):
         # 进行预处理
         audio_feature = self.audio_featurizer.featurize(audio_segment.samples, audio_segment.sample_rate)
-        audio_len = audio_feature.shape[1]
+        audio_len = audio_feature.shape[0]
         audio_data = np.array(audio_feature).astype('float32')[np.newaxis, :]
         seq_len_data = np.array([audio_len]).astype('int64')
 
