@@ -108,7 +108,7 @@ def train():
     optimizer = paddle.optimizer.Adam(parameters=model.parameters(),
                                       learning_rate=scheduler,
                                       weight_decay=5e-4,
-                                      grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=5.0))
+                                      grad_clip=paddle.nn.ClipGradByGlobalNorm(clip_norm=400.0))
 
     if args.pretrained_model:
         model = load_pretrained(args.pretrained_model, model)
