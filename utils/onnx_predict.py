@@ -106,9 +106,7 @@ class ONNXPredictor:
         seq_len_data = np.array([audio_len]).astype('int64')
 
         input_dict = dict(zip(self.get_input_names(), [audio_data, seq_len_data]))
-        print(input_dict)
         ctc_probs, ctc_lens = self.session.run(self.get_output_names(), input_dict)
-        print(ctc_probs.shape, ctc_lens)
 
         if self.decoder == 'ctc_beam_search':
             # 集束搜索解码策略
