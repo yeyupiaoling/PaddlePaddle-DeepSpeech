@@ -26,17 +26,11 @@ add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('min_duration',     float,  0.5,    "最短的用于训练的音频长度")
 add_arg('max_duration',     float,  20.0,   "最长的用于训练的音频长度")
-add_arg('beam_size',        int,    300,    "集束搜索解码相关参数，搜索大小，范围:[5, 500]")
-add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM系数")
-add_arg('num_proc_bsearch', int,    8,      "集束搜索解码相关参数，使用CPU数量")
-add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
-add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
-add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
 add_arg('test_manifest',    str,    'dataset/manifest.test',     "需要评估的测试数据列表")
 add_arg('mean_istd_path',   str,    'dataset/mean_istd.json',    "均值和标准值得json文件路径，后缀 (.json)")
 add_arg('vocab_dir',        str,    'dataset/vocab_model',       "数据字典模型文件夹")
-add_arg('pretrained_model', str,    'models/epoch_0/',           "模型文件路径")
-add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',    "集束搜索解码相关参数，语言模型文件路径")
+add_arg('pretrained_model', str,    'models/best_model/',        "模型文件路径")
+add_arg('beam_search_conf', str,    'configs/decoder.yml',       "集束搜索解码相关参数")
 add_arg('decoder',          str,    'ctc_greedy',        "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 add_arg('metrics_type',     str,    'cer',    "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
@@ -109,19 +103,10 @@ def decoder_result(ctc_probs, ctc_lens, tokenizer:Tokenizer):
     global beam_search_decoder
     # 集束搜索方法的处理
     if args.decoder == "ctc_beam_search" and beam_search_decoder is None:
-        try:
-            from decoders.beam_search_decoder import BeamSearchDecoder
-            beam_search_decoder = BeamSearchDecoder(args.alpha, args.beta, args.beam_size, args.cutoff_prob,
-                                                    args.cutoff_top_n, tokenizer.vocab_list,
-                                                    language_model_path=args.lang_model_path)
-        except ModuleNotFoundError:
-            logger.warning('==================================================================')
-            logger.warning('缺少 paddlespeech-ctcdecoders 库，请根据文档安装。')
-            logger.warning(
-                'python -m pip install paddlespeech_ctcdecoders -U -i https://ppasr.yeyupiaoling.cn/pypi/simple/')
-            logger.warning('【注意】现在已自动切换为ctc_greedy解码器，ctc_greedy解码器准确率相对较低。')
-            logger.warning('==================================================================\n')
-            args.decoder = 'ctc_greedy'
+        from decoders.beam_search_decoder import BeamSearchDecoder
+        beam_search_decoder = BeamSearchDecoder(conf_path=args.beam_search_conf,
+                                                vocab_list=tokenizer.vocab_list,
+                                                blank_id=tokenizer.blank_id)
 
     # 执行解码
     # outs = [outs[i, :, :] for i, _ in enumerate(range(outs.shape[0]))]
@@ -129,7 +114,7 @@ def decoder_result(ctc_probs, ctc_lens, tokenizer:Tokenizer):
         out_tokens = ctc_greedy_search(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
         result = tokenizer.ids2text([t for t in out_tokens])
     else:
-        result = beam_search_decoder.decode_batch_beam_search_offline(probs_split=outs)
+        result = beam_search_decoder.ctc_beam_search_decoder_batch(ctc_probs=ctc_probs, ctc_lens=ctc_lens)
     return result
 
 

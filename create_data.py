@@ -19,8 +19,8 @@ add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据�
 add_arg('max_test_manifest',    int,  10000,                      '最大的测试数据数量')
 add_arg('count_threshold',      int,  2,                          '字符计数的截断阈值，0为不做限制')
 add_arg('vocab_dir',            str,  'dataset/vocab_model',      '生成的数据字典模型文件夹')
-add_arg('vocab_model_type',     str,  'char',                     '生成的数据字典模型类型，中文等字符类型的用char，其他的用unigram')
-add_arg('vocab_size',           int,  8000,                       '生成的数据字典的大小，如果vocab_model_type是char则无效')
+add_arg('vocab_model_type',     str,  'unigram',                     '生成的数据字典模型类型，中文等字符类型的用char，其他的用unigram')
+add_arg('vocab_size',           int,  5000,                       '生成的数据字典的大小，如果vocab_model_type是char则无效')
 add_arg('manifest_path',        str,  'dataset/manifest.train',   '数据列表路径')
 add_arg('num_samples',          int,  1000000,                    '用于计算均值和标准值得音频数量，当为-1使用全部数据')
 add_arg('mean_istd_filepath',   str,  'dataset/mean_istd.json',   '均值和标准值得json文件路径，后缀 (.json)')
@@ -142,10 +142,6 @@ def compute_mean_std(manifest_path, num_samples, mean_istd_filepath):
 
 def main():
     print_arguments(args)
-    print('开始生成数据列表...')
-    create_manifest(annotation_path=args.annotation_path,
-                    manifest_path_prefix=args.manifest_prefix)
-
     print('开始生成数据字典...')
     tokenizer = Tokenizer(vocab_model_dir=args.vocab_dir,
                           model_type=args.vocab_model_type,
@@ -153,10 +149,6 @@ def main():
                           is_build_vocab=True)
     tokenizer.build_vocab(manifest_paths=[args.manifest_path])
     print('数据词汇表已生成完成，保存与：%s' % args.vocab_dir)
-    print('='*70)
-
-    print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)
-    compute_mean_std(args.manifest_path, args.num_samples, args.mean_istd_filepath)
     print('='*70)
 
 

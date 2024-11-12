@@ -10,14 +10,9 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('audio_path',       str,    'dataset/test.wav', "预测音频的路径")
 add_arg('use_gpu',          bool,   True,   "是否使用GPU预测")
 add_arg('to_itn',           bool,  False,   "是否逆文本标准化")
-add_arg('beam_size',        int,    300,    "集束搜索解码相关参数，搜索的大小，范围:[5, 500]")
-add_arg('alpha',            float,  1.2,    "集束搜索解码相关参数，LM系数")
-add_arg('beta',             float,  0.35,   "集束搜索解码相关参数，WC系数")
-add_arg('cutoff_prob',      float,  0.99,   "集束搜索解码相关参数，剪枝的概率")
-add_arg('cutoff_top_n',     int,    40,     "集束搜索解码相关参数，剪枝的最大值")
-add_arg('vocab_dir',        str,    'dataset/vocab_model',    "数据字典模型文件夹")
-add_arg('model_path',       str,    'models/inference/model.onnx',            "导出的预测模型文件夹路径")
-add_arg('lang_model_path',  str,    'lm/zh_giga.no_cna_cmn.prune01244.klm',   "集束搜索解码相关参数，语言模型文件路径")
+add_arg('vocab_dir',        str,    'dataset/vocab_model',         "数据字典模型文件夹")
+add_arg('beam_search_conf', str,    'configs/decoder.yml',         "集束搜索解码相关参数")
+add_arg('model_path',       str,    'models/inference/model.onnx', "导出的预测模型文件夹路径")
 add_arg('decoder',          str,    'ctc_greedy',    "结果解码方法，有集束搜索解码器(ctc_beam_search)、贪心解码器(ctc_greedy)", choices=['ctc_beam_search', 'ctc_greedy'])
 args = parser.parse_args()
 print_arguments(args)
@@ -25,12 +20,7 @@ print_arguments(args)
 predictor = ONNXPredictor(model_path=args.model_path,
                           vocab_dir=args.vocab_dir,
                           decoder=args.decoder,
-                          alpha=args.alpha,
-                          beta=args.beta,
-                          lang_model_path=args.lang_model_path,
-                          beam_size=args.beam_size,
-                          cutoff_prob=args.cutoff_prob,
-                          cutoff_top_n=args.cutoff_top_n,
+                          beam_search_conf=args.beam_search_conf,
                           use_gpu=args.use_gpu)
 
 

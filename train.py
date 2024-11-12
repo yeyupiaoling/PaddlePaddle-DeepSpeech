@@ -42,7 +42,7 @@ add_arg('test_manifest',           str,  'dataset/manifest.test',      "测试�
 add_arg('mean_istd_path',          str,  'dataset/mean_istd.json',     "均值和标准值得json文件路径，后缀 (.json)")
 add_arg('vocab_dir',               str,  'dataset/vocab_model',        "生成的数据字典模型文件夹")
 add_arg('output_model_dir',        str,  'models/',                    "保存训练模型的文件夹")
-add_arg('augment_conf_path',       str,  'conf/augmentation.yml',      "数据增强的配置文件，为json格式")
+add_arg('augment_conf_path',       str,  'configs/augmentation.yml',   "数据增强的配置文件，为yaml格式")
 add_arg('metrics_type',            str,  'cer', "评估所使用的错误率方法，有字错率(cer)、词错率(wer)", choices=['wer', 'cer'])
 args = parser.parse_args()
 print_arguments(args=args)

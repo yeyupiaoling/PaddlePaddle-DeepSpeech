@@ -1,0 +1,14 @@
+# 集束搜索解码相关参数，搜索大小，范围:[5, 500]
+beam_size: 300
+# 集束搜索解码相关参数，LM系数
+alpha:  1.2
+# 集束搜索解码相关参数，WC系数
+beta: 0.35
+# 集束搜索解码相关参数，剪枝的概率
+cutoff_prob: 0.99
+# 集束搜索解码相关参数，剪枝的最大值
+cutoff_top_n: 40
+# 集束搜索解码相关参数，使用CPU数量
+num_processes: 8
+# 集束搜索解码相关参数，语言模型文件路径
+language_model_path: "lm/zh_giga.no_cna_cmn.prune01244.klm"

@@ -16,12 +16,7 @@ class Predictor:
                  model_dir,
                  vocab_dir,
                  decoder='ctc_greedy',
-                 alpha=1.2,
-                 beta=0.35,
-                 lang_model_path=None,
-                 beam_size=10,
-                 cutoff_prob=1.0,
-                 cutoff_top_n=40,
+                 beam_search_conf=None,
                  use_gpu=True,
                  gpu_mem=500,
                  enable_mkldnn=False,
@@ -64,7 +59,7 @@ class Predictor:
 
         # 初始化解码器
         vocab_list = self.tokenizer.vocab_list
-        self.__init_decoder(alpha, beta, beam_size, cutoff_prob, cutoff_top_n, vocab_list, lang_model_path)
+        self.__init_decoder(beam_search_conf)
         # 预热
         warmup_audio_path = 'dataset/test.wav'
         if os.path.exists(warmup_audio_path):
@@ -73,21 +68,13 @@ class Predictor:
             logger.warning('预热文件不存在，忽略预热！', file=sys.stderr)
 
     # 初始化解码器
-    def __init_decoder(self, alpha, beta, beam_size, cutoff_prob, cutoff_top_n, vocab_list, lang_model_path):
+    def __init_decoder(self, beam_search_conf):
         # 集束搜索方法的处理
         if self.decoder == "ctc_beam_search":
-            try:
-                from decoders.beam_search_decoder import BeamSearchDecoder
-                self.beam_search_decoder = BeamSearchDecoder(alpha, beta, beam_size, cutoff_prob, cutoff_top_n,
-                                                             vocab_list, language_model_path=lang_model_path)
-            except ModuleNotFoundError:
-                logger.warning('==================================================================')
-                logger.warning('缺少 paddlespeech_ctcdecoders 库，请执行以下命令安装。')
-                logger.warning(
-                    'python -m pip install paddlespeech_ctcdecoders -U -i https://ppasr.yeyupiaoling.cn/pypi/simple/')
-                logger.warning('【注意】现在已自动切换为ctc_greedy解码器，ctc_greedy解码器准确率相对较低。')
-                logger.warning('==================================================================\n')
-                self.decoder = 'ctc_greedy'
+            from decoders.beam_search_decoder import BeamSearchDecoder
+            self.beam_search_decoder = BeamSearchDecoder(conf_path=beam_search_conf,
+                                                         vocab_list=self.tokenizer.vocab_list,
+                                                         blank_id=self.tokenizer.blank_id)
 
     # 预测音频
     def predict(self, audio_path, to_itn=False):
@@ -145,7 +132,7 @@ class Predictor:
         # 执行解码
         if self.decoder == 'ctc_beam_search':
             # 集束搜索解码策略
-            text = self.beam_search_decoder.decode_beam_search_offline(probs_split=output_data)
+            text = self.beam_search_decoder.ctc_beam_search_decoder(ctc_probs=ctc_probs_data[0])
         else:
             # 贪心解码策略
             out_tokens = ctc_greedy_search(ctc_probs=ctc_probs_data,
