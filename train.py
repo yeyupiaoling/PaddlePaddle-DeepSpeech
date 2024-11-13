@@ -119,8 +119,9 @@ def train():
 
     model.train()
     writer = LogWriter(logdir='log')
-    ctc_loss = paddle.nn.CTCLoss()
+    ctc_loss = paddle.nn.CTCLoss(blank=tokenizer.blank_id, reduction='sum')
     train_step = 0
+    best_error_result = 1
     max_step = len(train_loader) * (args.num_epoch - last_epoch)
     for epoch_id in range(last_epoch, args.num_epoch):
         train_times, reader_times, batch_times, loss_sum = [], [], [], []
@@ -130,6 +131,7 @@ def train():
             inputs, labels, input_lens, label_lens = batch
             output, output_lens = model(inputs, input_lens)
             loss = ctc_loss(output, labels, output_lens, label_lens)
+            loss = loss / output.shape[1]
             loss.backward()
             optimizer.step()
             optimizer.clear_grad()
@@ -154,14 +156,19 @@ def train():
                             f'eta: {eta_str}')
                 train_times, reader_times, batch_times, loss_sum = [], [], [], []
             start = time.time()
-
+        # 训练一个epoch消耗时间
         train_time_str = str(timedelta(seconds=int(time.time() - start_epoch)))
+        # 评估模型
         error_result = evaluate(model, test_loader, tokenizer)
         writer.add_scalar(f'Test/{args.metrics_type}', error_result, epoch_id)
         logger.info(f'Test epoch: {epoch_id + 1}，训练耗时：{train_time_str}, {args.metrics_type}: {error_result}')
-
+        # 保存模型
         save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
                         error_rate=error_result, metrics_type=args.metrics_type)
+        # 保存最优模型
+        if error_result > best_error_result:
+            save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
+                            error_rate=error_result, metrics_type=args.metrics_type, best_model=True)
 
 
 def evaluate(model, test_loader, tokenizer):

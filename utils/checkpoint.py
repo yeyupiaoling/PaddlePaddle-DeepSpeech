@@ -96,7 +96,10 @@ def save_checkpoint(model, optimizer, epoch_id, save_model_path,
     :param best_model: 是否为最佳模型
     :type best_model: bool
     """
-    model_path = os.path.join(save_model_path, f'epoch_{epoch_id}')
+    if best_model:
+        model_path = os.path.join(save_model_path, 'best_model')
+    else:
+        model_path = os.path.join(save_model_path, f'epoch_{epoch_id}')
     os.makedirs(model_path, exist_ok=True)
     # 保存模型参数
     paddle.save(optimizer.state_dict(), os.path.join(model_path, 'optimizer.pdopt'))

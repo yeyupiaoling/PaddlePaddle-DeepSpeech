@@ -65,6 +65,7 @@ class DeepSpeech2Model(nn.Layer):
                                    direction="bidirectional"))
             self.layernorm_list.append(nn.LayerNorm(layernorm_size))
         self.output_dim = layernorm_size
+        self.dropout = nn.Dropout(0.1)
         self.output = paddle.nn.Linear(layernorm_size, vocab_size)
 
     def forward(self, speech, speech_lengths):
@@ -82,6 +83,7 @@ class DeepSpeech2Model(nn.Layer):
         for i in range(0, self.num_rnn_layers):
             x, final_state = self.rnn[i](x, sequence_length=x_lens)  # [B, T, D]
             x = self.layernorm_list[i](x)
+        x = self.dropout(x)
         x = self.output(x)
         x = x.transpose([1, 0, 2])
         return x, x_lens
@@ -92,6 +94,7 @@ class DeepSpeech2Model(nn.Layer):
         for i in range(0, self.num_rnn_layers):
             x, final_state = self.rnn[i](x, sequence_length=x_lens)  # [B, T, D]
             x = self.layernorm_list[i](x)
+        x = self.dropout(x)
         x = self.output(x)
         ctc_probs = F.softmax(x, axis=2)
         return ctc_probs, x_lens
