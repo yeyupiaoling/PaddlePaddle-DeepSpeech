@@ -30,6 +30,7 @@ add_arg('use_gpu',          bool,   True,   "是否使用GPU训练")
 add_arg('batch_size',       int,    8,      "训练每一批数据的大小")
 add_arg('num_workers',      int,    8,      "读取数据的线程数量")
 add_arg('num_epoch',        int,    200,    "训练的轮数")
+add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('learning_rate',    float,  5e-4,   "初始学习率")
@@ -99,6 +100,7 @@ def train():
     model = DeepSpeech2Model(input_dim=train_dataset.feature_dim,
                              vocab_size=train_dataset.vocab_size,
                              mean_istd_path=args.mean_istd_path,
+                             num_conv_layers=args.num_conv_layers,
                              num_rnn_layers=args.num_rnn_layers,
                              rnn_layer_size=args.rnn_layer_size)
     input_data = [paddle.rand((1, 100, train_dataset.feature_dim)), paddle.to_tensor([100], dtype='int64')]

@@ -13,6 +13,7 @@ from utils.utils import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
+add_arg('num_conv_layers',   int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',    int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',    int,    1024,   "循环神经网络的大小")
 add_arg('mean_istd_path',    str,    'dataset/mean_istd.json',   "均值和标准值得json文件路径，后缀 (.json)")
@@ -29,6 +30,7 @@ tokenizer = Tokenizer(args.vocab_dir)
 model = DeepSpeech2Model(input_dim=audio_featurizer.feature_dim,
                          vocab_size=tokenizer.vocab_size,
                          mean_istd_path=args.mean_istd_path,
+                         num_conv_layers=args.num_conv_layers,
                          num_rnn_layers=args.num_rnn_layers,
                          rnn_layer_size=args.rnn_layer_size)
 model = load_pretrained(model, args.pretrained_model)

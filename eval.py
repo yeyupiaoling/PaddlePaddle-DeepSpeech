@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('use_gpu',          bool,   True,   "是否使用GPU评估")
 add_arg('batch_size',       int,    32,     "评估是每一批数据的大小")
+add_arg('num_conv_layers',  int,    2,      "卷积层数量")
 add_arg('num_rnn_layers',   int,    3,      "循环神经网络的数量")
 add_arg('rnn_layer_size',   int,    1024,   "循环神经网络的大小")
 add_arg('min_duration',     float,  0.5,    "最短的用于训练的音频长度")
@@ -65,6 +66,7 @@ def evaluate():
     model = DeepSpeech2Model(input_dim=test_dataset.feature_dim,
                              vocab_size=test_dataset.vocab_size,
                              mean_istd_path=args.mean_istd_path,
+                             num_conv_layers=args.num_conv_layers,
                              num_rnn_layers=args.num_rnn_layers,
                              rnn_layer_size=args.rnn_layer_size)
 
