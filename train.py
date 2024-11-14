@@ -168,7 +168,8 @@ def train():
         save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
                         error_rate=error_result, metrics_type=args.metrics_type)
         # 保存最优模型
-        if error_result > best_error_result:
+        if error_result < best_error_result:
+            best_error_result = error_result
             save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
                             error_rate=error_result, metrics_type=args.metrics_type, best_model=True)
 
