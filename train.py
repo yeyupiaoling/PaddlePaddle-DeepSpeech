@@ -16,7 +16,7 @@ from data_utils.audio_featurizer import AudioFeaturizer
 from data_utils.tokenizer import Tokenizer
 from data_utils.reader import CustomDataset
 from data_utils.sampler import SortagradBatchSampler
-from decoders.ctc_greedy_search import ctc_greedy_search
+from decoders.ctc_greedy_search import ctc_greedy_search_batch
 from model_utils.model import DeepSpeech2Model
 from utils.checkpoint import load_checkpoint, load_pretrained, save_checkpoint
 from utils.metrics import wer, cer
@@ -182,7 +182,7 @@ def evaluate(model, test_loader, tokenizer):
             inputs, labels, input_lens, label_lens = batch
             ctc_probs, ctc_lens = model.predict(inputs, input_lens)
             ctc_probs, ctc_lens = ctc_probs.numpy(), ctc_lens.numpy()
-            out_tokens = ctc_greedy_search(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
+            out_tokens = ctc_greedy_search_batch(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
             out_strings = tokenizer.ids2text([t for t in out_tokens])
             labels = labels.numpy().tolist()
             # 移除每条数据的-1值

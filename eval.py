@@ -12,7 +12,7 @@ from tqdm import tqdm
 from data_utils.collate_fn import collate_fn
 from data_utils.reader import CustomDataset
 from data_utils.tokenizer import Tokenizer
-from decoders.ctc_greedy_search import ctc_greedy_search
+from decoders.ctc_greedy_search import ctc_greedy_search_batch
 from model_utils.model import DeepSpeech2Model
 from utils.checkpoint import load_pretrained
 from utils.metrics import wer, cer
@@ -113,7 +113,7 @@ def decoder_result(ctc_probs, ctc_lens, tokenizer:Tokenizer):
     # 执行解码
     # outs = [outs[i, :, :] for i, _ in enumerate(range(outs.shape[0]))]
     if args.decoder == 'ctc_greedy':
-        out_tokens = ctc_greedy_search(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
+        out_tokens = ctc_greedy_search_batch(ctc_probs=ctc_probs, ctc_lens=ctc_lens, blank_id=tokenizer.blank_id)
         result = tokenizer.ids2text([t for t in out_tokens])
     else:
         result = beam_search_decoder.ctc_beam_search_decoder_batch(ctc_probs=ctc_probs, ctc_lens=ctc_lens)

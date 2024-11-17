@@ -4,17 +4,31 @@ import numpy as np
 
 
 def ctc_greedy_search(ctc_probs: np.ndarray,
-                      ctc_lens: np.ndarray,
                       blank_id: int = 0) -> List[List[int]]:
     """贪心解码器  
 
-    param ctc_probs: (B, maxlen, vocab_size) 模型编码器输出的概率分布  
-    param ctc_lens: (B, ) 每个样本的实际长度  
+    param ctc_probs: (maxlen, vocab_size) 模型编码器输出的概率分布
     param blank_id: 空白标签的id  
     return: 解码结果  
     """
+    topk_index = np.argmax(ctc_probs, axis=1)  # (maxlen)
+    hyps = topk_index.tolist()
+    results = [hyp for hyp in hyps if hyp != blank_id]
+    return results
+
+
+def ctc_greedy_search_batch(ctc_probs: np.ndarray,
+                            ctc_lens: np.ndarray,
+                            blank_id: int = 0) -> List[List[int]]:
+    """贪心解码器
+
+    param ctc_probs: (B, maxlen, vocab_size) 模型编码器输出的概率分布
+    param ctc_lens: (B, ) 每个样本的实际长度
+    param blank_id: 空白标签的id
+    return: 解码结果
+    """
     batch_size, maxlen, vocab_size = ctc_probs.shape
-    topk_index = np.argmax(ctc_probs, axis=2)  # (B, maxlen)  
+    topk_index = np.argmax(ctc_probs, axis=2)  # (B, maxlen)
 
     mask = make_pad_mask(ctc_lens, maxlen)  # (B, maxlen)
     topk_index[mask] = blank_id  # (B, maxlen)

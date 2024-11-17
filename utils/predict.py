@@ -135,10 +135,9 @@ class Predictor:
             text = self.beam_search_decoder.ctc_beam_search_decoder(ctc_probs=ctc_probs_data[0])
         else:
             # 贪心解码策略
-            out_tokens = ctc_greedy_search(ctc_probs=ctc_probs_data,
-                                           ctc_lens=ctc_lens_data,
+            out_tokens = ctc_greedy_search(ctc_probs=ctc_probs_data[0],
                                            blank_id=self.tokenizer.blank_id)
-            text = self.tokenizer.ids2text([t for t in out_tokens])[0]
+            text = self.tokenizer.ids2text(out_tokens)
         # 是否逆文本标准化
         if to_itn:
             if self.inv_normalizer is None:

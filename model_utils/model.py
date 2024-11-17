@@ -32,6 +32,7 @@ class DeepSpeech2Model(nn.Layer):
 
     def __init__(self, input_dim, vocab_size, mean_istd_path, num_conv_layers=2, num_rnn_layers=3, rnn_layer_size=1024):
         super().__init__()
+        self.input_dim = input_dim
         feature_normalizer = FeatureNormalizer(mean_istd_filepath=mean_istd_path)
         self.global_cmvn = GlobalCMVN(paddle.to_tensor(feature_normalizer.mean, dtype=paddle.float32),
                                       paddle.to_tensor(feature_normalizer.istd, dtype=paddle.float32))
