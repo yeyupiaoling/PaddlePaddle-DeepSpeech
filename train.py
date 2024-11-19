@@ -165,12 +165,12 @@ def train():
         writer.add_scalar(f'Test/{args.metrics_type}', error_result, epoch_id)
         logger.info(f'Test epoch: {epoch_id + 1}，训练耗时：{train_time_str}, {args.metrics_type}: {error_result}')
         # 保存模型
-        save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
+        save_checkpoint(model, optimizer, epoch_id + 1, save_model_path=args.output_model_dir,
                         error_rate=error_result, metrics_type=args.metrics_type)
         # 保存最优模型
         if error_result < best_error_result:
             best_error_result = error_result
-            save_checkpoint(model, optimizer, epoch_id, save_model_path=args.output_model_dir,
+            save_checkpoint(model, optimizer, epoch_id + 1, save_model_path=args.output_model_dir,
                             error_rate=error_result, metrics_type=args.metrics_type, best_model=True)
 
 
