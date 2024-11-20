@@ -1,5 +1,6 @@
 import os
 import multiprocessing
+import platform
 from math import log
 
 import yaml
@@ -146,6 +147,14 @@ class BeamSearchDecoder:
             ctc_probs = ctc_probs.tolist()
             ctc_lens = ctc_lens.tolist()
         assert len(ctc_probs) == len(ctc_lens)
+        # Windows系统不支持多进程
+        beam_search_results = []
+        if platform.system() == 'Windows' or self.configs.num_processes <= 1:
+            for i, ctc_prob in enumerate(ctc_probs):
+                ctc_prob = ctc_prob[:ctc_lens[i]]
+                beam_search_results.append(self.ctc_beam_search_decoder(ctc_prob))
+            return beam_search_results
+        # 使用多进程进行并行解码
         pool = multiprocessing.Pool(processes=self.configs.num_processes)
         results = []
         for i, ctc_prob in enumerate(ctc_probs):
