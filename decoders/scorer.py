@@ -37,19 +37,19 @@ class Scorer(object):
         self._alpha = alpha
         self._beta = beta
 
-    def __call__(self, sentence, log=False):
+    def __call__(self, sentence, use_log=False):
         """评估函数，收集所有不同的得分并返回最终得分
 
         :param sentence: 用于计算的输入句子
         :type sentence: str
-        :param log: 是否使用对数
-        :type log: bool
+        :param use_log: 是否使用对数
+        :type use_log: bool
         :return: 评价分数，用小数或对数表示
         :rtype: float
         """
         lm = self._language_model_score(sentence)
         word_cnt = self._word_count(sentence)
-        if not log:
+        if not use_log:
             score = np.power(lm, self._alpha) * np.power(word_cnt, self._beta)
         else:
             score = self._alpha * np.log(lm) + self._beta * np.log(word_cnt)
