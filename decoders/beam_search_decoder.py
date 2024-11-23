@@ -1,11 +1,10 @@
 import os
-import multiprocessing
-import platform
-from math import log
 
+import numpy as np
+import paddlespeech_ctcdecoders
 import yaml
+from loguru import logger
 
-from decoders.scorer import Scorer
 from utils.utils import download, print_arguments, dict_to_object
 
 
@@ -20,147 +19,152 @@ class BeamSearchDecoder:
         self.blank_id = blank_id
         if (not os.path.exists(self.configs.language_model_path) and
                 self.configs.language_model_path == 'lm/zh_giga.no_cna_cmn.prune01244.klm'):
-            print('=' * 70)
+            logger.info('=' * 70)
             language_model_url = 'https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm'
-            print("语言模型不存在，正在下载，下载地址： %s ..." % language_model_url)
+            logger.info("语言模型不存在，正在下载，下载地址： %s ..." % language_model_url)
             os.makedirs(os.path.dirname(self.configs.language_model_path), exist_ok=True)
             download(url=language_model_url, download_target=self.configs.language_model_path)
-            print('=' * 70)
-        print('=' * 70)
-        print("初始化解码器...")
+            logger.info('=' * 70)
+        logger.info('=' * 70)
+        logger.info("初始化解码器...")
         assert os.path.exists(self.configs.language_model_path), f'语言模型不存在：{self.configs.language_model_path}'
-        self._ext_scorer = Scorer(self.configs.alpha, self.configs.beta, self.configs.language_model_path)
-        print("初始化解码器完成!")
-        print('=' * 70)
+        self._ext_scorer = Scorer(self.configs.alpha, self.configs.beta, self.configs.language_model_path, vocab_list)
+        lm_char_based = self._ext_scorer.is_character_based()
+        lm_max_order = self._ext_scorer.get_max_order()
+        lm_dict_size = self._ext_scorer.get_dict_size()
+        logger.info(f"language model: "
+                    f"model path = {self.configs.language_model_path}, "
+                    f"is_character_based = {lm_char_based}, "
+                    f"max_order = {lm_max_order}, "
+                    f"dict_size = {lm_dict_size}")
+        logger.info("初始化解码器完成!")
+        logger.info('=' * 70)
 
+    # 单个数据解码
     def ctc_beam_search_decoder(self, ctc_probs):
-        # 判断ctc_probs是否为列表，如果不是则转换为列表
         if not isinstance(ctc_probs, list):
             ctc_probs = ctc_probs.tolist()
-
-        # 初始化前缀集合，以制表符作为前缀，概率为1.0
-        prefix_set_prev = {'\t': 1.0}
-        # 初始化前缀为制表符时的空白概率和非空白概率
-        probs_b_prev, probs_nb_prev = {'\t': 1.0}, {'\t': 0.0}
-
-        # 在循环中扩展前缀
-        for time_step in range(len(ctc_probs)):
-            # 初始化下一个时间步的前缀集合和对应的概率字典
-            prefix_set_next, probs_b_cur, probs_nb_cur = {}, {}, {}
-
-            # 获取当前时间步的概率索引
-            prob_idx = list(enumerate(ctc_probs[time_step]))
-            cutoff_len = len(prob_idx)
-
-            # 如果启用了剪枝
-            if self.configs.cutoff_prob < 1.0 or self.configs.cutoff_top_n < cutoff_len:
-                # 按概率从高到低排序
-                prob_idx = sorted(prob_idx, key=lambda asd: asd[1], reverse=True)
-                cutoff_len, cum_prob = 0, 0.0
-                # 计算累积概率并确定剪枝长度
-                for i in range(len(prob_idx)):
-                    cum_prob += prob_idx[i][1]
-                    cutoff_len += 1
-                    if cum_prob >= self.configs.cutoff_prob:
-                        break
-                # 确定最终的剪枝长度
-                cutoff_len = min(cutoff_len, self.configs.cutoff_top_n)
-                # 取前cutoff_len个概率最高的索引
-                prob_idx = prob_idx[0:cutoff_len]
-
-            # 遍历前一个时间步的前缀集合
-            for l in prefix_set_prev:
-                # 如果当前前缀不在下一个时间步的前缀集合中，则初始化其空白概率和非空白概率为0.0
-                if l not in prefix_set_next:
-                    probs_b_cur[l], probs_nb_cur[l] = 0.0, 0.0
-
-                # 遍历当前时间步的概率索引，扩展前缀
-                for index in range(cutoff_len):
-                    c, prob_c = prob_idx[index][0], prob_idx[index][1]
-
-                    # 如果当前字符为空白字符
-                    if c == self.blank_id:
-                        # 更新空白概率
-                        probs_b_cur[l] += prob_c * (probs_b_prev[l] + probs_nb_prev[l])
-                    else:
-                        # 获取当前字符和前一个字符
-                        last_char = l[-1]
-                        new_char = self.vocab_list[c]
-                        l_plus = l + new_char
-                        # 如果新前缀不在下一个时间步的前缀集合中，则初始化其空白概率和非空白概率为0.0
-                        if l_plus not in prefix_set_next:
-                            probs_b_cur[l_plus], probs_nb_cur[l_plus] = 0.0, 0.0
-
-                        # 根据当前字符和前一个字符的关系更新非空白概率
-                        if new_char == last_char:
-                            probs_nb_cur[l_plus] += prob_c * probs_b_prev[l]
-                            probs_nb_cur[l] += prob_c * probs_nb_prev[l]
-                        elif new_char == ' ':
-                            # 处理空格字符的特殊情况
-                            if len(l) == 1:
-                                score = 1.0
-                            else:
-                                prefix = l[1:]
-                                score = self._ext_scorer(prefix)
-                            probs_nb_cur[l_plus] += score * prob_c * (probs_b_prev[l] + probs_nb_prev[l])
-                        else:
-                            probs_nb_cur[l_plus] += prob_c * (probs_b_prev[l] + probs_nb_prev[l])
-                        # 将新前缀添加到下一个时间步的前缀集合中
-                        # add l_plus into prefix_set_next
-                        prefix_set_next[l_plus] = probs_nb_cur[l_plus] + probs_b_cur[l_plus]
-                # 将当前前缀添加到下一个时间步的前缀集合中
-                prefix_set_next[l] = probs_b_cur[l] + probs_nb_cur[l]
-            # 更新概率字典
-            probs_b_prev, probs_nb_prev = probs_b_cur, probs_nb_cur
-
-            # 存储前beam_size个概率最高的前缀
-            prefix_set_prev = sorted(prefix_set_next.items(), key=lambda asd: asd[1], reverse=True)
-            if self.configs.beam_size < len(prefix_set_prev):
-                prefix_set_prev = prefix_set_prev[:self.configs.beam_size]
-            prefix_set_prev = dict(prefix_set_prev)
-
-        # 初始化beam结果列表
-        beam_result = []
-        # 遍历最终时间步的前缀集合，计算每个前缀的概率和对应的序列
-        for seq, prob in prefix_set_prev.items():
-            if prob > 0.0 and len(seq) > 1:
-                result = seq[1:]
-                # 使用外部评分器对最后一个单词进行评分
-                if result[-1] != ' ':
-                    prob = prob * self._ext_scorer(result)
-                # 计算对数概率
-                log_prob = log(prob)
-                # 将对数概率和序列添加到beam结果列表中
-                beam_result.append((log_prob, result))
-            else:
-                # 对于不符合条件的前缀，添加负无穷大的对数概率和空字符串
-                beam_result.append((float('-inf'), ''))
-
-        # 输出前beam_size个解码结果
-        beam_result = sorted(beam_result, key=lambda asd: asd[0], reverse=True)
-        result = beam_result[0][1].replace('▁', ' ').strip()
-        # 返回概率最高的解码结果
+        # beam search decode
+        beam_search_result = ctc_beam_search_decoding(probs_seq=ctc_probs,
+                                                      vocabulary=self.vocab_list,
+                                                      beam_size=self.configs.beam_size,
+                                                      ext_scoring_func=self._ext_scorer,
+                                                      cutoff_prob=self.configs.cutoff_prob,
+                                                      cutoff_top_n=self.configs.cutoff_top_n,
+                                                      blank_id=self.blank_id)
+        result = beam_search_result[0][1].replace('▁', ' ').strip()
         return result
 
+    # 一批数据解码
     def ctc_beam_search_decoder_batch(self, ctc_probs, ctc_lens):
         if not isinstance(ctc_probs, list):
             ctc_probs = ctc_probs.tolist()
             ctc_lens = ctc_lens.tolist()
-        assert len(ctc_probs) == len(ctc_lens)
-        # Windows系统不支持多进程
-        beam_search_results = []
-        if platform.system() == 'Windows' or self.configs.num_processes <= 1:
-            for i, ctc_prob in enumerate(ctc_probs):
-                ctc_prob = ctc_prob[:ctc_lens[i]]
-                beam_search_results.append(self.ctc_beam_search_decoder(ctc_prob))
-            return beam_search_results
-        # 使用多进程进行并行解码
-        pool = multiprocessing.Pool(processes=self.configs.num_processes)
-        results = []
+        new_ctc_probs = []
         for i, ctc_prob in enumerate(ctc_probs):
             ctc_prob = ctc_prob[:ctc_lens[i]]
-            results.append(pool.apply_async(self.ctc_beam_search_decoder, args=(ctc_prob,)))
-        pool.close()
-        pool.join()
-        beam_search_results = [result.get() for result in results]
-        return beam_search_results
+            new_ctc_probs.append(ctc_prob)
+        # beam search decode
+        self.num_processes = min(self.configs.num_processes, len(ctc_probs))
+        beam_search_results = ctc_beam_search_decoding_batch(probs_split=new_ctc_probs,
+                                                             vocabulary=self.vocab_list,
+                                                             beam_size=self.configs.beam_size,
+                                                             num_processes=self.num_processes,
+                                                             ext_scoring_func=self._ext_scorer,
+                                                             cutoff_prob=self.configs.cutoff_prob,
+                                                             cutoff_top_n=self.configs.cutoff_top_n,
+                                                             blank_id=self.blank_id)
+        results = [result[0][1].replace('▁', ' ').strip() for result in beam_search_results]
+        return results
+
+    @staticmethod
+    def softmax(x):
+        e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+        return e_x / np.sum(e_x, axis=-1, keepdims=True)
+
+
+class Scorer(paddlespeech_ctcdecoders.Scorer):
+    """Wrapper for Scorer.
+
+    :param alpha: 与语言模型相关的参数。当alpha = 0时不要使用语言模型
+    :type alpha: float
+    :param beta: 与字计数相关的参数。当beta = 0时不要使用统计字
+    :type beta: float
+    :model_path: 语言模型的路径
+    :type model_path: str
+    :param vocabulary: 词汇列表
+    :type vocabulary: list
+    """
+
+    def __init__(self, alpha, beta, model_path, vocabulary):
+        paddlespeech_ctcdecoders.Scorer.__init__(self, alpha, beta, model_path, vocabulary)
+
+
+def ctc_beam_search_decoding(probs_seq,
+                             vocabulary,
+                             beam_size,
+                             cutoff_prob=1.0,
+                             cutoff_top_n=40,
+                             blank_id=0,
+                             ext_scoring_func=None):
+    """集束搜索解码器
+
+    :param probs_seq: 单个2-D概率分布列表，每个元素是词汇表和空白上的标准化概率列表
+    :type probs_seq: 2-D list
+    :param vocabulary: 词汇列表
+    :type vocabulary: list
+    :param beam_size: 集束搜索宽度
+    :type beam_size: int
+    :param cutoff_prob: 剪枝中的截断概率，默认1.0，没有剪枝
+    :type cutoff_prob: float
+    :param cutoff_top_n: 剪枝时的截断数，仅在词汇表中具有最大probs的cutoff_top_n字符用于光束搜索，默认为40
+    :type cutoff_top_n: int
+    :param blank_id 空白索引
+    :type blank_id int
+    :param ext_scoring_func: 外部评分功能部分解码句子，如字计数或语言模型
+    :type ext_scoring_func: callable
+    :return: 解码结果为log概率和句子的元组列表，按概率降序排列
+    :rtype: list
+    """
+    beam_results = paddlespeech_ctcdecoders.ctc_beam_search_decoding(
+        probs_seq, vocabulary, beam_size, cutoff_prob, cutoff_top_n, ext_scoring_func, blank_id)
+    beam_results = [(res[0], res[1]) for res in beam_results]
+    return beam_results
+
+
+def ctc_beam_search_decoding_batch(probs_split,
+                                   vocabulary,
+                                   beam_size,
+                                   num_processes,
+                                   cutoff_prob=1.0,
+                                   cutoff_top_n=40,
+                                   blank_id=0,
+                                   ext_scoring_func=None):
+    """Wrapper for the batched CTC beam search decoder.
+
+    :param probs_split: 3-D列表，每个元素作为ctc_beam_search_decoder()使用的2-D概率列表的实例
+    :type probs_split: 3-D list
+    :param vocabulary: 词汇列表
+    :type vocabulary: list
+    :param beam_size: 集束搜索宽度
+    :type beam_size: int
+    :param cutoff_prob: 剪枝中的截断概率，默认1.0，没有剪枝
+    :type cutoff_prob: float
+    :param cutoff_top_n: 剪枝时的截断数，仅在词汇表中具有最大probs的cutoff_top_n字符用于光束搜索，默认为40
+    :type cutoff_top_n: int
+    :param blank_id 空白索引
+    :type blank_id int
+    :param num_processes: 并行解码进程数
+    :type num_processes: int
+    :param ext_scoring_func: 外部评分功能部分解码句子，如字计数或语言模型
+    :type ext_scoring_func: callable
+    :return: 解码结果为log概率和句子的元组列表，按概率降序排列的列表
+    :rtype: list
+    """
+
+    batch_beam_results = paddlespeech_ctcdecoders.ctc_beam_search_decoding_batch(
+        probs_split, vocabulary, beam_size, num_processes, cutoff_prob,
+        cutoff_top_n, ext_scoring_func, blank_id)
+    batch_beam_results = [[(res[0], res[1]) for res in beam_results]
+                          for beam_results in batch_beam_results]
+    return batch_beam_results

@@ -1,8 +1,8 @@
 # 集束搜索解码
 
-本项目目前支持两种解码方法，分别是集束搜索解码器(ctc_beam_search)和贪心解码器(ctc_greedy)，项目全部默认都是使用贪婪策略解码的，首先要安装`kenlm`库，执行下面命令安装。
+本项目目前支持两种解码方法，分别是集束搜索解码器(ctc_beam_search)和贪心解码器(ctc_greedy)，项目全部默认都是使用贪婪策略解码的，首先要安装所需的依赖库，执行下面命令安装。
 ```shell
-pip install https://github.com/kpu/kenlm/archive/master.zip
+python -m pip install paddlespeech_ctcdecoders -U -i https://ppasr.yeyupiaoling.cn/pypi/simple/
 ```
 
 # 语言模型
