@@ -29,7 +29,7 @@ DeepSpeech2是基于PaddlePaddle实现的端到端自动语音识别（ASR）引
 ## 模型下载
 |                                   数据集                                    | 循环神经网络的数量 | 循环神经网络的大小 | 错误率(贪心解码器) | 错误率(集束搜索解码器) | 下载地址 |
 |:------------------------------------------------------------------------:|:---------:|:---------:|:----------:|:------------:|:----:|
-|  [AIShell](https://openslr.magicdatatech.com/resources/33) (179小时，普通话)   |     3     |   1024    |  0.08349   |   0.08344    |      |
+|  [AIShell](https://openslr.magicdatatech.com/resources/33) (179小时，普通话)   |     3     |   1024    |  0.08349   |   0.05942    |      |
 | [Librispeech](https://openslr.magicdatatech.com/resources/12) (960小时，英语) |     3     |   1024    |            |              |      |
 |            [WenetSpeech](./docs/wenetspeech.md) (10000小时，普通话)            |     3     |   1024    |            |              |      |
 
