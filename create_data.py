@@ -142,6 +142,9 @@ def compute_mean_std(manifest_path, num_samples, mean_istd_filepath):
 
 def main():
     print_arguments(args)
+    print('开始生成数据列表...')
+    create_manifest(annotation_path=args.annotation_path,
+                    manifest_path_prefix=args.manifest_prefix)
     print('开始生成数据字典...')
     tokenizer = Tokenizer(vocab_model_dir=args.vocab_dir,
                           model_type=args.vocab_model_type,
@@ -149,6 +152,10 @@ def main():
                           is_build_vocab=True)
     tokenizer.build_vocab(manifest_paths=[args.manifest_path])
     print('数据词汇表已生成完成，保存与：%s' % args.vocab_dir)
+    print('='*70)
+
+    print('开始抽取%s条数据计算均值和标准值...' % args.num_samples)
+    compute_mean_std(args.manifest_path, args.num_samples, args.mean_istd_filepath)
     print('='*70)
 
 
