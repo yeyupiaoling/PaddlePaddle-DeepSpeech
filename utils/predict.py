@@ -91,7 +91,7 @@ class Predictor:
             sentences = []
             last_audio_ndarray = None
             for i, t in enumerate(speech_timestamps):
-                audio_ndarray = audio_segment.samples[t['start']: t['end']]
+                audio_ndarray = audio_segment.samples[int(t['start']): int(t['end'])]
                 if last_audio_ndarray is not None:
                     audio_ndarray = np.concatenate((last_audio_ndarray, audio_ndarray))
                     last_audio_ndarray = None
