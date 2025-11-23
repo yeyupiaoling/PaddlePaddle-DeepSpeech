@@ -2,7 +2,6 @@ import argparse
 import functools
 import json
 import os
-from collections import Counter
 
 from tqdm import tqdm
 from yeaudio.audio import AudioSegment
@@ -19,7 +18,7 @@ add_arg('manifest_prefix',      str,  'dataset/',                 '训练数据�
 add_arg('max_test_manifest',    int,  10000,                      '最大的测试数据数量')
 add_arg('count_threshold',      int,  2,                          '字符计数的截断阈值，0为不做限制')
 add_arg('vocab_dir',            str,  'dataset/vocab_model',      '生成的数据字典模型文件夹')
-add_arg('vocab_model_type',     str,  'unigram',                     '生成的数据字典模型类型，中文等字符类型的用char，其他的用unigram')
+add_arg('vocab_model_type',     str,  'unigram',                  '生成的数据字典模型类型，中文等字符类型的用char，其他的用unigram')
 add_arg('vocab_size',           int,  5000,                       '生成的数据字典的大小，如果vocab_model_type是char则无效')
 add_arg('manifest_path',        str,  'dataset/manifest.train',   '数据列表路径')
 add_arg('num_samples',          int,  1000000,                    '用于计算均值和标准值得音频数量，当为-1使用全部数据')

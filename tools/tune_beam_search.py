@@ -2,6 +2,7 @@ import argparse
 import functools
 import os
 import time
+from datetime import timedelta
 
 current_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
@@ -118,6 +119,7 @@ def tune():
     best_alpha, best_beta, best_result = 0, 0, 1
     for i, (alpha, beta) in enumerate(params_grid):
         error_results = []
+        start_time = time.time()
         for j in tqdm(range(len(all_ctc_probs))):
             ctc_probs, ctc_lens, label = all_ctc_probs[j], all_ctc_lens[j], all_label[j]
             beam_search_decoder.reset_params(alpha, beta)
@@ -134,9 +136,12 @@ def tune():
             best_alpha = alpha
             best_beta = beta
             best_result = error_result
+        eta_sec = (time.time() - start_time) * (len(params_grid) - i - 1)
+        eta_str = str(timedelta(seconds=int(eta_sec)))
         logger.info(
             f'[{i + 1}/{len(params_grid)}] 当alpha为：{alpha}, beta为：{beta}，{args.metrics_type}：{error_result:.5f}, '
-            f'【目前最优】当alpha为：{best_alpha}, beta为：{best_beta}，{args.metrics_type}：{best_result:.5f}')
+            f'【目前最优】当alpha为：{best_alpha}, beta为：{best_beta}，{args.metrics_type}：{best_result:.5f}, '
+            f'预计剩余时间：{eta_str}')
     logger.info(f'【最终最优】当alpha为：%f, {best_alpha}, beta为：{best_beta}，{args.metrics_type}：{best_result:.5f}')
 
 
