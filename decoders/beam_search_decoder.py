@@ -1,11 +1,13 @@
-import os
 import math
+import os
 from typing import List, Tuple, Optional, Dict
-import numpy as np
+
 import kenlm
+import numpy as np
+import yaml
 from loguru import logger
 
-from masr.utils.utils import download
+from utils.utils import download, print_arguments, dict_to_object
 
 # 常量定义
 NUM_FLT_INF = float('-inf')
@@ -539,36 +541,33 @@ def ctc_beam_search_decoding_batch(probs_split: List[List[List[float]]],
 
 
 class BeamSearchDecoder:
-    def __init__(self,
-                 vocab_list,
-                 alpha=1.2,
-                 beta=0.35,
-                 beam_size=300,
-                 cutoff_prob=0.99,
-                 cutoff_top_n=40,
-                 language_model_path=None,
-                 num_processes=10,
-                 blank_id=0):
+    def __init__(self, conf_path, vocab_list, blank_id=0):
+        # 读取数据增强配置文件
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            decoder_configs = yaml.load(f.read(), Loader=yaml.FullLoader)
+        print_arguments(configs=decoder_configs, title='集束搜索解码器参数')
+        self.configs = dict_to_object(decoder_configs)
         self.vocab_list = vocab_list
-        self.alpha = alpha
-        self.beta = beta
-        self.beam_size = beam_size
-        self.cutoff_prob = cutoff_prob
-        self.cutoff_top_n = cutoff_top_n
+        self.alpha = self.configs.alpha
+        self.beta = self.configs.beta
+        self.beam_size = self.configs.beam_size
+        self.cutoff_prob = self.configs.cutoff_prob
+        self.cutoff_top_n = self.configs.cutoff_top_n
         self.vocab_list = vocab_list
-        self.num_processes = num_processes
+        self.num_processes = self.configs.num_processes
         self.blank_id = blank_id
-        if not os.path.exists(language_model_path) and language_model_path == 'lm/zh_giga.no_cna_cmn.prune01244.klm':
+        if (not os.path.exists(self.configs.language_model_path) and
+                self.configs.language_model_path == 'lm/zh_giga.no_cna_cmn.prune01244.klm'):
             logger.info('=' * 70)
             language_model_url = 'https://deepspeech.bj.bcebos.com/zh_lm/zh_giga.no_cna_cmn.prune01244.klm'
             logger.info("语言模型不存在，正在下载，下载地址： %s ..." % language_model_url)
-            os.makedirs(os.path.dirname(language_model_path), exist_ok=True)
-            download(url=language_model_url, download_target=language_model_path)
+            os.makedirs(os.path.dirname(self.configs.language_model_path), exist_ok=True)
+            download(url=language_model_url, download_target=self.configs.language_model_path)
             logger.info('=' * 70)
         logger.info('=' * 70)
         logger.info("初始化解码器...")
-        assert os.path.exists(language_model_path), f'语言模型不存在：{language_model_path}'
-        self._ext_scorer = Scorer(alpha, beta, language_model_path, vocab_list)
+        assert os.path.exists(self.configs.language_model_path), f'语言模型不存在：{self.configs.language_model_path}'
+        self._ext_scorer = Scorer(self.configs.alpha, self.configs.beta, self.configs.language_model_path, vocab_list)
         logger.info("初始化解码器完成!")
         logger.info('=' * 70)
 
