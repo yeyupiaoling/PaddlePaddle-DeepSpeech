@@ -99,7 +99,7 @@ wav_path: ./dataset/test.wav
 <br/>
 <div align="center">
 <p>打赏一块钱支持一下作者</p>
-<img src="https://yeyupiaoling.cn/reward.png" alt="打赏作者" width="400">
+<img src="https://yeyupiaoling.cn/reward.jpg" alt="打赏作者" width="400">
 </div>
 
 ## 相关项目
